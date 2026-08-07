@@ -1259,9 +1259,11 @@
   position: relative;
   width: 100%;
   /* Tall enough to hold the full anchor spread at zoom 7. Alexandria to Upper Egypt is
-     0.017 of the Mercator world, which is ~560px at that zoom, plus room for the pills
-     themselves at the extremes. */
-  height: clamp(420px, 64vh, 660px);
+     0.017 of the Mercator world, which is ~560px at that zoom, plus room for the pills at
+     the extremes. Height is what decides the zoom on a desktop — width is never the
+     shortage — so this leans tall. Below the threshold fitZoom drops to 6 and the frame
+     fills with Libya and Saudi Arabia around a small Egypt. */
+  height: clamp(420px, 72vh, 700px);
   overflow: hidden; /* clips the iframe's over-scan */
   border-radius: var(--r-card); /* the same radius as every card on the site */
   background: var(--accent-tint); /* what shows while the embed loads */

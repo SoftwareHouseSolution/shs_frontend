@@ -68,8 +68,23 @@ for (const vp of [
 
   if (vp.tag === "desktop") {
     // The map must actually filter, and clearing must actually restore.
+    await p.evaluate(() => window.scrollTo(0, 0));
+    await p.waitForTimeout(400);
+    const yBefore = await p.evaluate(() => window.scrollY);
     await p.locator(".swh-map__tag", { hasText: "Greater Cairo" }).click();
-    await p.waitForTimeout(700);
+    await p.waitForTimeout(1400); // smooth scroll has to land
+
+    /* Selecting must bring the results into view. Without it the grid updates below the
+       fold and the only visible feedback is the pill changing colour. */
+    const scroll = await p.evaluate(() => {
+      const h = document.querySelector(".swh-map__result").getBoundingClientRect();
+      const nav = document.querySelector(".swh-nav").offsetHeight;
+      return { y: window.scrollY, headingTop: Math.round(h.top), nav };
+    });
+    rec("selecting scrolls the results into view",
+      scroll.y > yBefore + 100 && scroll.headingTop >= 0 && scroll.headingTop < 260,
+      `scrollY ${yBefore} -> ${scroll.y}, heading at ${scroll.headingTop}px (nav ${scroll.nav}px)`);
+
     const heading = (await p.locator(".swh-map__result-title").innerText()).replace(/\n/g, " ");
     const cards = await p.locator(".swh-client-grid > li").count();
     rec("selecting a region filters the grid", /Greater Cairo/.test(heading) && cards > 0 && cards < 367,

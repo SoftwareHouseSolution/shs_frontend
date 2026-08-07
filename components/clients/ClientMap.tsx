@@ -87,7 +87,37 @@ export function ClientMap({ clients }: { clients: readonly Client[] }) {
       .sort((a, b) => a.name.localeCompare(b.name, "en"));
   }, [clients, active, q]);
 
-  const select = useCallback((r: Region) => setActive((cur) => (cur === r ? null : r)), []);
+  /* Selecting a region scrolls the results into view.
+
+     Without this the map fills the screen, the grid updates 600px below the fold, and the
+     pill just changes colour — the page looks like it did nothing. Only on SELECT: clearing
+     should leave the reader where they are, and the search field must never yank the page
+     while someone is still typing into it.
+
+     The scroll waits a frame so it targets the grid's new height rather than the old one,
+     and `block: "start"` lands on the heading, which already clears the fixed navbar via the
+     global `[id] { scroll-margin-top }` rule. */
+  const resultRef = useRef<HTMLDivElement>(null);
+  const select = useCallback(
+    (r: Region) => {
+      setActive((cur) => {
+        const next = cur === r ? null : r;
+        if (next) {
+          requestAnimationFrame(() =>
+            resultRef.current?.scrollIntoView({
+              // html{scroll-behavior:smooth} would otherwise animate this for everyone.
+              behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+                ? "auto"
+                : "smooth",
+              block: "start",
+            }),
+          );
+        }
+        return next;
+      });
+    },
+    [],
+  );
 
   // Escape clears the selection, matching every other dismissible thing on the site.
   useEffect(() => {
@@ -190,7 +220,7 @@ export function ClientMap({ clients }: { clients: readonly Client[] }) {
           </div>
         </div>
 
-        <div className="swh-map__result">
+        <div className="swh-map__result" id="clients" ref={resultRef}>
           <h2 className="swh-map__result-title">
             {active ?? "Every client"}
             <span aria-live="polite">

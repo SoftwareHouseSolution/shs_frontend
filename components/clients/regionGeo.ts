@@ -82,7 +82,11 @@ export const REGION_ANCHORS: Record<string, LatLng> = {
    chrome.css), so the allowance should shrink with them. */
 const pads = (w: number, h: number) => ({
   x: Math.min(220, w * 0.42),
-  y: Math.min(76, h * 0.18),
+  /* Vertical is the binding constraint on a wide, short window — the anchors span more
+     screen vertically than horizontally. A 76px allowance for a ~34px pill was costing a
+     whole zoom level on a laptop, which pulled Libya and Iraq into frame around a small
+     Egypt. Half the pill plus a little is enough. */
+  y: Math.min(52, h * 0.14),
 });
 
 /* How far the anchors spread, in normalised world units. Computed once at module scope. */

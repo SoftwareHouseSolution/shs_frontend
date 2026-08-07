@@ -1,6 +1,6 @@
 "use client";
 
-/* The social rail on the left edge.
+/* The social rail on the right edge.
 
    It sits 70% inside the viewport and 30% outside it. That is not decoration: an element
    flush to the edge reads as part of the browser chrome and gets ignored, whereas one
@@ -13,11 +13,12 @@
    - `position: fixed` and NOT inside any transformed ancestor. #app carries
      overflow-x:hidden (see app/layout.tsx); a fixed element is only clipped by an
      ancestor's overflow if that ancestor is also a containing block, which #app
-     deliberately is not. The 30% that hangs off the LEFT edge cannot create a horizontal
-     scrollbar either — only overflow past the right edge can, in LTR.
+     deliberately is not.
 
-   - The rest position is a transform, never a negative `left`. Transforms do not
-     participate in layout, so the rail cannot widen the page at any breakpoint.
+   - The rest position is a transform, never a `right` offset. Transforms do not
+     participate in layout, so the 30% overhang cannot widen the page or trip a horizontal
+     scrollbar. This matters more on the right than it did on the left: overflow past the
+     left edge is free in LTR, overflow past the right edge is not.
 
    - `focus-within` gets the same treatment as `hover`. Tabbing to a control that is 30%
      off-screen and stays there is the version of this pattern that fails an audit.
@@ -28,8 +29,8 @@
    - Icons come from components/chrome/SocialIcon.tsx, shared with the footer, so the two
      places cannot drift.
 
-   The rail hides itself below 900px. On a phone the left edge is thumb territory that
-   belongs to the page and to the browser's back gesture, and the same three links are
+   The rail hides itself below 900px. On a phone the screen edges are thumb territory that
+   belongs to the page and to the browser's own gestures, and the same three links are
    already in the footer. */
 
 import { useEffect, useRef, useState } from "react";

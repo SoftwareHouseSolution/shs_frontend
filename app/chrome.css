@@ -71,6 +71,16 @@
   --ph-h: clamp(340px, 44vh, 480px);
   --ph-zoom-dur: 18s;
   --ph-zoom-to: 1.06;
+  /* The header's OWN scrims, not the carousel's. The navbar is transparent over this band,
+     and the carousel's --hero-scrim-top (0.44) stacked on --overlay (0.25) put ~0.58 of
+     darkening exactly where the bar sits — over a dark photograph the bar rendered solid
+     black. The carousel survives that because it is 100svh, so its top scrim covers a small
+     fraction of the picture; this header is ~400px, so the same gradient covers a quarter
+     of it. Lighter and shorter here: enough for white nav text, not enough to black out the
+     photograph. The bottom scrim is UNCHANGED — the title and lede sit on it and it is what
+     keeps them readable. */
+  --ph-scrim-top: linear-gradient(180deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.12) 30%, rgba(0, 0, 0, 0) 58%);
+  --ph-overlay: rgba(0, 0, 0, 0.14);
 
   /* focus + drawer */
   --focus-ring: 0 0 0 2px var(--paper), 0 0 0 4px var(--accent);
@@ -749,7 +759,9 @@
 .swh-page-header__scrim {
   position: absolute;
   inset: 0;
-  background: var(--hero-scrim-top), var(--hero-scrim-bottom), var(--overlay);
+  /* Header-specific top scrim and flat overlay; the bottom one is shared with the carousel
+     because it does the same job in both — see the --ph-scrim-top note above. */
+  background: var(--ph-scrim-top), var(--hero-scrim-bottom), var(--ph-overlay);
 }
 .swh-page-header__inner {
   position: relative;
@@ -1432,11 +1444,20 @@
 .swh-proof__strip {
   padding: 4px 0;
 }
+/* Height alone is not enough to make a logo wall look like one. These marks run from 0.5:1
+   to 13:1 — Gemma Azzurro is a 13:1 wordmark, the next widest is 7.7:1, and the median is
+   1.4:1. Sized by height, Gemma rendered 730px wide against a 78px median and read as a
+   banner with some logos next to it.
+
+   So each mark gets a SLOT: at most 210px wide, 56px tall, with the artwork contained and
+   centred inside it. A wide wordmark now uses the full width and less of the height, which
+   is the honest way to fit a 13:1 shape into a row — and no single client can dominate the
+   strip by having a long name. */
 .swh-proof__mark {
   flex: none;
   height: 56px;
   width: auto;
-  max-width: none;
+  max-width: 210px;
   object-fit: contain;
   /* Explicit, because an <img> with no intrinsic box measures 0 until it decodes, and a
      0-width group would let the slider compute a duration from nothing on first paint. */
@@ -1463,21 +1484,23 @@
 }
 
 /* ── Social rail ────────────────────────────────────────────────────────────────── */
-/* components/chrome/SocialRail.tsx. Fixed to the left edge, resting 30% outside it.
+/* components/chrome/SocialRail.tsx. Fixed to the RIGHT edge, resting 30% outside it.
 
-   The rest position is --rail-out, a transform — never a negative `left`. A transform is
-   outside layout, so the 30% overhang cannot widen the document at any width. */
+   The rest position is --rail-out, a transform — never a `right` offset. A transform is
+   outside layout, so the overhang cannot widen the document or trip a horizontal
+   scrollbar at any width. (Off the LEFT edge that is free; off the right it is not, which
+   is why this must stay a transform now that the rail has moved sides.) */
 
 :root {
-  --rail-w: 56px;
-  --rail-out: -30%; /* 70% in view, 30% past the edge */
+  --rail-w: 58px;
+  --rail-out: 30%; /* 70% in view, 30% past the edge */
   --rail-r: 20px;
   --t-rail: 0.34s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .swh-rail {
   position: fixed;
-  left: 0;
+  right: 0;
   top: 50%;
   z-index: calc(var(--nav-z) - 2); /* under the nav and its drawer, over the page */
   translate: 0 -50%;
@@ -1500,13 +1523,30 @@
   width: var(--rail-w);
   padding: 6px;
   box-sizing: border-box;
-  /* Rounded on the right only — the left side is meant to read as continuing past the
+  /* Rounded on the left only — the right side is meant to read as continuing past the
      viewport edge, and a fully rounded pill reads as a finished object sitting near it. */
-  border-radius: 0 var(--rail-r) var(--rail-r) 0;
+  border-radius: var(--rail-r) 0 0 var(--rail-r);
   background: var(--paper);
   border: 1px solid var(--hairline);
-  border-left: 0;
-  box-shadow: 0 10px 30px rgba(22, 25, 29, 0.1), 0 2px 6px rgba(22, 25, 29, 0.05);
+  border-right: 0;
+  /* Three layers, cast LEFTWARD (negative x) since the light now falls across the right
+     edge. The previous single soft shadow left the rail almost invisible against --paper:
+     a white capsule on a white page is only its own border. The tight dark layer draws
+     the edge, the mid layer lifts it, and the wide one separates it from the section
+     behind. Every layer has an offset and a blur — a zero-offset halo is decoration. */
+  box-shadow:
+    -1px 0 2px rgba(22, 25, 29, 0.06),
+    -6px 6px 16px rgba(22, 25, 29, 0.1),
+    -18px 12px 42px rgba(22, 25, 29, 0.16);
+}
+/* Lifts further on approach, so the rail answers the pointer before it is even clicked. */
+.swh-rail:hover .swh-rail__body,
+.swh-rail:focus-within .swh-rail__body,
+.swh-rail[data-open="true"] .swh-rail__body {
+  box-shadow:
+    -1px 0 2px rgba(22, 25, 29, 0.08),
+    -8px 8px 20px rgba(22, 25, 29, 0.14),
+    -26px 16px 56px rgba(22, 25, 29, 0.22);
 }
 
 .swh-rail__toggle {

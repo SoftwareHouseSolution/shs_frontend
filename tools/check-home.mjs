@@ -5,6 +5,7 @@
    Same shape as check-nav.mjs and check-hero.mjs: assert, print, exit non-zero on failure. */
 
 import { chromium } from "playwright";
+import { PNG } from "pngjs";
 import { mkdir } from "node:fs/promises";
 
 const BASE = "http://localhost:3311";
@@ -71,6 +72,16 @@ const loop = await p.locator(".swh-slider__track").evaluate((el) => {
 rec("loop distance == group width + gap (no seam)", Math.abs(loop.travel - loop.expected) < 1.5, JSON.stringify(loop));
 rec("loop is infinite", loop.iterations === Infinity || loop.iterations === null);
 
+/* No single mark may run away with the strip. Gemma Azzurro is a 13:1 wordmark against a
+   1.4:1 median, and sized by height alone it rendered 730px wide — a banner with logos
+   next to it. The slot cap is 210px. */
+const widest = await p.evaluate(() =>
+  [...document.querySelectorAll(".swh-proof__mark")]
+    .map((el) => ({ alt: el.alt, w: Math.round(el.getBoundingClientRect().width) }))
+    .sort((a, b) => b.w - a.w)[0],
+);
+rec("no marquee mark exceeds its slot", widest.w <= 211, `${widest.alt} at ${widest.w}px`);
+
 // Hero dots carry a running timer.
 await p.evaluate(() => window.scrollTo(0, 0));
 await p.waitForTimeout(600);
@@ -87,11 +98,18 @@ await p.waitForTimeout(8200);
 const after = await p.locator(".hero-carousel__dot[aria-current='true']").getAttribute("aria-label");
 rec("carousel advances while hovered", before !== after, `${before} -> ${after}`);
 
-// Social rail.
+// Social rail — right edge, resting 30% past it.
+rec("rail is anchored to the right edge",
+  await p.locator(".swh-rail").evaluate((el) => {
+    const s = getComputedStyle(el);
+    return s.right === "0px" && (s.left === "auto" || parseFloat(s.left) > window.innerWidth / 2);
+  }),
+  await p.locator(".swh-rail").evaluate((el) => `right:${getComputedStyle(el).right}`));
 rec("rail rests 30% out",
   await p.locator(".swh-rail").evaluate((el) => {
     const m = new DOMMatrix(getComputedStyle(el).transform);
-    return Math.abs(m.m41 + el.getBoundingClientRect().width * 0.3 / 0.7) < 3 || m.m41 < -5;
+    const w = el.getBoundingClientRect().width;
+    return Math.abs(m.m41 - w * 0.3) < 2; // positive now: pushed OFF the right edge
   }),
   await p.locator(".swh-rail").evaluate((el) => getComputedStyle(el).transform));
 await p.locator(".swh-rail").hover();
@@ -127,12 +145,31 @@ rec("Blogs removed from nav", (await p.locator('.swh-nav__list a:text-is("Blogs"
 const res = await p.request.get(`${BASE}/blogs`);
 rec("/blogs returns 404", res.status() === 404, String(res.status()));
 
-await p.goto(`${BASE}/technology-partners`, { waitUntil: "domcontentloaded" });
-await p.waitForTimeout(1800);
-const navState = await p.locator(".swh-nav").getAttribute("data-nav-state");
-rec("interior nav is solid, not transparent-over-ink", navState === "solid", String(navState));
-await p.locator("header.swh-nav").screenshot({ path: `${OUT}/v-nav-interior.png` });
-await p.locator(".swh-hardware, main").first().screenshot({ path: `${OUT}/v-partners.png` }).catch(() => {});
+/* Interior pages: the bar is transparent over the header at scroll 0, and the header's own
+   scrim must be light enough that the band the bar sits in is not effectively black. */
+for (const route of ["/technology-partners", "/about-company"]) {
+  await p.goto(`${BASE}${route}`, { waitUntil: "domcontentloaded" });
+  await p.waitForTimeout(2000);
+  const navState = await p.locator(".swh-nav").getAttribute("data-nav-state");
+  rec(`${route}: nav is transparent at scroll 0`, navState === "over", String(navState));
+
+  /* Measure the ACTUALLY RENDERED band, not the source bitmap — the header image is
+     object-fit:cover, so the visible slice is a centre crop and sampling the file's top
+     rows measures pixels nobody sees. Screenshot the strip the bar occupies and take the
+     mean luminance of the composite: image, scrims and all. */
+  const navH = await p.locator(".swh-nav").evaluate((el) => el.offsetHeight);
+  const shot = await p.screenshot({ clip: { x: 0, y: 0, width: 1440, height: navH } });
+  const png = PNG.sync.read(shot);
+  let sum = 0;
+  for (let i = 0; i < png.data.length; i += 4) {
+    sum += 0.299 * png.data[i] + 0.587 * png.data[i + 1] + 0.114 * png.data[i + 2];
+  }
+  const lum = Math.round(sum / (png.data.length / 4));
+  // 45 is roughly where a photograph stops reading as a photograph and starts reading as
+  // a black bar. The old shared scrim put /technology-partners well under it.
+  rec(`${route}: nav band is not blacked out`, lum > 45, `mean luminance ${lum}`);
+  await p.locator("header.swh-nav").screenshot({ path: `${OUT}/v-nav${route.replace(/\//g, "-")}.png` });
+}
 
 // Dropdown opens on hover, and does not stay pinned after a click elsewhere.
 await p.goto(BASE, { waitUntil: "domcontentloaded" });

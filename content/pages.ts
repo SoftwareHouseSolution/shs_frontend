@@ -60,7 +60,12 @@ export type PageContent = {
 const IMG = {
   about: "/assets/imagery/slider_01.jpg",
   solutions: "/assets/imagery/slider_02.jpg",
-  partners: "/assets/imagery/parallax_04.jpg",
+  /* Was parallax_04.jpg. That file is a pre-darkened parallax plate — the black wash is
+     BAKED INTO the pixels, so the page header's own scrim darkened an already-darkened
+     image and the transparent navbar over it rendered as a solid black bar. No scrim value
+     could fix that; the file itself was the problem. about_02 is unretouched, bright, and
+     happens to be four hands joined over a desk, which is a better Partners image anyway. */
+  partners: "/assets/imagery/about_02.jpg",
   customers: "/assets/imagery/slider_03.jpg",
   careers: "/assets/services/hardware.jpeg",
   /* Real photography now that it exists — the team under the stand sign, and the whole

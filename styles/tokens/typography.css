@@ -1,0 +1,41 @@
+/* Typography tokens — the 3-role system + responsive display scale.
+   Breakpoints change ONLY type (size / letter-spacing / line-height); layout is fluid.
+   Display serif has aggressively negative tracking and sub-1 line-height — that ramp IS the character. */
+
+:root{
+  /* families */
+  --f-serif:"Crimson Text",Georgia,serif;/* @kind font */
+  --f-sans:"DM Sans","Rethink Sans",system-ui,sans-serif;/* @kind font */
+  --f-mono:"Reddit Mono",ui-monospace,monospace;/* @kind font */
+  --f-mono-data:"Roboto Mono",ui-monospace,monospace;/* @kind font */
+
+  /* static roles */
+  --nav-link:700 14px/1 var(--f-sans);    /* letter-spacing -.35px */
+  --body-copy:400 15px/1.4 var(--f-sans); /* #6F6F6F */
+  --feature-title:400 22px/1.1 var(--f-serif);
+
+  /* display scale — base = mobile (<800) */
+  --hero-size:76px;   --hero-ls:-2.60px;  --hero-lh:.85;/* @kind other */
+  --head-size:50px;   --head-ls:-.75px;   --head-lh:.95;/* @kind other */
+  --sub-size:32px;    --sub-ls:-.41px;    --sub-lh:1.10;/* @kind other */
+  --mutedxl-size:64px;--mutedxl-ls:-1.64px;--mutedxl-lh:1;/* @kind other */
+  --caption-size:10.5px;--caption-ls:-.033px;--caption-lh:1.4;/* @kind other */
+}
+
+@media(min-width:800px){   /* tablet */
+  :root{
+    --hero-size:140px; --hero-ls:-9.8px;  --hero-lh:.80;/* @kind other */
+    --head-size:54px;  --head-ls:-.87px;  --head-lh:.90;/* @kind other */
+    --sub-size:40px;   --sub-ls:-.64px;   --sub-lh:1.10;/* @kind other */
+    --mutedxl-size:80px;--mutedxl-ls:-2.56px;--mutedxl-lh:1;/* @kind other */
+    --caption-size:11px;--caption-ls:-.012px;
+  }
+}
+@media(min-width:1200px){ :root{ --caption-size:12px; --caption-ls:-.014px; } }
+@media(min-width:1280px){  /* desktop */
+  :root{
+    --hero-size:160px; --hero-ls:-12.8px; --hero-lh:.85;/* @kind other */
+    --head-size:60px;  --head-ls:-1.08px; --head-lh:.90;/* @kind other */
+    --sub-size:40px;   --sub-ls:-.64px;   --sub-lh:1.05;/* @kind other */
+  }
+}

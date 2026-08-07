@@ -1,0 +1,12 @@
+/* Spacing + layout tokens. Section rhythm 64–80px mobile → 120px desktop.
+   Gutter steps 16 → 40 at tablet. */
+
+:root{
+  --s-1:4px; --s-2:8px; --s-3:16px; --s-4:20px; --s-5:24px;
+  --s-6:30px; --s-7:40px; --s-8:50px; --s-9:60px; --s-10:80px; --s-12:120px;
+
+  --max-content:1600px;
+  --gutter:16px;
+  --section-y:64px;   /* vertical rhythm between sections */
+}
+@media(min-width:800px){ :root{ --gutter:40px; --section-y:120px; } }

@@ -1,0 +1,42 @@
+/* Colors — near-monochrome + ONE accent.
+   The identity is restraint: off-black ink on off-white paper, greys for text, and a single
+   softened brand BLUE (from the SWH house+S mark) used only in small doses — pills, eyebrows,
+   footer. Nothing is pure: not exact black, not exact white, not exact blue.
+   Do not flood sections with accent. */
+
+:root{
+  /* base neutrals — softened, never pure */
+  --ink:#16191D;        /* off-black — headings, primary text */
+  --paper:#FAFAF8;      /* off-white page canvas */
+  --body:#6F6F6F;       /* body copy */
+  --muted:#929292;      /* muted-xl numerals, secondary labels */
+  --hairline:#E6E7E9;   /* row dividers, table lines */
+
+  /* accent — softened SWH brand blue (from the logo mark) */
+  --accent:#4A6FA6;         /* CTAs, eyebrows, footer text */
+  --accent-hover:#3A5A8A;   /* pressed/hover darken */
+  --accent-soft:#DCE6F3;    /* secondary "Discover More" pill bg */
+  --accent-tint:#EFF4FA;    /* faint accent wash for surfaces */
+  --sage:#D9E2EE;           /* soft blue-grey decorative block behind hero card */
+
+  /* glass + overlay */
+  --nav-glass:rgba(255,255,255,.4);
+  --overlay:rgba(0,0,0,.25);
+
+  /* the raw logo-mark blue (lighter than accent; used for the mark itself) */
+  --brand-blue:#6089C0;
+
+  /* semantic aliases */
+  --text-strong:var(--ink);
+  --text-body:var(--body);
+  --text-muted:var(--muted);
+  --surface-page:var(--paper);
+  --surface-card:var(--paper);
+  --surface-decor:var(--sage);
+  --border-hairline:var(--hairline);
+  --cta-bg:var(--accent);
+  --cta-fg:#FFFFFF;
+  --cta-soft-bg:var(--accent-soft);
+  --cta-soft-fg:var(--ink);
+  --eyebrow:var(--accent);
+}

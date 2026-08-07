@@ -1,0 +1,1408 @@
+/* Site chrome — navigation, drawer, hero carousel, page headers.
+   The ONLY new stylesheet in this app. Imported by layout.tsx AFTER prototype.css.
+
+   Everything here is either a design-system token or derived from one. Where a genuinely
+   new value was needed (bar height, panel radius) it is defined here rather than by
+   editing styles/tokens/, which are byte-identical design-system copies.
+
+   ── THREE RULES THAT MUST NOT BE BROKEN ──────────────────────────────────────────
+   1. Never put transform / filter / backdrop-filter / will-change:transform / contain on
+      #app, body, or .page-content. Any of them makes that element a containing block for
+      position:fixed, which breaks the sticky footer and the navbar simultaneously.
+   2. Never use 100vw. It includes the scrollbar width, so a 100vw element is ~15px wider
+      than the content box and trips horizontal scroll. Use width:100%, inset:0, or min().
+   3. Never give #app a height. Its overflow-x:hidden computes overflow-y to auto, so a
+      fixed height would move scrolling from the viewport into #app and silently break
+      window.scrollY, the nav IntersectionObserver, ScrollReveal, Testimonial and StatsBand.
+
+   Breakpoints: 800px and 1200px are the design system's own (spacing.css, typography.css).
+   1024px is the one new breakpoint — the desktop menu does not fit below it. It is
+   mirrored as NAV_MENU_BP in content/nav.ts because media queries cannot read custom
+   properties. Keep the two in sync. */
+
+/* Registering these makes the custom property ITSELF animatable, so one transition on the
+   header cross-fades colour for every descendant reading var(--nav-fg). */
+@property --nav-fg {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #fafaf8;
+}
+/* inherits MUST be true. --nav-bg is set on .swh-nav but read by its child
+   .swh-nav__surface; with inherits:false the child falls back to the initial value and
+   the bar never paints, even though the state attribute flips correctly. */
+@property --nav-bg {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+:root {
+  /* bar geometry — no height token exists in the design system */
+  --nav-h: 64px;
+  --nav-gap: 14px;
+  --nav-cluster-gap: 12px;
+  --nav-z: 10000; /* beats NavPill's inline z-index 9999; see README */
+
+  /* dropdown panels */
+  --nav-panel-bg: #ffffff; /* panels are pure white, not --paper (#FAFAF8) */
+  --nav-panel-w: 264px;
+  --nav-panel-r: 18px; /* --r-card (30px) is absurd on a 264px panel */
+  --nav-item-r: 10px;
+  --nav-panel-shadow: var(--sh-2), 0 18px 40px rgba(0, 0, 0, 0.12);
+
+  /* motion — every value sourced from the design system, nothing invented */
+  --t-nav: 0.28s ease; /* prototype.css .site-nav */
+  --t-menu: 0.18s ease; /* PillButton background */
+  --t-press: 0.12s ease; /* PillButton transform */
+  --t-drawer: 0.2s ease-in-out; /* NavPill transform */
+
+  /* hero carousel — derived from the design system's ken-burns rate of 0.14/11s */
+  --hero-h: 100svh;
+  --hero-min-h: 560px;
+  --hero-hold: 7s;
+  --hero-fade: 1.2s;
+  --hero-zoom-dur: 8.2s; /* hold + fade = time a slide is actually on screen */
+  --hero-zoom-to: 1.104; /* 1 + 0.01273 x 8.2 — identical zoom RATE to the device hero */
+  --hero-scrim-top: linear-gradient(180deg, rgba(0, 0, 0, 0.44) 0%, rgba(0, 0, 0, 0.2) 20%, rgba(0, 0, 0, 0) 44%);
+  --hero-scrim-bottom: linear-gradient(0deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.22) 40%, rgba(0, 0, 0, 0) 66%);
+
+  /* page header — slower rate on purpose: a header never leaves the screen, so the
+     carousel's rate over an unbounded dwell would grow without bound */
+  --ph-h: clamp(340px, 44vh, 480px);
+  --ph-zoom-dur: 18s;
+  --ph-zoom-to: 1.06;
+
+  /* focus + drawer */
+  --focus-ring: 0 0 0 2px var(--paper), 0 0 0 4px var(--accent);
+  --focus-ring-over: 0 0 0 2px rgba(0, 0, 0, 0.55), 0 0 0 4px var(--paper);
+  --drawer-w: min(360px, 86%); /* % not vw — see rule 2 */
+  --drawer-scrim: rgba(0, 0, 0, 0.42);
+  --swh-lock-pad: 0px; /* set from JS to the scrollbar width while the drawer is open */
+}
+
+@media (min-width: 800px) {
+  :root {
+    --nav-h: 80px;
+    --nav-gap: 18px;
+  }
+}
+@media (min-width: 1200px) {
+  :root {
+    --nav-gap: 24px;
+  }
+}
+
+/* ── Global adjustments ─────────────────────────────────────────────────────────── */
+
+/* html{scroll-behavior:smooth} plus a fixed bar would land every in-page anchor
+   (#services, #specs, #how-to, #contact) underneath it. */
+[id] {
+  scroll-margin-top: calc(var(--nav-h) + 12px);
+}
+
+/* A stub page shorter than the viewport would stop covering the fixed footer and let it
+   show through. No-op on the home page, which is far taller. */
+.page-content {
+  min-height: 100svh;
+}
+
+.swh-skip {
+  position: absolute;
+  left: 50%;
+  top: 8px;
+  translate: -50% -200%;
+  z-index: calc(var(--nav-z) + 1);
+  padding: 12px 20px;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  color: #fff;
+  font: var(--nav-link);
+  letter-spacing: -0.35px;
+  text-decoration: none;
+  transition: translate var(--t-menu);
+}
+.swh-skip:focus-visible {
+  translate: -50% 0;
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* ── Navigation bar ─────────────────────────────────────────────────────────────── */
+
+.swh-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: var(--swh-lock-pad);
+  z-index: var(--nav-z);
+  height: var(--nav-h);
+  /* NO backdrop-filter / transform / filter on this element — it would become a
+     containing block and anchor the fixed drawer to the 64px bar. Paint goes on
+     .swh-nav__surface instead. */
+  --nav-fg: var(--paper);
+  --nav-bg: transparent;
+  transition: --nav-fg var(--t-nav), --nav-bg var(--t-nav);
+}
+.swh-nav[data-nav-state="solid"] {
+  --nav-fg: var(--ink);
+  --nav-bg: var(--paper);
+}
+
+.swh-nav__surface {
+  position: absolute;
+  inset: 0;
+  background: var(--nav-bg);
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--t-nav);
+  pointer-events: none;
+}
+.swh-nav[data-nav-state="solid"] .swh-nav__surface {
+  border-bottom-color: var(--hairline);
+}
+
+.swh-nav__inner {
+  position: relative;
+  height: 100%;
+  max-width: var(--max-content);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+  display: flex;
+  align-items: center;
+  gap: var(--nav-cluster-gap);
+}
+
+.swh-nav__brand {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  text-decoration: none;
+  border-radius: var(--nav-item-r);
+}
+/* BrandLogo sets these inline; a transition declared here still applies. `filter`
+   interpolates from `none` because an empty filter list pads with identity functions,
+   so the mark cross-fades rather than snapping. */
+.swh-nav__brand img {
+  transition: filter var(--t-nav);
+}
+.swh-nav__brand span {
+  transition: color var(--t-nav);
+}
+
+.swh-nav__list {
+  display: flex;
+  align-items: center;
+  gap: var(--nav-gap);
+  margin: 0 0 0 auto;
+  padding: 0;
+  list-style: none;
+}
+.swh-nav__item {
+  position: relative;
+}
+
+.swh-nav__link,
+.swh-nav__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--nav-item-r);
+  background: transparent;
+  color: var(--nav-fg);
+  font: var(--nav-link);
+  letter-spacing: -0.35px;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--t-menu), opacity var(--t-menu);
+}
+.swh-nav__link:hover,
+.swh-nav__trigger:hover,
+.swh-nav__trigger[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--nav-fg) 10%, transparent);
+}
+.swh-nav__link[aria-current="page"] {
+  color: var(--accent);
+}
+.swh-nav[data-nav-state="over"] .swh-nav__link[aria-current="page"] {
+  color: var(--paper);
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+
+.swh-nav__chev {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  transition: transform var(--t-menu);
+}
+.swh-nav__trigger[aria-expanded="true"] .swh-nav__chev {
+  transform: rotate(180deg);
+}
+
+/* Dropdown panel. Visibility is inert + these rules, never the `hidden` attribute —
+   `hidden` sets display:none and kills the transition. */
+.swh-nav__panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: var(--nav-panel-w);
+  padding: 8px;
+  border-radius: var(--nav-panel-r);
+  background: var(--nav-panel-bg);
+  box-shadow: var(--nav-panel-shadow);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px);
+  pointer-events: none;
+  transition: opacity var(--t-menu), transform var(--t-menu), visibility 0s linear var(--t-menu);
+}
+.swh-nav__item[data-open="true"] .swh-nav__panel {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+  transition: opacity var(--t-menu), transform var(--t-menu), visibility 0s;
+}
+/* Invisible bridge so the pointer never leaves the item while crossing the 6px gap. */
+.swh-nav__panel::before {
+  content: "";
+  position: absolute;
+  inset: -10px 0 auto 0;
+  height: 10px;
+}
+.swh-nav__panel ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.swh-nav__panel a {
+  display: block;
+  padding: 10px 12px;
+  border-radius: var(--nav-item-r);
+  color: var(--ink);
+  font: var(--body-copy);
+  text-decoration: none;
+  transition: background var(--t-menu), color var(--t-menu);
+}
+.swh-nav__panel a:hover {
+  background: var(--accent-tint);
+  color: var(--accent);
+}
+.swh-nav__panel a[aria-current="page"] {
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+}
+
+.swh-nav__cluster {
+  display: flex;
+  align-items: center;
+  gap: var(--nav-cluster-gap);
+  flex: none;
+  margin-left: var(--nav-cluster-gap);
+}
+
+.swh-wa {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  color: var(--nav-fg);
+  transition: background var(--t-menu), color var(--t-menu);
+}
+.swh-wa:hover {
+  background: color-mix(in srgb, var(--nav-fg) 12%, transparent);
+}
+.swh-wa svg {
+  width: 20px;
+  height: 20px;
+}
+
+.swh-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.swh-badges img {
+  height: 34px;
+  width: auto;
+  display: block;
+}
+
+.swh-burger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--nav-item-r);
+  background: transparent;
+  color: var(--nav-fg);
+  cursor: pointer;
+}
+.swh-burger span {
+  display: block;
+  width: 20px;
+  height: 2px;
+  background: currentColor;
+  border-radius: 2px;
+  transition: transform var(--t-drawer), opacity var(--t-drawer);
+}
+.swh-burger span + span {
+  margin-top: 5px;
+}
+
+/* Focus rings. The over-hero variant uses a dark halo so the ring stays visible on a
+   bright slide region. */
+.swh-nav a:focus-visible,
+.swh-nav button:focus-visible,
+.swh-drawer a:focus-visible,
+.swh-drawer button:focus-visible,
+.hero-carousel button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.swh-nav[data-nav-state="over"] a:focus-visible,
+.swh-nav[data-nav-state="over"] button:focus-visible,
+.hero-carousel button:focus-visible {
+  box-shadow: var(--focus-ring-over);
+}
+
+/* ── Width tiers ────────────────────────────────────────────────────────────────── */
+/* Full desktop needs ~1166px at 14px/700 with the lockup logo; condensed needs ~1004px.
+   Below 1024 the menu would wrap, so it becomes a drawer. */
+@media (max-width: 1023px) {
+  .swh-nav__list,
+  .swh-nav__cluster .swh-cta {
+    display: none;
+  }
+  .swh-burger {
+    display: inline-flex;
+    margin-left: auto;
+  }
+}
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .swh-wa {
+    width: 34px;
+    height: 34px;
+  }
+}
+
+/* ── Mobile drawer ──────────────────────────────────────────────────────────────── */
+
+.swh-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--nav-z) - 1);
+  visibility: hidden;
+  pointer-events: none;
+}
+.swh-drawer[data-open="true"] {
+  visibility: visible;
+  pointer-events: auto;
+}
+.swh-drawer__scrim {
+  position: absolute;
+  inset: 0;
+  background: var(--drawer-scrim);
+  opacity: 0;
+  transition: opacity var(--t-drawer);
+}
+.swh-drawer[data-open="true"] .swh-drawer__scrim {
+  opacity: 1;
+}
+.swh-drawer__panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: var(--drawer-w);
+  padding: calc(var(--nav-h) + 12px) 20px 32px;
+  background: var(--paper);
+  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.16);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  transform: translateX(100%);
+  transition: transform var(--t-drawer);
+}
+.swh-drawer[data-open="true"] .swh-drawer__panel {
+  transform: translateX(0);
+}
+.swh-drawer__close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink);
+  font-size: 20px;
+  cursor: pointer;
+}
+.swh-drawer ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.swh-drawer__group + .swh-drawer__group,
+.swh-drawer__group + .swh-drawer__solo,
+.swh-drawer__solo + .swh-drawer__group,
+.swh-drawer__solo + .swh-drawer__solo {
+  border-top: 1px solid var(--hairline);
+}
+.swh-drawer__trigger,
+.swh-drawer__solo > a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 16px 4px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: var(--nav-link);
+  letter-spacing: -0.35px;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.swh-drawer__sub {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--t-drawer);
+}
+.swh-drawer__group[data-open="true"] .swh-drawer__sub {
+  grid-template-rows: 1fr;
+}
+.swh-drawer__sub > ul {
+  overflow: hidden;
+}
+.swh-drawer__sub a {
+  display: block;
+  padding: 12px 4px 12px 16px;
+  color: var(--body);
+  font: var(--body-copy);
+  text-decoration: none;
+}
+.swh-drawer__sub a:hover,
+.swh-drawer__sub a[aria-current="page"] {
+  color: var(--accent);
+}
+.swh-drawer__foot {
+  margin-top: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Hero carousel ──────────────────────────────────────────────────────────────── */
+
+.hero-carousel {
+  position: relative;
+  width: 100%; /* never 100vw */
+  height: var(--hero-h);
+  min-height: var(--hero-min-h);
+  /* Load-bearing: at scale(1.104) a 1900px slide overflows ~99px per side. #app clips
+     horizontally, but the vertical spill would paint over the section below. */
+  overflow: hidden;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  background: var(--ink);
+}
+.hero-carousel__stage {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.hero-slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0; /* OPACITY ONLY — never a transform on this element */
+  transition: opacity var(--hero-fade) ease-out;
+  will-change: opacity;
+}
+.hero-slide[data-state="enter"] {
+  opacity: 1;
+}
+.hero-slide[data-state="exit"] {
+  opacity: 0;
+}
+.hero-slide__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transform-origin: center;
+  /* TRANSFORM ONLY — the fade lives on the parent. Same separation the device hero uses
+     for its fan and ken-burns. */
+}
+/* Same sizing as __img, deliberately NOT the same class: the zoom rule below is scoped to
+   .hero-slide__img, so a video slide gets the crossfade and none of the ken-burns. The
+   footage already has a camera move; adding a second one fights it. */
+.hero-slide__video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* enter and exit declare an IDENTICAL animation-name, so the zoom is not restarted when
+   a slide begins fading out — it continues, and `forwards` holds the end scale through
+   the fade. It is only re-added after ~15s in the idle state, so the same-frame restart
+   problem never arises and no reflow hack is needed. */
+.hero-slide[data-state="enter"] .hero-slide__img,
+.hero-slide[data-state="exit"] .hero-slide__img {
+  animation: swh-hero-zoom var(--hero-zoom-dur) ease-out forwards;
+}
+@keyframes swh-hero-zoom {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(var(--hero-zoom-to));
+  }
+}
+
+/* Three layers. The flat --overlay base is structural, not decorative: the gradients
+   alone give 3.4:1 on a white photo pixel, which fails. With it, 5.3:1. */
+.hero-carousel__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: var(--hero-scrim-top), var(--hero-scrim-bottom), var(--overlay);
+}
+.hero-carousel__content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: var(--max-content);
+  margin: 0 auto;
+  padding: var(--nav-h) var(--gutter) 0;
+  color: var(--paper);
+}
+.hero-carousel__title {
+  margin: 12px 0 0;
+  max-width: 16ch;
+  font-family: var(--f-serif);
+  font-size: clamp(40px, 6.4vw, 88px);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  color: var(--paper);
+}
+.hero-carousel__body {
+  margin: 20px 0 0;
+  max-width: 52ch;
+  font: var(--body-copy);
+  font-size: 17px;
+  color: rgba(250, 250, 248, 0.88);
+}
+.hero-carousel__actions {
+  margin-top: 32px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+/* Slide copy re-animates on every slide change. Reveal fires once and never resets, so
+   this is hand-rolled with its values: y=9, ease-out, 0.08s stagger. An animation rather
+   than a transition because the block is remounted per slide (React key), which replays
+   an animation reliably without needing a committed "from" state first. */
+.hero-carousel__copy > * {
+  opacity: 0;
+  animation: swh-hero-copy 0.5s ease-out forwards;
+}
+.hero-carousel__copy > :nth-child(2) {
+  animation-delay: 0.08s;
+}
+.hero-carousel__copy > :nth-child(3) {
+  animation-delay: 0.16s;
+}
+.hero-carousel__copy > :nth-child(4) {
+  animation-delay: 0.24s;
+}
+@keyframes swh-hero-copy {
+  from {
+    opacity: 0;
+    transform: translateY(9px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.hero-carousel__ui {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 28px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: var(--max-content);
+}
+.hero-carousel__dots {
+  display: flex;
+  gap: 8px;
+}
+.hero-carousel__dot {
+  width: 30px;
+  height: 4px;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  background: rgba(250, 250, 248, 0.4);
+  cursor: pointer;
+  transition: background var(--t-menu);
+}
+.hero-carousel__dot[aria-current="true"] {
+  background: var(--paper);
+}
+.hero-carousel__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(250, 250, 248, 0.4);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--paper);
+  cursor: pointer;
+  transition: background var(--t-menu);
+}
+.hero-carousel__toggle:hover {
+  background: rgba(250, 250, 248, 0.18);
+}
+.hero-carousel__toggle svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* ── Interior page header ───────────────────────────────────────────────────────── */
+
+.swh-page-header {
+  position: relative;
+  width: 100%;
+  min-height: var(--ph-h);
+  overflow: hidden; /* contains the zoom overflow — same reason as the carousel */
+  display: flex;
+  align-items: flex-end;
+  background: var(--ink);
+}
+.swh-page-header__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  animation: swh-ph-zoom var(--ph-zoom-dur) ease-out forwards;
+}
+@keyframes swh-ph-zoom {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(var(--ph-zoom-to));
+  }
+}
+.swh-page-header__scrim {
+  position: absolute;
+  inset: 0;
+  background: var(--hero-scrim-top), var(--hero-scrim-bottom), var(--overlay);
+}
+.swh-page-header__inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: var(--max-content);
+  margin: 0 auto;
+  padding: calc(var(--nav-h) + 48px) var(--gutter) 44px;
+  color: var(--paper);
+}
+.swh-page-header__title {
+  margin: 14px 0 0;
+  font-family: var(--f-serif);
+  font-size: clamp(38px, 5.2vw, 68px);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  color: var(--paper);
+}
+.swh-page-header__lede {
+  margin: 16px 0 0;
+  max-width: 56ch;
+  font: var(--body-copy);
+  font-size: 17px;
+  color: rgba(250, 250, 248, 0.88);
+}
+
+.swh-crumb {
+  margin-bottom: 4px;
+}
+.swh-crumb ol {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--f-mono);
+  font-size: var(--caption-size);
+  letter-spacing: var(--caption-ls);
+  text-transform: uppercase;
+}
+.swh-crumb a {
+  color: rgba(250, 250, 248, 0.8);
+  text-decoration: none;
+}
+.swh-crumb a:hover {
+  color: var(--paper);
+  text-decoration: underline;
+}
+.swh-crumb li[aria-current="page"] {
+  color: var(--paper);
+}
+.swh-crumb li + li::before {
+  content: "/";
+  margin-right: 8px;
+  color: rgba(250, 250, 248, 0.45);
+}
+
+.swh-stub-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 44px;
+  border-radius: var(--r-card);
+  background: var(--accent-tint);
+}
+
+/* ── Events rail ────────────────────────────────────────────────────────────────── */
+/* components/sections/EventsRail.tsx. A vertical scroller with a clickable rail; the
+   only motion is the scroll itself, and that is smooth-vs-instant per prefers-reduced-
+   motion in the component, not here. */
+
+.swh-events {
+  display: grid;
+  grid-template-columns: minmax(200px, 300px) 1fr;
+  gap: 48px;
+  align-items: start;
+}
+/* Grid children default to min-width:auto, so the horizontally scrolling rail on mobile
+   would push its own column — and therefore the panel — wider than the container. #app's
+   overflow-x:hidden clips that rather than scrolling, which hides the bug instead of
+   showing it. */
+.swh-events__rail,
+.swh-events__scroller {
+  min-width: 0;
+}
+.swh-events__rail ol {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.swh-events__tab {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  padding: 14px 0 14px 18px;
+  text-align: left;
+  background: none;
+  border: 0;
+  /* The rail line is the left border, so the active marker and the timeline are the same
+     element rather than two things to keep in sync. */
+  border-left: 2px solid var(--hairline);
+  cursor: pointer;
+  transition: border-color var(--t-menu);
+}
+.swh-events__tab:hover {
+  border-left-color: var(--accent-soft);
+}
+.swh-events__tab[aria-current="true"] {
+  border-left-color: var(--accent);
+}
+.swh-events__tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.swh-events__tab-year {
+  font-family: var(--f-mono);
+  font-size: var(--caption-size);
+  letter-spacing: var(--caption-ls);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.swh-events__tab-title {
+  font: var(--feature-title);
+  font-size: 19px;
+  line-height: 1.15;
+  color: var(--body);
+  transition: color var(--t-menu);
+}
+.swh-events__tab[aria-current="true"] .swh-events__tab-title {
+  color: var(--ink);
+}
+
+.swh-events__scroller {
+  height: 520px;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: thin;
+  border-radius: var(--r-card);
+}
+.swh-events__scroller:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+.swh-events__panel {
+  scroll-snap-align: start;
+  /* Exactly the scroller's height, so one panel fills it and the snap has a single
+     resting place per event. */
+  height: 520px;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  overflow: hidden;
+  border-radius: var(--r-card);
+  background: var(--accent-tint);
+}
+.swh-events__img {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: cover;
+  display: block;
+}
+.swh-events__body {
+  padding: 24px 28px 28px;
+}
+.swh-events__year {
+  margin: 0;
+  font-family: var(--f-mono);
+  font-size: var(--caption-size);
+  letter-spacing: var(--caption-ls);
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.swh-events__title {
+  margin: 6px 0 0;
+  font-family: var(--f-serif);
+  font-weight: 400;
+  font-size: var(--sub-size);
+  letter-spacing: var(--sub-ls);
+  line-height: 1.05;
+  color: var(--ink);
+}
+.swh-events__text {
+  margin: 10px 0 0;
+  max-width: 62ch;
+  font: var(--body-copy);
+  color: var(--body);
+  /* Two lines on the card; the full write-up is on /news-events. */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+@media (max-width: 899px) {
+  .swh-events {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+  .swh-events__rail ol {
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 0;
+  }
+  /* On narrow screens the rail becomes a horizontal strip of years — the panel below it
+     is still the vertical scroller, so the timeline direction is unchanged. */
+  .swh-events__tab {
+    width: auto;
+    flex: none;
+    padding: 10px 16px 0;
+    border-left: 0;
+    border-top: 2px solid var(--hairline);
+  }
+  .swh-events__tab[aria-current="true"] {
+    border-top-color: var(--accent);
+  }
+  .swh-events__tab-title {
+    font-size: 15px;
+    white-space: nowrap;
+  }
+  .swh-events__scroller,
+  .swh-events__panel {
+    height: 460px;
+  }
+}
+
+/* ── Hardware catalogue ─────────────────────────────────────────────────────────── */
+/* The "hardware" block in components/stubs/StubBody.tsx. Product shots, so contain
+   rather than cover — cropping a scanner to fill a tile is worse than letterboxing it. */
+
+.swh-hardware {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 32px 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  width: 100%;
+}
+.swh-hardware__item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+.swh-hardware__item img {
+  width: 100%;
+  height: 200px;
+  object-fit: contain;
+  object-position: left center;
+  margin-bottom: 10px;
+}
+.swh-hardware__n {
+  margin: 0;
+  font-family: var(--f-mono);
+  font-size: var(--caption-size);
+  letter-spacing: var(--caption-ls);
+  color: var(--accent);
+}
+.swh-hardware__title {
+  margin: 0;
+  font: var(--feature-title);
+  color: var(--ink);
+}
+@media (max-width: 599px) {
+  .swh-hardware {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px 14px;
+  }
+  .swh-hardware__item img {
+    height: 130px;
+  }
+}
+
+/* ── Timeline & photo grid ──────────────────────────────────────────────────────── */
+/* Used by the "timeline" and "gallery" blocks in components/stubs/StubBody.tsx. Static
+   layout only — no transitions, no :hover transforms. The blocks are rendered inside
+   <Reveal>, which already supplies the entrance motion and the reduced-motion guard. */
+
+.swh-timeline {
+  position: relative;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.swh-timeline__item {
+  position: relative;
+  padding-left: 34px;
+  padding-bottom: 64px;
+}
+.swh-timeline__item:last-child {
+  padding-bottom: 0;
+}
+/* The rail is drawn per item rather than once on the <ol>, so the last entry can stop it
+   at its own marker instead of trailing past the final photo grid. */
+.swh-timeline__item::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 6px;
+  bottom: 0;
+  width: 1px;
+  background: var(--hairline);
+}
+.swh-timeline__item:last-child::before {
+  display: none;
+}
+.swh-timeline__marker {
+  position: absolute;
+  left: 0;
+  top: 4px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.swh-timeline__body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.swh-timeline__body > .swh-photo-grid {
+  margin-top: 10px;
+}
+
+/* auto-fill, not auto-fit: a four-photo row must not stretch two survivors to full width
+   when the viewport is narrow. */
+.swh-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+.swh-photo-grid__img {
+  width: 100%;
+  /* The source set mixes 3:4 portrait with 3:2 landscape. A fixed ratio plus cover keeps
+     the grid on a rhythm; letting each image keep its own would stagger every row. */
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 16px;
+  display: block;
+  background: var(--accent-tint);
+}
+@media (max-width: 599px) {
+  .swh-photo-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .swh-timeline__item {
+    padding-left: 26px;
+    padding-bottom: 48px;
+  }
+}
+
+/* ── Client directory ───────────────────────────────────────────────────────────── */
+/* components/clients/. The filtering is JavaScript; the only thing that moves here is a
+   chip's background colour. */
+
+.swh-directory {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--section-y) 0;
+}
+.swh-directory__inner {
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+  box-sizing: border-box;
+}
+
+.swh-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 24px 32px;
+  padding-bottom: 28px;
+  margin-bottom: 40px;
+  border-bottom: 1px solid var(--hairline);
+}
+.swh-filters__field,
+.swh-filters__group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.swh-filters__group {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+}
+.swh-filters__label,
+.swh-filters__group legend {
+  font-family: var(--f-mono);
+  font-size: var(--caption-size);
+  letter-spacing: var(--caption-ls);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+/* A <legend> is not a flex item in every engine, so it is given the full row rather than
+   being left to fall wherever the layout decides. */
+.swh-filters__group legend {
+  width: 100%;
+  padding: 0;
+  margin-bottom: 2px;
+}
+.swh-filters__search,
+.swh-filters__sort {
+  font: var(--body-copy);
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-pill);
+  padding: 9px 16px;
+  min-width: 220px;
+}
+.swh-filters__search:focus-visible,
+.swh-filters__sort:focus-visible,
+.swh-filters__chip:focus-visible,
+.swh-filters__reset:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.swh-filters__chip {
+  font: var(--body-copy);
+  font-size: 14px;
+  color: var(--body);
+  background: transparent;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-pill);
+  padding: 7px 15px;
+  cursor: pointer;
+  transition: background var(--t-menu), color var(--t-menu), border-color var(--t-menu);
+}
+.swh-filters__chip:hover {
+  border-color: var(--accent);
+}
+/* The style hangs off aria-pressed, so a chip cannot look selected while reporting
+   otherwise to assistive tech. */
+.swh-filters__chip[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--cta-fg);
+}
+.swh-filters__bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-left: auto;
+}
+.swh-filters__count {
+  margin: 0;
+  font: var(--body-copy);
+  color: var(--body);
+  white-space: nowrap;
+}
+.swh-filters__reset {
+  font: var(--body-copy);
+  font-size: 14px;
+  color: var(--accent);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  white-space: nowrap;
+}
+.swh-filters__empty {
+  margin: 64px 0;
+  text-align: center;
+  font: var(--body-copy);
+  color: var(--body);
+}
+
+.swh-client-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 28px 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.swh-client-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 16px 20px;
+  border: 1px solid var(--hairline);
+  border-radius: 16px;
+  text-align: center;
+}
+.swh-client-card__logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 82px;
+}
+.swh-client-card__logo img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  object-fit: contain;
+}
+.swh-client-card__name {
+  margin: 0;
+  font: var(--feature-title);
+  font-size: 17px;
+  line-height: 1.2;
+  color: var(--ink);
+}
+.swh-client-card__loc {
+  margin: 0;
+  font: var(--body-copy);
+  font-size: 13px;
+  color: var(--body);
+}
+.swh-client-card__types {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.swh-client-card__types li {
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--accent-tint);
+  border-radius: var(--r-pill);
+  padding: 3px 9px;
+}
+@media (max-width: 599px) {
+  .swh-client-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px 12px;
+  }
+  .swh-client-card {
+    padding: 16px 10px 14px;
+  }
+  .swh-client-card__logo {
+    height: 60px;
+  }
+  .swh-client-card__name {
+    font-size: 15px;
+  }
+  .swh-filters {
+    gap: 18px 20px;
+  }
+  .swh-filters__bar {
+    margin-left: 0;
+    width: 100%;
+  }
+  .swh-filters__search,
+  .swh-filters__sort {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+/* ── Logo wall ──────────────────────────────────────────────────────────────────── */
+/* components/sections/LogoWall.tsx. Static — nothing here animates. */
+
+.swh-logo-wall {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 20px 28px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  width: 100%;
+  max-width: 1100px;
+}
+.swh-logo-wall__item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 68px;
+}
+/* No blend mode and no opacity dimming: the logos are exported already composited onto
+   --paper (see tools/extract-clients.py), so they sit flush on the page. A blend mode
+   here would fight that, and dimming a client's mark to 0.7 makes it look disabled. */
+.swh-logo-wall__item img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  object-fit: contain;
+}
+@media (max-width: 599px) {
+  .swh-logo-wall {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  .swh-logo-wall__item {
+    height: 52px;
+  }
+}
+
+/* ── Trust figures ──────────────────────────────────────────────────────────────── */
+/* components/sections/StatsBand.tsx. The count-up itself is JS; nothing here animates. */
+
+.swh-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 40px 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  width: 100%;
+}
+.swh-stats__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+.swh-stats__label {
+  max-width: 22ch;
+  font-family: var(--f-mono);
+  font-size: var(--caption-size);
+  letter-spacing: var(--caption-ls);
+  line-height: 1.5;
+  text-transform: uppercase;
+  color: var(--body);
+}
+@media (max-width: 599px) {
+  .swh-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 32px 16px;
+  }
+  /* Five items in a two-column grid leaves an orphan. Let the last one span the row so it
+     centres under the pair above rather than hugging the left edge. */
+  .swh-stats__item:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ── Reduced motion ─────────────────────────────────────────────────────────────── */
+/* Suppresses AUTOMATIC motion only. Dots, arrows and the pause control keep working —
+   reduced motion removes involuntary movement, not user control. */
+@media (prefers-reduced-motion: reduce) {
+  /* These selectors must MATCH the ones that declare the animation above, not merely
+     target the same element. A media query adds no specificity, so the shorter
+     `.hero-slide__img` (0,1,0) would lose to `.hero-slide[data-state="enter"]
+     .hero-slide__img` (0,2,1) and the zoom would keep running. */
+  .hero-slide[data-state="enter"] .hero-slide__img,
+  .hero-slide[data-state="exit"] .hero-slide__img,
+  .swh-page-header__img {
+    animation: none;
+    transform: none;
+  }
+  .hero-slide {
+    transition: none;
+  }
+  .hero-carousel__copy > * {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+  .swh-nav,
+  .swh-nav__panel,
+  .swh-nav__surface,
+  .swh-drawer__panel,
+  .swh-drawer__scrim,
+  .swh-drawer__sub,
+  .swh-filters__chip,
+  .swh-skip {
+    transition-duration: 0.01ms;
+  }
+}

@@ -1,0 +1,34 @@
+/* Webfonts — Area type system carried into SWH.
+   3-role system: serif display (Crimson Text) · sans UI/body (DM Sans) · mono labels/data (Reddit + Roboto Mono).
+   Files are the originals extracted from the Area (Figma) build; all also available on Google Fonts.
+
+   PORT NOTE: this is the ONLY design-system file whose content differs from the original. The five
+   src url()s were changed from "../assets/fonts/…" to "/assets/fonts/…" so they resolve against
+   Next's public root instead of styles/assets/. Nothing else — family, weight, style, display —
+   was touched. Every other token file and styles.css is byte-identical to the design system. */
+
+@font-face{
+  font-family:"Crimson Text";
+  src:url("/assets/fonts/CrimsonText-Regular.woff2") format("woff2");
+  font-weight:400;font-style:normal;font-display:swap;
+}
+@font-face{
+  font-family:"DM Sans";
+  src:url("/assets/fonts/DMSans-Variable.woff2") format("woff2");
+  font-weight:100 1000;font-style:normal;font-display:swap;
+}
+@font-face{
+  font-family:"Reddit Mono";
+  src:url("/assets/fonts/RedditMono-Variable.woff2") format("woff2");
+  font-weight:200 900;font-style:normal;font-display:swap;
+}
+@font-face{
+  font-family:"Roboto Mono";
+  src:url("/assets/fonts/RobotoMono-Variable.woff2") format("woff2");
+  font-weight:100 700;font-style:normal;font-display:swap;
+}
+@font-face{
+  font-family:"Rethink Sans";
+  src:url("/assets/fonts/RethinkSans-Variable.woff2") format("woff2");
+  font-weight:400 800;font-style:normal;font-display:swap;
+}

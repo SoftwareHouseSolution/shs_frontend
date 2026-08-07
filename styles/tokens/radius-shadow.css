@@ -1,0 +1,12 @@
+/* Radius + shadow. Soft-only shadows; large 30px card radius; full-round pills. */
+
+:root{
+  --r-card:30px;    /* rounded imagery + spec card */
+  --r-pill:1000px;  /* CTAs, secondary pills */
+  --r-nav:100px;    /* glass nav pill */
+
+  --sh-1:0 -4px 20px rgba(0,0,0,.10);
+  --sh-2:0 2px 8px rgba(0,0,0,.08);
+
+  --blur-nav:15px;  /* nav-pill backdrop blur */
+}

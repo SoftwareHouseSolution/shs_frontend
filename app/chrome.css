@@ -1248,6 +1248,227 @@
   color: var(--body);
 }
 
+/* ── Client map ─────────────────────────────────────────────────────────────────── */
+/* components/clients/ClientMap.tsx. The Google embed is a LOCKED backdrop — see the note
+   in components/clients/regionGeo.ts for why it cannot be pannable. */
+
+.swh-map {
+  margin-bottom: 40px;
+}
+.swh-map__frame {
+  position: relative;
+  width: 100%;
+  /* Tall enough to hold the full anchor spread at zoom 7. Alexandria to Upper Egypt is
+     0.017 of the Mercator world, which is ~560px at that zoom, plus room for the pills
+     themselves at the extremes. */
+  height: clamp(420px, 64vh, 660px);
+  overflow: hidden; /* clips the iframe's over-scan */
+  border-radius: var(--r-card); /* the same radius as every card on the site */
+  background: var(--accent-tint); /* what shows while the embed loads */
+  border: 1px solid var(--hairline);
+  /* Load-bearing: the pins are absolutely positioned against this box, and its centre is
+     the map's centre. Nothing inside may change its size. */
+  contain: paint;
+}
+/* Over-scanned past all four edges and clipped, symmetrically so the centre is unmoved.
+   It crops off Google's zoom buttons and "View larger map" link, which would otherwise sit
+   inside our panel looking clickable while being inert. Position and size are set from the
+   component so the bleed is one number in one place.
+
+   The size MUST be explicit. `inset: -68px` with `width: auto` does not stretch an iframe:
+   for an absolutely positioned REPLACED element, `auto` resolves to the intrinsic size, so
+   the map collapsed to its default 300x150 in the corner and the panel looked empty. */
+.swh-map__embed {
+  position: absolute;
+  border: 0;
+  /* The map is scenery, not a control. Every destination it shows is also a real button in
+     .swh-map__pins above it. */
+  pointer-events: none;
+}
+/* Knocks back Google's own colour so our pills are the most saturated thing in the frame.
+   Without it the blue motorway shields compete with the accent. */
+.swh-map__wash {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(250, 250, 248, 0.34), rgba(250, 250, 248, 0.12));
+  pointer-events: none;
+}
+
+.swh-map__pins {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.swh-map__pin {
+  position: absolute;
+  /* The pill is centred on its coordinate, so the anchor point is its middle rather than
+     its top-left corner. */
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
+/* Neighbouring pills overlap — Alexandria and the Delta share a coast. Whichever one the
+   pointer is on, or is currently selected, comes to the front so every pill can always be
+   read and hit. Without this the later one in DOM order permanently buries its neighbour's
+   count badge. */
+.swh-map__pin:hover,
+.swh-map__pin:focus-within,
+.swh-map__pin:has([aria-pressed="true"]) {
+  z-index: 3;
+}
+.swh-map__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 8px 14px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-pill);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--f-sans);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(22, 25, 29, 0.08), 0 6px 18px rgba(22, 25, 29, 0.14);
+  transition: background var(--t-menu), color var(--t-menu), scale var(--t-press), box-shadow var(--t-menu);
+}
+.swh-map__tag:hover {
+  scale: 1.05;
+  box-shadow: 0 2px 4px rgba(22, 25, 29, 0.1), 0 10px 26px rgba(22, 25, 29, 0.2);
+}
+.swh-map__tag[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--cta-fg);
+}
+.swh-map__tag:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.swh-map__tag-n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 7px;
+  border-radius: var(--r-pill);
+  background: var(--accent-tint);
+  color: var(--accent);
+  font-family: var(--f-mono);
+  font-size: 11px;
+  font-weight: 500;
+}
+.swh-map__tag[aria-pressed="true"] .swh-map__tag-n {
+  background: rgba(255, 255, 255, 0.22);
+  color: var(--cta-fg);
+}
+
+.swh-map__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 24px 40px;
+  margin-top: 24px;
+}
+.swh-map__search,
+.swh-map__off {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.swh-map__off-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.swh-map__off-n {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.swh-map__result {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  padding-bottom: 20px;
+  margin-bottom: 36px;
+  border-bottom: 1px solid var(--hairline);
+}
+.swh-map__result-title {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin: 0;
+  font-family: var(--f-serif);
+  font-weight: 400;
+  font-size: var(--sub-size);
+  letter-spacing: var(--sub-ls);
+  line-height: 1.05;
+  color: var(--ink);
+}
+.swh-map__result-title span {
+  font-family: var(--f-mono);
+  font-size: var(--caption-size);
+  letter-spacing: var(--caption-ls);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+@media (max-width: 799px) {
+  .swh-map__frame {
+    height: clamp(320px, 62vh, 460px);
+  }
+  /* Desktop-sized pills on a phone cover the country they sit on. Shrunk hard here, which
+     also buys back a zoom level via the proportional padding in regionGeo.ts. The name
+     truncates rather than wrapping — a two-line pill is taller than the gap between
+     Alexandria and the Delta. */
+  .swh-map__tag {
+    padding: 4px 4px 4px 9px;
+    font-size: 10px;
+    gap: 5px;
+    border-radius: var(--r-pill);
+  }
+  .swh-map__tag-name {
+    display: block;
+    max-width: 62px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* The one being touched or selected gets its full name back, on top of its neighbours. */
+  .swh-map__pin:has([aria-pressed="true"]) .swh-map__tag-name {
+    max-width: none;
+  }
+  .swh-map__tag-n {
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    font-size: 9px;
+  }
+  .swh-map__bar {
+    gap: 18px 24px;
+  }
+  .swh-map__search .swh-filters__search {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swh-map__tag {
+    transition-duration: 0.01ms;
+  }
+  .swh-map__tag:hover {
+    scale: 1;
+  }
+}
+
 .swh-client-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
@@ -1379,6 +1600,52 @@
 .swh-slider[data-reduced="true"] {
   overflow-x: auto;
   scrollbar-width: thin;
+}
+
+/* ── Logo wall ──────────────────────────────────────────────────────────────────── */
+/* The "logos" block in components/stubs/StubBody.tsx — the partner marks on
+   /technology-partners and /business-partners. Static; nothing here animates.
+
+   This rule was briefly deleted when the home page's logo grid became the .swh-proof
+   marquee, and the stub pages still referenced the class: the partner logos fell back to
+   an unstyled <ul> and rendered as full-size images down a column of bullet points. The
+   two are separate things and this one has to keep existing on its own.
+
+   Slots, not free sizing — the same lesson as the marquee. These are brand logos with wildly
+   different aspect ratios (Bixolon is a long wordmark, HP is a circle), and sizing them by
+   height alone makes the wordmarks four times the width of the roundels. */
+.swh-logo-wall {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 32px 28px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  width: 100%;
+  max-width: 1100px;
+}
+.swh-logo-wall__item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 76px;
+}
+/* No blend mode and no opacity dimming: partner logos are colour marks on --paper and a
+   blend mode would tint them. Dimming a partner's logo to 0.7 makes it look disabled. */
+.swh-logo-wall__item img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  object-fit: contain;
+}
+@media (max-width: 599px) {
+  .swh-logo-wall {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px 16px;
+  }
+  .swh-logo-wall__item {
+    height: 58px;
+  }
 }
 
 /* ── Client proof band ──────────────────────────────────────────────────────────── */

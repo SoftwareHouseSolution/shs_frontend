@@ -11,7 +11,7 @@
 
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/hero/PageHeader";
-import { ClientDirectory } from "@/components/clients/ClientDirectory";
+import { ClientMap } from "@/components/clients/ClientMap";
 import { CLIENTS } from "@/content/clients";
 import { PAGES } from "@/content/pages";
 
@@ -32,7 +32,10 @@ export default function CustomersPage() {
         image={page.image}
         crumbs={[{ label: "Home", href: "/" }, { label: "Customers" }, { label: page.title }]}
       />
-      <ClientDirectory clients={CLIENTS} />
+      {/* Was ClientDirectory — five rows of filter chips. ClientMap replaces the facets
+          with a map of where the clients actually are; that file is kept on disk for
+          reference and is no longer imported anywhere. */}
+      <ClientMap clients={CLIENTS} />
     </>
   );
 }

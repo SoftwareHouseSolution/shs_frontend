@@ -276,6 +276,17 @@ export const PAGES: Record<PageSlug, PageContent> = {
           { n: "04", title: "Rat-tail Colour Ribbons", image: "/assets/hardware/rat-tail-ribbons.webp" },
         ],
       },
+      /* Hardware House is the group's own hardware arm and carries the full catalogue,
+         stock and pricing that this page only summarises. Sending people there is better
+         than growing a second product list here that would immediately fall out of date.
+         StubBody detects the absolute URL and opens it in a new tab. */
+      {
+        kind: "cta",
+        heading: "The full hardware catalogue.",
+        body: "Hardware House is our dedicated hardware arm. Point-of-sale machines, scanners, printers, servers, consumables and networking — the complete range, with the same local support behind it.",
+        label: "Visit hardwarehouse-sol.com",
+        href: "https://hardwarehouse-sol.com/",
+      },
       {
         kind: "steps",
         heading: "How we work",

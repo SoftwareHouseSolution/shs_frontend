@@ -8,15 +8,58 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, resolve, basename } from "node:path";
 
 const WEB = resolve(import.meta.dirname, "..");
-const DS = resolve(
-  WEB,
+
+/* The design system lives OUTSIDE this repository — it is a sibling working directory, not
+   a dependency, and it is not committed here. So this check only runs on a machine that has
+   both, and it exits 0 with a notice rather than failing when the source is absent. A clone
+   of this repo alone cannot verify parity, and pretending otherwise would make CI red for a
+   reason nobody could fix.
+
+   It moved twice on 2026-08-07: the folder was renamed (apps/softwarehouse-frontend ->
+   apps/design_assets) and its contents were then nested one level deeper under
+   claude_design/. Candidates are newest-first; the check locates itself by looking for the
+   components/ directory rather than trusting any one path. */
+const CANDIDATES = [
+  "../design_assets/Software House Solutions Design System/claude_design",
+  "../design_assets/Software House Solutions Design System",
   "../softwarehouse-frontend/Software House Solutions Design System",
-);
+];
+const DS = CANDIDATES.map((c) => resolve(WEB, c)).find((p) => {
+  try {
+    return statSync(join(p, "components")).isDirectory();
+  } catch {
+    return false;
+  }
+});
+
+if (!DS) {
+  console.log(
+    "SKIP  design-system parity: source not found next to this repo.\n" +
+      "      Looked for:\n" +
+      CANDIDATES.map((c) => "        " + resolve(WEB, c)).join("\n"),
+  );
+  process.exit(0);
+}
 
 /* The two files that gained a "use client" directive when copied. Nothing else in
-   components/ds/ may differ from its source at all. */
+   components/ds/ may differ from its source at all — except the file below. */
 const ALLOWED_ADDED_LINE = '"use client";';
 const MAY_ADD_DIRECTIVE = new Set(["Reveal.jsx", "PillButton.jsx"]);
+
+/* BrandLogo.jsx is a DECLARED FORK as of 2026-08-07, not a drift.
+
+   The delivered mark is a blue roof plus an OFF-WHITE "S", so it only works on something
+   dark; on the footer's --paper and on the solid navbar the S disappeared and the roof
+   floated over nothing. The fix needs a second asset — no CSS filter recolours one part of
+   an image — and therefore a component that chooses between two files. That cannot be done
+   without editing this component, so parity is knowingly given up for this one file.
+
+   It is listed here rather than silently excluded so the fork stays visible in the check's
+   output. If the design system ever ships its own light-surface variant, delete this and
+   restore parity. */
+const FORKED = new Map([
+  ["BrandLogo.jsx", "light-surface mark variant — see tools/make-assets.mjs"],
+]);
 
 /* fonts.css is the one token file that legitimately differs: its five src url() paths
    were rewritten from ../assets/fonts/ to /assets/fonts/ so they resolve against public/. */
@@ -56,6 +99,13 @@ for (const f of copied) {
 
   if (a === b) {
     rec(`${f} identical`, true);
+    continue;
+  }
+
+  // A declared fork is reported as such, so it is never mistaken for accidental drift.
+  const fork = FORKED.get(basename(f));
+  if (fork) {
+    rec(`${f} is a declared fork (${fork})`, true);
     continue;
   }
 

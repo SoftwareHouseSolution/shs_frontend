@@ -177,16 +177,26 @@ function Block({ block }: { block: StubBlock }) {
         </div>
       );
 
-    case "cta":
+    case "cta": {
+      // An off-site CTA opens in a new tab and says so; an in-site one must not.
+      const external = /^https?:\/\//.test(block.href);
       return (
         <div className="swh-stub-cta">
           <SectionHeading level="sub">{block.heading}</SectionHeading>
           <p style={{ ...body, maxWidth: "52ch" }}>{block.body}</p>
-          <PillButton variant="primary" arrow href={block.href}>
+          <PillButton
+            variant="primary"
+            arrow
+            href={block.href}
+            {...(external
+              ? { target: "_blank", rel: "noopener noreferrer", "aria-label": `${block.label} — opens in a new tab` }
+              : {})}
+          >
             {block.label}
           </PillButton>
         </div>
       );
+    }
   }
 }
 

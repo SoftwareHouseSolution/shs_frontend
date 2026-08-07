@@ -21,7 +21,7 @@ export function Specs() {
             { cells: [{ ok: true, text: "POS-integrated ERP" }, { ok: true, text: "Add-on POS" }, { ok: false, text: "Manual entry" }] },
             { cells: [{ ok: true, text: "Local support + training" }, { ok: false, text: "Remote only" }, { ok: false, text: "None" }] },
             { cells: [{ ok: true, text: "Regional presence" }, { ok: false, text: "Single market" }, { ok: false, text: "None" }] },
-            { cells: [{ ok: true, text: "1,050+ jewellery clients" }, { ok: true, text: "Varies" }, { ok: false, text: "Unproven" }] },
+            { cells: [{ ok: true, text: "1,750+ jewellery clients" }, { ok: true, text: "Varies" }, { ok: false, text: "Unproven" }] },
           ]}
         />
       </Reveal>

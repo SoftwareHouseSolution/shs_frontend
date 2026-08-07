@@ -163,8 +163,13 @@ export function HeroCarousel() {
       aria-roledescription="carousel"
       aria-label="Featured"
       onKeyDown={onKeyDown}
-      onPointerEnter={() => setHeld(true)}
-      onPointerLeave={() => setHeld(false)}
+      /* NO pointer hold. It used to stop the slideshow whenever the pointer was anywhere
+         over the hero, which on a 100svh hero is most of the time a visitor spends near
+         the top of the page — so it looked broken, not considerate. WCAG 2.2.2 is
+         satisfied by the explicit pause button below, not by hover.
+
+         Focus still holds: a keyboard user tabbing to a slide's CTA must not have the
+         slide, and therefore that CTA's destination, change underneath them. */
       onFocus={() => setHeld(true)}
       onBlur={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget as Node)) setHeld(false);
@@ -251,7 +256,9 @@ export function HeroCarousel() {
             </svg>
           )}
         </button>
-        <div className="hero-carousel__dots">
+        {/* data-running drives the fill's animation-play-state, so the bar visibly stops
+            with the slideshow rather than continuing to run against a frozen slide. */}
+        <div className="hero-carousel__dots" data-running={!reduce && !paused && !held}>
           {SLIDES.map((s, i) => (
             <button
               key={s.image}
@@ -263,7 +270,14 @@ export function HeroCarousel() {
                 setUserControlled(true);
                 goTo(i);
               }}
-            />
+            >
+              {/* The fill is a child rather than a ::after so the animation is guaranteed
+                  to restart on every advance: React keys it by `index`, so the element is
+                  genuinely new each time and cannot inherit a half-finished run — which is
+                  what happens when a four-slide loop returns to a dot it has already
+                  filled. Only the active dot has one. */}
+              {i === index && <span key={index} className="hero-carousel__dot-fill" aria-hidden="true" />}
+            </button>
           ))}
         </div>
       </div>

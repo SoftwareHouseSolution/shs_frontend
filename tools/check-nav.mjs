@@ -28,14 +28,15 @@ const browser = await chromium.launch();
 
   rec("navbar present", await p.locator("header.swh-nav").count() === 1);
   rec("old NavPill no longer rendered", await p.locator("nav.site-nav").count() === 0);
-  rec("8 top-level items", await p.locator(".swh-nav__list > .swh-nav__item").count() === 8);
+  rec("7 top-level items", await p.locator(".swh-nav__list > .swh-nav__item").count() === 7);
   /* 5 groups (About 4, Solutions 2, Partners 3, Customers 3, Careers 3) = 15 dropdown
-     links, plus 3 standalone (Home, News & Events, Blogs) = 18 leaves, 17 interior. */
+     links, plus 2 standalone (Home, News & Events) = 17 leaves, 16 interior. Blogs was
+     removed on 2026-08-07. */
   rec("5 dropdown panels", (await p.locator(".swh-nav__panel").count()) === 5);
   const dropdownLinks = await p.locator(".swh-nav__panel a").count();
   const soloLinks = await p.locator(".swh-nav__list > .swh-nav__item > a.swh-nav__link").count();
-  rec("18 nav leaves = 17 interior routes + home",
-    dropdownLinks === 15 && soloLinks === 3,
+  rec("17 nav leaves = 16 interior routes + home",
+    dropdownLinks === 15 && soloLinks === 2,
     `${dropdownLinks} in dropdowns + ${soloLinks} standalone`);
 
   // Header section removed from the home page.

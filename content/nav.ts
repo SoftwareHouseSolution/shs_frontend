@@ -54,7 +54,10 @@ export const NAV = [
       { label: "Life At SWH", href: "/life-at-swh" },
     ],
   },
-  { label: "Blogs", href: "/blogs" },
+  /* Blogs was removed on 2026-08-07. It was a nav slot leading to an empty "not published
+     yet" page, which reads as neglect rather than as a promise. Removing the entry here
+     also removes the /blogs route: generateStaticParams derives its slugs from this array,
+     so the page and the link cannot go out of step. */
 ] as const satisfies readonly NavEntry[];
 
 export function isGroup(e: NavEntry): e is NavGroup {

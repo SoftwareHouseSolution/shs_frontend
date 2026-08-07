@@ -653,7 +653,12 @@
   display: flex;
   gap: 8px;
 }
+/* The dots double as the slide timer: the active one fills left-to-right over exactly
+   --hero-hold, so the bar reaching its end and the slide changing are the same moment.
+   A visitor can see how long is left instead of being surprised. */
 .hero-carousel__dot {
+  position: relative;
+  overflow: hidden;
   width: 30px;
   height: 4px;
   padding: 0;
@@ -661,10 +666,37 @@
   border-radius: 2px;
   background: rgba(250, 250, 248, 0.4);
   cursor: pointer;
-  transition: background var(--t-menu);
+  transition: background var(--t-menu), width var(--t-menu);
 }
+.hero-carousel__dot:hover {
+  background: rgba(250, 250, 248, 0.65);
+}
+/* Wider while active, so the slide position is legible at a glance and the fill has room
+   to read as progress rather than as a flicker. */
 .hero-carousel__dot[aria-current="true"] {
+  width: 46px;
+}
+.hero-carousel__dot-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
   background: var(--paper);
+  transform-origin: left center;
+  /* scaleX, not width: width animates on the layout thread and this runs for seven
+     seconds under a full-bleed video. */
+  transform: scaleX(0);
+  animation: swh-dot-fill var(--hero-hold) linear forwards;
+}
+.hero-carousel__dots[data-running="false"] .hero-carousel__dot-fill {
+  animation-play-state: paused;
+}
+@keyframes swh-dot-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
 }
 .hero-carousel__toggle {
   display: inline-flex;
@@ -1295,65 +1327,351 @@
   }
 }
 
-/* ── Logo wall ──────────────────────────────────────────────────────────────────── */
-/* components/sections/LogoWall.tsx. Static — nothing here animates. */
+/* ── Infinite slider ────────────────────────────────────────────────────────────── */
+/* components/core/infinite-slider.tsx. The travel is a Web Animations API animation set
+   from JS; everything structural is here.
 
-.swh-logo-wall {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-  gap: 20px 28px;
+   The mask is what removes the strip's two ends. Without it the first and last logo are
+   guillotined by the container edge on every pass, which is precisely the "it has a
+   start and an end" tell. `mask-image` on the scroller, not a pair of gradient overlays:
+   overlays only work on a known background colour, and this strip sits on --paper today
+   and could sit on a tint tomorrow. */
+
+.swh-slider {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  /* A long fade, not a short one. At 7% the logos still met the edge at near-full opacity
+     and read as clipped, which is the exact tell the strip is trying not to have. */
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 14%, #000 86%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 14%, #000 86%, transparent 100%);
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+}
+.swh-slider__track {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  /* Promotes the strip to its own layer so the loop never shares a raster with the rest
+     of the page. This is the one place will-change:transform is safe — it is not #app,
+     body or .page-content (see the three rules at the top of this file). */
+  will-change: transform;
+}
+.swh-slider__group {
+  display: flex;
+  align-items: center;
+  flex: none;
+}
+/* Reduced motion: the animation is never created, so the strip becomes a plain
+   horizontally scrollable row rather than a truncated one. */
+.swh-slider[data-reduced="true"] {
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+/* ── Client proof band ──────────────────────────────────────────────────────────── */
+/* components/sections/LogoWall.tsx. Two tiers: three VIP marks held still, then the
+   endless strip. */
+
+.swh-proof {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 52px;
+  padding: 90px 0 40px;
+}
+.swh-proof__inner {
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+  box-sizing: border-box;
+}
+.swh-proof__lede {
+  margin: 0;
+  font-family: var(--f-sans);
+  font-size: 15px;
+  letter-spacing: -0.075px;
+  color: var(--body);
+  text-align: center;
+}
+
+/* The VIP row. Sized well above the strip's marks — the size difference IS the tiering,
+   so it has to survive every breakpoint rather than collapsing to parity on tablet. */
+.swh-proof__vip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 40px 88px;
   margin: 0;
   padding: 0;
   list-style: none;
   width: 100%;
-  max-width: 1100px;
 }
-.swh-logo-wall__item {
+.swh-proof__vip li {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 68px;
+  height: 96px;
 }
 /* No blend mode and no opacity dimming: the logos are exported already composited onto
    --paper (see tools/extract-clients.py), so they sit flush on the page. A blend mode
    here would fight that, and dimming a client's mark to 0.7 makes it look disabled. */
-.swh-logo-wall__item img {
-  max-width: 100%;
+/* max-width as well as max-height. Height alone lets a wide wordmark (Kirmena) scale to
+   whatever its aspect ratio demands — on a phone it ran the full column width and made a
+   three-logo row read as one logo plus two footnotes. Capping both keeps the three marks
+   at comparable visual weight, which is the point of the tier. */
+.swh-proof__vip img {
+  max-width: min(100%, 280px);
   max-height: 100%;
   width: auto;
   object-fit: contain;
 }
-@media (max-width: 599px) {
-  .swh-logo-wall {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 14px;
+
+.swh-proof__strip {
+  padding: 4px 0;
+}
+.swh-proof__mark {
+  flex: none;
+  height: 56px;
+  width: auto;
+  max-width: none;
+  object-fit: contain;
+  /* Explicit, because an <img> with no intrinsic box measures 0 until it decodes, and a
+     0-width group would let the slider compute a duration from nothing on first paint. */
+  min-width: 40px;
+}
+
+@media (max-width: 799px) {
+  .swh-proof {
+    gap: 36px;
+    padding: 64px 0 32px;
   }
-  .swh-logo-wall__item {
-    height: 52px;
+  .swh-proof__vip {
+    gap: 24px 32px;
+  }
+  .swh-proof__vip li {
+    height: 56px;
+  }
+  .swh-proof__vip img {
+    max-width: min(100%, 170px);
+  }
+  .swh-proof__mark {
+    height: 40px;
   }
 }
 
-/* ── Trust figures ──────────────────────────────────────────────────────────────── */
-/* components/sections/StatsBand.tsx. The count-up itself is JS; nothing here animates. */
+/* ── Social rail ────────────────────────────────────────────────────────────────── */
+/* components/chrome/SocialRail.tsx. Fixed to the left edge, resting 30% outside it.
 
-.swh-stats {
+   The rest position is --rail-out, a transform — never a negative `left`. A transform is
+   outside layout, so the 30% overhang cannot widen the document at any width. */
+
+:root {
+  --rail-w: 56px;
+  --rail-out: -30%; /* 70% in view, 30% past the edge */
+  --rail-r: 20px;
+  --t-rail: 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.swh-rail {
+  position: fixed;
+  left: 0;
+  top: 50%;
+  z-index: calc(var(--nav-z) - 2); /* under the nav and its drawer, over the page */
+  translate: 0 -50%;
+  transform: translateX(var(--rail-out));
+  transition: transform var(--t-rail);
+}
+/* Focus gets the same pull-in as hover. A control sitting 30% off-screen that a keyboard
+   can reach but not see is the failure mode of this whole pattern. */
+.swh-rail:hover,
+.swh-rail:focus-within,
+.swh-rail[data-open="true"] {
+  transform: translateX(0);
+}
+
+.swh-rail__body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: var(--rail-w);
+  padding: 6px;
+  box-sizing: border-box;
+  /* Rounded on the right only — the left side is meant to read as continuing past the
+     viewport edge, and a fully rounded pill reads as a finished object sitting near it. */
+  border-radius: 0 var(--rail-r) var(--rail-r) 0;
+  background: var(--paper);
+  border: 1px solid var(--hairline);
+  border-left: 0;
+  box-shadow: 0 10px 30px rgba(22, 25, 29, 0.1), 0 2px 6px rgba(22, 25, 29, 0.05);
+}
+
+.swh-rail__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  flex: none;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  transition: background var(--t-menu), color var(--t-menu);
+}
+.swh-rail__toggle:hover {
+  background: var(--accent-tint);
+}
+.swh-rail__glyph {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  transition: rotate var(--t-rail);
+}
+.swh-rail[data-open="true"] .swh-rail__glyph {
+  rotate: 45deg;
+}
+
+/* 0fr → 1fr, the same mechanism the mobile drawer's submenus use. It animates to the
+   content's real height without measuring anything, so adding a fourth profile needs no
+   change here. */
+.swh-rail__reveal {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 40px 24px;
+  grid-template-rows: 0fr;
+  width: 100%;
+  transition: grid-template-rows var(--t-rail);
+}
+.swh-rail[data-open="true"] .swh-rail__reveal {
+  grid-template-rows: 1fr;
+}
+.swh-rail__list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow: hidden; /* required: the 0fr row only collapses if the child can be clipped */
+}
+.swh-rail__list li {
+  opacity: 0;
+  translate: 0 -6px;
+  transition: opacity var(--t-rail), translate var(--t-rail);
+}
+/* Stagger down the stack on open. On close every item leaves at once — a staggered exit
+   makes dismissing a menu feel slow. */
+.swh-rail[data-open="true"] .swh-rail__list li {
+  opacity: 1;
+  translate: 0 0;
+  transition-delay: calc(var(--i) * 55ms);
+}
+.swh-rail__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  color: var(--body);
+  transition: background var(--t-menu), color var(--t-menu);
+}
+.swh-rail__link:hover {
+  background: var(--accent-tint);
+  color: var(--accent);
+}
+.swh-rail__link svg {
+  width: 19px;
+  height: 19px;
+}
+.swh-rail__toggle:focus-visible,
+.swh-rail__link:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* Below 900px the left edge belongs to the thumb and to the browser's back gesture. The
+   same three links are already in the footer. */
+@media (max-width: 899px) {
+  .swh-rail {
+    display: none;
+  }
+}
+
+/* ── Trust figures under the hero ───────────────────────────────────────────────── */
+/* components/sections/StatsRow.tsx. The count-up is JS; the entrance and the dividers
+   are here.
+
+   Hairline dividers rather than cards: five boxed tiles under a full-bleed hero is the
+   stat-grid template, and the numbers are strong enough to hold a row on their own. */
+
+.swh-figures {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 72px 0 12px;
+}
+.swh-figures__inner {
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+  box-sizing: border-box;
+}
+.swh-figures__eyebrow {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 34px;
+}
+.swh-figures__row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
   margin: 0;
   padding: 0;
   list-style: none;
   width: 100%;
 }
-.swh-stats__item {
+.swh-figures__item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  padding: 4px 16px;
   text-align: center;
+  /* The divider is a border on the item, so it can never fall out of step with the
+     column count the way a separately positioned rule would. */
+  border-left: 1px solid var(--hairline);
+  opacity: 0;
+  translate: 0 12px;
+  transition: opacity 0.65s ease-out, translate 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: calc(var(--i) * 110ms); /* matches STAGGER_MS in StatsRow.tsx */
 }
-.swh-stats__label {
-  max-width: 22ch;
+.swh-figures__item:first-child {
+  border-left: 0;
+}
+.swh-figures__row[data-in="true"] .swh-figures__item {
+  opacity: 1;
+  translate: 0 0;
+}
+.swh-figures__value {
+  margin: 0;
+  font-family: var(--f-serif);
+  font-weight: 400;
+  font-size: clamp(34px, 3.6vw, 54px);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  /* Without this the row twitches sideways on every frame of the count-up, because
+     proportional digits are not the same width. */
+  font-variant-numeric: tabular-nums;
+}
+.swh-figures__label {
+  max-width: 20ch;
   font-family: var(--f-mono);
   font-size: var(--caption-size);
   letter-spacing: var(--caption-ls);
@@ -1361,15 +1679,195 @@
   text-transform: uppercase;
   color: var(--body);
 }
-@media (max-width: 599px) {
-  .swh-stats {
+
+@media (max-width: 899px) {
+  .swh-figures {
+    padding: 48px 0 8px;
+  }
+  .swh-figures__row {
     grid-template-columns: repeat(2, 1fr);
-    gap: 32px 16px;
+    gap: 32px 0;
   }
   /* Five items in a two-column grid leaves an orphan. Let the last one span the row so it
-     centres under the pair above rather than hugging the left edge. */
-  .swh-stats__item:last-child {
+     centres under the pair above rather than hugging the left edge — and drop its border,
+     which would otherwise draw a rule down the middle of a full-width cell. */
+  .swh-figures__item:last-child {
     grid-column: 1 / -1;
+    border-left: 0;
+  }
+  .swh-figures__item:nth-child(odd) {
+    border-left: 0;
+  }
+}
+
+/* ── Footer ─────────────────────────────────────────────────────────────────────── */
+/* components/sections/Footer.jsx. Lives inside .sticky-footer (position:fixed, bg
+   #EEEFF1 from prototype.css), whose height PageShell measures at runtime — so this can
+   be as tall as it needs to be without a magic number anywhere.
+
+   Layout is one asymmetric split: the brand column takes the widest track and the link
+   columns share the rest. Not four equal columns — the brand block carries a paragraph
+   and three contact lines, and forcing it into a quarter would set it at a measure of
+   about 25 characters. */
+
+.swh-footer {
+  padding: 64px 0 40px;
+  border-top: 1px solid var(--hairline);
+}
+.swh-footer__top {
+  display: grid;
+  grid-template-columns: minmax(280px, 1.4fr) 2.6fr;
+  gap: 56px;
+  align-items: start;
+}
+.swh-footer__brand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 18px;
+}
+.swh-footer__mark {
+  display: inline-flex;
+  text-decoration: none;
+  border-radius: var(--nav-item-r);
+}
+.swh-footer__mark:focus-visible,
+.swh-footer a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.swh-footer__blurb {
+  margin: 0;
+  max-width: 46ch;
+  font: var(--body-copy);
+  font-size: 14px;
+  color: var(--body);
+}
+.swh-footer__contact {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--f-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--body);
+}
+.swh-footer__contact a {
+  color: var(--body);
+  text-decoration: none;
+}
+.swh-footer__contact a:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.swh-footer__nav {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 40px 32px;
+}
+.swh-footer__col ul {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+/* An <h2> so the columns are real landmarks in the outline, sized down to a caption —
+   the visual weight belongs to the links, not to the label above them. */
+.swh-footer__heading {
+  margin: 0 0 16px;
+  font-family: var(--f-mono);
+  font-weight: 500;
+  font-size: var(--caption-size);
+  letter-spacing: var(--caption-ls);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.swh-footer__col a {
+  font-family: var(--f-sans);
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: -0.2px;
+  color: var(--ink);
+  text-decoration: none;
+  transition: color var(--t-menu);
+}
+.swh-footer__col a:hover {
+  color: var(--accent);
+}
+
+.swh-footer__bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-top: 56px;
+  padding-top: 26px;
+  border-top: 1px solid var(--hairline);
+}
+.swh-footer__social {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.swh-footer__social a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  color: var(--body);
+  transition: background var(--t-menu), color var(--t-menu);
+}
+.swh-footer__social a:hover {
+  background: var(--accent-tint);
+  color: var(--accent);
+}
+.swh-footer__social svg {
+  width: 18px;
+  height: 18px;
+}
+.swh-footer__legal {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+  margin: 0;
+  font-family: var(--f-mono);
+  font-size: 12px;
+  color: var(--accent);
+}
+
+@media (max-width: 999px) {
+  .swh-footer__top {
+    grid-template-columns: 1fr;
+    gap: 44px;
+  }
+}
+@media (max-width: 599px) {
+  .swh-footer {
+    padding: 44px 0 32px;
+  }
+  .swh-footer__nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 32px 20px;
+  }
+  .swh-footer__bottom {
+    margin-top: 40px;
+  }
+  .swh-footer__legal {
+    gap: 4px 20px;
+    font-size: 11px;
   }
 }
 
@@ -1395,6 +1893,12 @@
     transform: none;
     animation: none;
   }
+  /* The slideshow does not auto-advance under reduced motion, so a timer that never
+     completes would be a lie. The active dot is simply filled. */
+  .hero-carousel__dot-fill {
+    animation: none;
+    transform: scaleX(1);
+  }
   .swh-nav,
   .swh-nav__panel,
   .swh-nav__surface,
@@ -1402,7 +1906,21 @@
   .swh-drawer__scrim,
   .swh-drawer__sub,
   .swh-filters__chip,
-  .swh-skip {
+  .swh-skip,
+  /* The rail and its reveal stay fully operable — reduced motion removes involuntary
+     movement, not user control. Only the travel time goes. */
+  .swh-rail,
+  .swh-rail__reveal,
+  .swh-rail__glyph,
+  .swh-rail__list li {
     transition-duration: 0.01ms;
+  }
+  /* The figures are content, not an effect. With the entrance suppressed they must be
+     visible outright rather than left at opacity 0 waiting for a transition that will
+     never be perceived. */
+  .swh-figures__item {
+    opacity: 1;
+    translate: none;
+    transition: none;
   }
 }

@@ -10,6 +10,7 @@ import "./chrome.css";
 
 import { SiteNav } from "@/components/chrome/SiteNav";
 import { SkipLink } from "@/components/chrome/SkipLink";
+import { SocialRail } from "@/components/chrome/SocialRail";
 import { SITE } from "@/content/site";
 
 export const metadata: Metadata = {
@@ -39,6 +40,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <SkipLink />
           <SiteNav />
           {children}
+          {/* Fixed to the left edge, so it is deliberately a sibling of {children} rather
+              than something a page has to opt into. Safe inside #app: a fixed element is
+              only clipped by an ancestor's overflow when that ancestor is a containing
+              block, and #app carries no transform or filter (see the comment above). */}
+          <SocialRail />
         </div>
       </body>
     </html>

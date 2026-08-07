@@ -20,6 +20,7 @@ import { Specs } from "@/components/sections/Specs";
 import { Testimonial } from "@/components/sections/Testimonial";
 import { HowTo } from "@/components/sections/HowTo";
 import { EventsRail } from "@/components/sections/EventsRail";
+import { StatsRow } from "@/components/sections/StatsRow";
 import { StatsBand } from "@/components/sections/StatsBand";
 import { Contact } from "@/components/sections/Contact";
 
@@ -31,6 +32,10 @@ export default function Page() {
           stack) — commented out. The component and its import are left in place so it
           can be restored by uncommenting both. */}
       {/* <Hero /> */}
+      {/* The figures come first, immediately under the hero: since 1988, 1,750+ stores,
+          96% of the market is the strongest thing on the page and it used to sit eight
+          sections down, below the closing CTA. */}
+      <StatsRow />
       <LogoWall />
       <Services />
       <BigPicture />
@@ -38,8 +43,8 @@ export default function Page() {
       <Testimonial />
       <HowTo />
       <EventsRail />
-      {/* The client's closing CTA plus the trust figures. Contact stays below it — that
-          section carries the address, phone and email, which this one does not. */}
+      {/* The client's closing CTA. Contact stays below it — that section carries the
+          address, phone and email, which this one does not. */}
       <StatsBand />
       <Contact />
     </>

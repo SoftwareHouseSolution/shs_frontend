@@ -21,8 +21,9 @@ type Props = {
   id: string;
   open: boolean;
   pathname: string;
-  onOpen: (id: string, pin: boolean) => void;
-  onClose: () => void;
+  onOpen: (id: string) => void;
+  /** Pass `id` to close only if this item is still the open one — see SiteNav. */
+  onClose: (id?: string) => void;
   /** Move focus to the previous/next top-level trigger. */
   onStep: (id: string, dir: -1 | 1) => void;
 };
@@ -53,12 +54,12 @@ export function NavMenu({ group, id, open, pathname, onOpen, onClose, onStep }: 
     switch (e.key) {
       case "ArrowDown":
         e.preventDefault();
-        onOpen(id, true);
+        onOpen(id);
         requestAnimationFrame(() => focusLink(0));
         break;
       case "ArrowUp":
         e.preventDefault();
-        onOpen(id, true);
+        onOpen(id);
         requestAnimationFrame(() => focusLink(-1));
         break;
       case "Escape":
@@ -112,17 +113,23 @@ export function NavMenu({ group, id, open, pathname, onOpen, onClose, onStep }: 
       data-open={open}
       onPointerEnter={() => {
         clearTimeout(graceTimer.current);
-        onOpen(id, false);
+        onOpen(id);
       }}
       onPointerLeave={() => {
         clearTimeout(graceTimer.current);
         // Grace period plus the CSS bridge in chrome.css: either alone flickers when the
         // pointer crosses the gap between the trigger and the panel.
-        graceTimer.current = setTimeout(onClose, CLOSE_GRACE_MS);
+        graceTimer.current = setTimeout(() => {
+          /* Do not yank a panel out from under the keyboard. A user can open with
+             ArrowDown and then move the mouse anywhere; without this the pointerleave
+             would close the panel their focus is currently inside. */
+          if (itemRef.current?.contains(document.activeElement)) return;
+          onClose(id);
+        }, CLOSE_GRACE_MS);
       }}
       onBlur={(e) => {
         // Covers Tab, Shift+Tab and click-away-to-focus in one check.
-        if (!e.currentTarget.contains(e.relatedTarget as Node)) onClose();
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) onClose(id);
       }}
     >
       <button
@@ -133,7 +140,9 @@ export function NavMenu({ group, id, open, pathname, onOpen, onClose, onStep }: 
         aria-controls={`navmenu-${id}`}
         aria-expanded={open}
         aria-haspopup="true"
-        onClick={() => (open ? onClose() : onOpen(id, true))}
+        /* A plain toggle with no memory — see the note in SiteNav. It exists for keyboard
+           and touch; a mouse never needs it, because hover already did the work. */
+        onClick={() => (open ? onClose() : onOpen(id))}
         onKeyDown={onTriggerKeyDown}
       >
         {group.label}
@@ -155,7 +164,9 @@ export function NavMenu({ group, id, open, pathname, onOpen, onClose, onStep }: 
               <Link
                 href={c.href}
                 aria-current={pathname === c.href ? "page" : undefined}
-                onClick={onClose}
+                /* Arrow, not a bare `onClose`: the handler would pass the MouseEvent as
+                   the id, and the guard in SiteNav would then never match. */
+                onClick={() => onClose()}
               >
                 {c.label}
               </Link>

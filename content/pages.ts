@@ -92,7 +92,7 @@ export const PAGES: Record<PageSlug, PageContent> = {
     eyebrow: "About",
     lede: `A regional market leader and solution provider, developing cutting-edge IT solutions for businesses across many industries since ${SITE.since}.`,
     image: IMG.about,
-    metaDescription: `Software House Solutions has led the market since ${SITE.since}, building ERP and custom software for businesses across Egypt, Dubai, Malaysia and Singapore.`,
+    metaDescription: `Software House Solutions has led the market since ${SITE.since}, building ERP and custom software for businesses across Egypt, Dubai, KSA and the USA.`,
     blocks: [
       {
         kind: "intro",
@@ -420,17 +420,7 @@ export const PAGES: Record<PageSlug, PageContent> = {
     ],
   },
 
-  blogs: {
-    title: "Blogs",
-    eyebrow: "Company",
-    lede: "Notes on ERP, the jewellery trade, and running a technology-driven business.",
-    image: IMG.partners,
-    metaDescription: "Articles on ERP, jewellery retail technology and business systems from Software House Solutions.",
-    blocks: [
-      notPublishedYet("our first set of articles"),
-      contactCta("Have a topic in mind?", "Tell us what you would find useful and we will write about it."),
-    ],
-  },
+  /* `blogs` was removed on 2026-08-07 along with its nav entry — see content/nav.ts. */
 
   /* ---------------- Careers ---------------- */
   vacancies: {

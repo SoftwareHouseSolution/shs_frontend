@@ -30,7 +30,6 @@ export function SiteNav() {
   const pathname = usePathname();
   const [solid, setSolid] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
-  const [pinned, setPinned] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const listRef = useRef<HTMLUListElement>(null);
 
@@ -53,35 +52,28 @@ export function SiteNav() {
   // Close everything on navigation.
   useEffect(() => {
     setOpenId(null);
-    setPinned(false);
     setDrawerOpen(false);
   }, [pathname]);
 
-  const close = useCallback(() => {
-    setOpenId(null);
-    setPinned(false);
-  }, []);
-
-  const open = useCallback(
-    (id: string, pin: boolean) => {
-      // A pinned panel ignores hover-driven opens of other items until it is dismissed.
-      if (pinned && !pin) return;
-      setOpenId(id);
-      if (pin) setPinned(true);
-    },
-    [pinned],
+  /* HOVER IS THE ONLY STATE. There used to be a second one: clicking a trigger "pinned"
+     the panel, and a pinned panel then ignored hover on every other trigger until it was
+     dismissed. So the same gesture did different things depending on invisible history —
+     sometimes the menu followed the pointer, sometimes it refused to. One state now:
+     pointing at a trigger opens it, pointing away closes it, and clicking is just a
+     toggle with no memory. Keyboard opening still works through NavMenu's ArrowUp/Down,
+     and focus still holds a panel open via the activeElement guard there. */
+  /* `close` takes the id of the item ASKING to close. Sliding the pointer along the bar
+     fires Partners' leave and Customers' enter back to back, and Partners' 120ms grace
+     timer then lands AFTER Customers has already opened — an unconditional close would
+     shut the panel the pointer had just arrived at, so moving across the nav flickered
+     everything shut. Ignoring a close request from an item that is no longer the open one
+     fixes it. Called with no argument it closes whatever is open, which is what Escape
+     and a link click want. */
+  const close = useCallback(
+    (id?: string) => setOpenId((cur) => (id !== undefined && cur !== id ? cur : null)),
+    [],
   );
-
-  /* Click-outside is registered only while a panel is pinned open — no always-on
-     document listener. */
-  useEffect(() => {
-    if (!pinned) return;
-    const onDown = (e: PointerEvent) => {
-      if (!listRef.current?.contains(e.target as Node)) close();
-    };
-    document.addEventListener("pointerdown", onDown);
-    return () => document.removeEventListener("pointerdown", onDown);
-  }, [pinned, close]);
+  const open = useCallback((id: string) => setOpenId(id), []);
 
   /* ArrowLeft/ArrowRight move between top-level triggers. */
   const step = useCallback((id: string, dir: -1 | 1) => {
@@ -99,9 +91,11 @@ export function SiteNav() {
 
       <nav className="swh-nav__inner" aria-label="Primary">
         <Link className="swh-nav__brand" href="/" aria-label={`${SITE.name} — home`}>
-          {/* onAccent is a real BrandLogo prop: it whitens the mark and sets the wordmark
-              to --paper. No design-system edit needed for the over-hero state. */}
-          <BrandLogo variant="lockup" height={36} src="/assets/brand/swh-logo.png" onAccent={!solid} />
+          {/* onAccent is a real BrandLogo prop: over the hero it whitens the mark and sets
+              the wordmark to --paper; on the solid bar it swaps to the ink-S variant, which
+              is the only version of the mark that survives a light background. No src prop
+              here — BrandLogo owns both files. */}
+          <BrandLogo variant="lockup" height={36} onAccent={!solid} />
         </Link>
 
         <ul className="swh-nav__list" ref={listRef}>
@@ -124,7 +118,9 @@ export function SiteNav() {
                   id={`navtrig-${idOf(entry.label)}`}
                   href={entry.href}
                   aria-current={pathname === entry.href ? "page" : undefined}
-                  onPointerEnter={close}
+                  /* Arrow, not a bare `close`: the handler would pass the PointerEvent as
+                     the id, and the guard would then never match. */
+                  onPointerEnter={() => close()}
                 >
                   {entry.label}
                 </Link>

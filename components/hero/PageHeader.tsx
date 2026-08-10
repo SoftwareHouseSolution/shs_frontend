@@ -34,19 +34,9 @@ export function PageHeader({ title, eyebrow, lede, image, crumbs }: Props) {
       <div className="swh-page-header__scrim" aria-hidden="true" />
       <div className="swh-page-header__inner">
         <Breadcrumb items={crumbs} />
-        <p
-          style={{
-            margin: 0,
-            fontFamily: "var(--f-mono)",
-            fontWeight: 500,
-            fontSize: "var(--caption-size)",
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-            color: "rgba(250,250,248,.82)",
-          }}
-        >
-          {eyebrow}
-        </p>
+        {/* Classed rather than inline-styled so the mobile rule can reach it — see
+            .swh-page-header__eyebrow in app/chrome.css for why it goes away on a phone. */}
+        <p className="swh-page-header__eyebrow">{eyebrow}</p>
         <h1 className="swh-page-header__title">{title}</h1>
         <p className="swh-page-header__lede">{lede}</p>
       </div>

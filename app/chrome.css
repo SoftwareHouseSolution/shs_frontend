@@ -36,6 +36,21 @@
   initial-value: transparent;
 }
 
+/* The design system ramps --caption UP with viewport: 10.5px below 800, 11px at 800,
+   12px at 1200. That is the wrong direction. Captions here are the eyebrows, figure
+   labels, event years and footer headings — all set uppercase with positive tracking,
+   which costs legibility on top of the small size — and the phone is the reading
+   condition with the least light, the most movement and the shortest viewing distance.
+   Desktop is unchanged; only the two mobile tiers are lifted, to the size desktop
+   already trusted. typography.css is a byte-identical design-system copy and cannot be
+   edited, so the floor is set here instead. */
+@media (max-width: 1199px) {
+  :root {
+    --caption-size: 12px;
+    --caption-ls: -0.014px;
+  }
+}
+
 :root {
   /* bar geometry — no height token exists in the design system */
   --nav-h: 64px;
@@ -342,8 +357,11 @@
   display: block;
 }
 
+/* flex-direction: column is load-bearing. Without it the three bars lay out side by side —
+   three 20px rules in a 42px box — and the burger renders as a pair of stray dashes. */
 .swh-burger {
   display: none;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   width: 42px;
@@ -668,7 +686,6 @@
    A visitor can see how long is left instead of being surprised. */
 .hero-carousel__dot {
   position: relative;
-  overflow: hidden;
   width: 30px;
   height: 4px;
   padding: 0;
@@ -677,6 +694,17 @@
   background: rgba(250, 250, 248, 0.4);
   cursor: pointer;
   transition: background var(--t-menu), width var(--t-menu);
+}
+/* A 30x4 bar is a 4px-tall tap target — unusable with a thumb. This grows the HIT area to
+   44px without touching the visual one: the bar still reads as a hairline timer, the
+   finger gets the whole band around it. Horizontal inset is half the 8px gap, so
+   neighbouring dots meet exactly and never overlap. `overflow: hidden` cannot live on the
+   button any more — it would clip this pseudo-element out of hit-testing — so the fill
+   clips itself instead. */
+.hero-carousel__dot::after {
+  content: "";
+  position: absolute;
+  inset: -20px -4px;
 }
 .hero-carousel__dot:hover {
   background: rgba(250, 250, 248, 0.65);
@@ -689,7 +717,9 @@
 .hero-carousel__dot-fill {
   position: absolute;
   inset: 0;
-  border-radius: inherit;
+  /* Own radius, not the parent's overflow clip — see the hit-area note above. At a 2px
+     radius on a 4px bar the scaleX distortion is sub-pixel. */
+  border-radius: 2px;
   background: var(--paper);
   transform-origin: left center;
   /* scaleX, not width: width animates on the layout thread and this runs for seven
@@ -727,6 +757,35 @@
 .hero-carousel__toggle svg {
   width: 12px;
   height: 12px;
+}
+
+/* ── Tap targets ────────────────────────────────────────────────────────────────── */
+/* Four controls sit under the 44px floor: the carousel's play/pause (32), the nav's
+   WhatsApp button (38), the drawer's close (40) and the burger (42). All four are correct
+   at their drawn size — a 44px WhatsApp circle would overpower a 64px bar — so the fix
+   grows the hit area only. The pseudo-element is transparent and unpainted, so nothing
+   moves and nothing reflows; it just gives the finger the margin the eye does not need.
+
+   Not gated behind `pointer: coarse`. A 32px target is a poor target with a trackpad too,
+   and a touchscreen laptop reports a fine pointer while being poked with a thumb. */
+/* .swh-drawer__close is deliberately absent — it is already position:absolute, so it is
+   already a containing block, and relative here would drop it out of its corner. */
+.hero-carousel__toggle,
+.swh-wa,
+.swh-burger {
+  position: relative;
+}
+.hero-carousel__toggle::after,
+.swh-wa::after,
+.swh-drawer__close::after,
+.swh-burger::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  translate: -50% -50%;
 }
 
 /* ── Interior page header ───────────────────────────────────────────────────────── */
@@ -788,8 +847,12 @@
   color: rgba(250, 250, 248, 0.88);
 }
 
+/* 4px was enough on desktop, where the trail fits one line and the eyebrow below it reads
+   as a separate kicker. It is not enough once the trail wraps: two lines of mono uppercase
+   ending 4px above a third line of mono uppercase is one garbled block, not a breadcrumb
+   and a kicker. */
 .swh-crumb {
-  margin-bottom: 4px;
+  margin-bottom: 12px;
 }
 .swh-crumb ol {
   display: flex;
@@ -819,6 +882,31 @@
   content: "/";
   margin-right: 8px;
   color: rgba(250, 250, 248, 0.45);
+}
+/* Moved off an inline style in PageHeader.tsx so the mobile rule below can reach it. */
+.swh-page-header__eyebrow {
+  margin: 0;
+  font-family: var(--f-mono);
+  font-weight: 500;
+  font-size: var(--caption-size);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(250, 250, 248, 0.82);
+}
+/* Three elements state the same thing at the top of every interior page: the trail, the
+   eyebrow and the <h1>. On desktop that is a legible hierarchy — the trail fits one line
+   and the eyebrow reads as a kicker under it. On a phone the trail wraps and the eyebrow
+   lands directly beneath it in the same mono uppercase at the same size, so the two read
+   as one broken sentence.
+
+   The eyebrow is what goes, not the trail's last item: the eyebrow only ever repeats the
+   PARENT crumb, so the trail already contains it and one more level besides. Removing the
+   trail's tail instead leaves "HOME / PARTNERS" sitting directly above "PARTNERS", which
+   is the same collision with fewer words. */
+@media (max-width: 599px) {
+  .swh-page-header__eyebrow {
+    display: none;
+  }
 }
 
 .swh-stub-cta {
@@ -2177,9 +2265,11 @@
   .swh-footer__bottom {
     margin-top: 40px;
   }
+  /* The gap tightens, the type does not. Wrapping the legal links onto their own lines is
+     what buys the space here; shrinking 12px copy to 11px on the narrowest screen buys
+     almost no width and costs the most legibility. */
   .swh-footer__legal {
     gap: 4px 20px;
-    font-size: 11px;
   }
 }
 

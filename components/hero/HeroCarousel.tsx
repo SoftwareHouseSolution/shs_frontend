@@ -71,7 +71,11 @@ const SLIDES: Slide[] = [
     eyebrow: "Gold & Diamond Solutions",
     title: "Credence, built on quality standards.",
     body: "Developing credence by ensuring quality standards across every jewellery segment.",
-    cta: { label: "Book a demo", href: SITE.demoHref },
+    /* "Contact us", not "Book a demo": demoHref is /#contact, the contact section on this
+       same page, so the old label promised a booking flow that does not exist. The nav and
+       the drawer keep "Book a demo" — a persistent CTA can afford to name the outcome,
+       whereas this one sits directly above the form it scrolls to. */
+    cta: { label: "Contact us", href: SITE.demoHref },
   },
 ];
 

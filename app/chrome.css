@@ -1887,7 +1887,10 @@
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  color: var(--body);
+  /* --ink, not --body. A grey tuned for a paragraph of text is too weak for an 19px solid
+     glyph: text gets contrast from stroke rhythm, an icon is one flat silhouette and reads
+     washed out at the same value. */
+  color: var(--ink);
   transition: background var(--t-menu), color var(--t-menu);
 }
 .swh-rail__link:hover {
@@ -2136,7 +2139,7 @@
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  color: var(--body);
+  color: var(--ink); /* see the note on .swh-rail__link — grey body text ≠ grey icon */
   transition: background var(--t-menu), color var(--t-menu);
 }
 .swh-footer__social a:hover {

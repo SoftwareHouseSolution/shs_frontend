@@ -331,7 +331,7 @@ export const PAGES: Record<PageSlug, PageContent> = {
         label: "Our technology partners",
         logos: [
           { src: "/assets/partners/microsoft.webp", alt: "Microsoft" },
-          { src: "/assets/partners/hp.webp", alt: "HP" },
+          { src: "/assets/partners/hp.svg", alt: "HP" },
           { src: "/assets/partners/dell.webp", alt: "Dell" },
           { src: "/assets/partners/zebra.webp", alt: "Zebra" },
           { src: "/assets/partners/bixolon.webp", alt: "Bixolon" },

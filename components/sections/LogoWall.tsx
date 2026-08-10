@@ -67,7 +67,7 @@ export function LogoWall() {
           gap={72}
           speed={44}
           speedOnHover={14}
-          aria-label={`A selection of our ${CLIENTS.length} clients`}
+          aria-label="A selection of our 1,750+ clients"
         >
           {/* NOT lazy, deliberately. The strip is an overflow:hidden box whose content is
               moved by a transform, so all but the first few marks sit outside the clip at
@@ -90,8 +90,11 @@ export function LogoWall() {
 
       <div className="swh-proof__inner">
         <Reveal delay={0.12} style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+          {/* 1,750+ is the roster; CLIENTS.length is only how many logos we have clearance
+              to publish. The button now names the roster so it matches the band above it,
+              the /customers lede and StatsBand rather than contradicting all three. */}
           <PillButton variant="secondary" arrow href="/customers">
-            See all {CLIENTS.length} clients
+            See all 1,750+ clients
           </PillButton>
         </Reveal>
       </div>

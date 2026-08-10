@@ -387,9 +387,14 @@ export const PAGES: Record<PageSlug, PageContent> = {
   customers: {
     title: "Our Clients",
     eyebrow: "Customers",
-    lede: `${CLIENTS.length} jewellery and enterprise businesses running on our systems across ${SITE.regions.join(", ")}.`,
+    /* The lede states the ROSTER, the page below it lists the PUBLISHED SAMPLE, and those
+       are two different numbers on purpose — CLIENTS.length is how many logos we have
+       clearance to show, not how many businesses run on the systems. The directory's own
+       "See all N clients" still reports CLIENTS.length, so nothing on the page claims the
+       sample is the whole. Same split the home page's proof band already makes. */
+    lede: `1,750+ jewellery and enterprise businesses running on our systems across ${SITE.regions.join(", ")}.`,
     image: IMG.customers,
-    metaDescription: `The ${CLIENTS.length} jewellery retailers, manufacturers, wholesalers and enterprises running on Software House Solutions systems. Search and filter by sector, business type and region.`,
+    metaDescription: `1,750+ jewellery retailers, manufacturers, wholesalers and enterprises run on Software House Solutions systems. Search and filter our published client roster by sector, business type and region.`,
     blocks: [],
   },
 

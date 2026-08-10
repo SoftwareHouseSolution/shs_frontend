@@ -198,8 +198,19 @@ await m.waitForTimeout(2500);
 rec("mobile: no horizontal scroll",
   await m.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1),
   await m.evaluate(() => `${document.documentElement.scrollWidth} vs ${window.innerWidth}`));
-rec("mobile: rail hidden",
-  await m.locator(".swh-rail").evaluate((el) => getComputedStyle(el).display === "none"));
+/* The rail SHOWS on mobile now. It used to be display:none, from when it sat on the left
+   edge; the assertion is inverted rather than deleted because the thing that can silently
+   regress is not its presence but its rest position — hover cannot pull it in on a touch
+   screen, so if the translateX(0) override is ever lost the toggle goes back to sitting
+   partly off the edge with no gesture that can retrieve it. */
+rec("mobile: rail visible",
+  await m.locator(".swh-rail").evaluate((el) => getComputedStyle(el).display !== "none"));
+rec("mobile: rail rests fully in view (no hover to pull it in)",
+  await m.locator(".swh-rail").evaluate((el) => {
+    const m41 = new DOMMatrix(getComputedStyle(el).transform).m41;
+    return Math.abs(m41) < 1 && el.getBoundingClientRect().right <= window.innerWidth + 1;
+  }),
+  await m.locator(".swh-rail").evaluate((el) => `transform=${getComputedStyle(el).transform} right=${Math.round(el.getBoundingClientRect().right)}`));
 await m.evaluate(() => document.querySelector(".swh-figures").scrollIntoView());
 await m.waitForTimeout(1500);
 await m.screenshot({ path: `${OUT}/v-mobile-figures.png` });

@@ -409,9 +409,17 @@
   .swh-nav__cluster .swh-cta {
     display: none;
   }
+  /* The auto margin has to move to the CLUSTER here. On desktop it lives on
+     .swh-nav__list, which is what pushes the list and the cluster after it to the right
+     edge — but the list is display:none below this breakpoint, and an auto margin on a
+     removed box pushes nothing. It cannot stay on .swh-burger either: .swh-nav__cluster is
+     flex:none, so it is shrink-to-fit and has no free space inside for an auto margin to
+     absorb. The burger ended up parked mid-bar with ~130px of empty rail to its right. */
+  .swh-nav__cluster {
+    margin-left: auto;
+  }
   .swh-burger {
     display: inline-flex;
-    margin-left: auto;
   }
 }
 @media (min-width: 1024px) and (max-width: 1199px) {
@@ -772,13 +780,17 @@
    already a containing block, and relative here would drop it out of its corner. */
 .hero-carousel__toggle,
 .swh-wa,
-.swh-burger {
+.swh-burger,
+.swh-rail__toggle,
+.swh-rail__link {
   position: relative;
 }
 .hero-carousel__toggle::after,
 .swh-wa::after,
 .swh-drawer__close::after,
-.swh-burger::after {
+.swh-burger::after,
+.swh-rail__toggle::after,
+.swh-rail__link::after {
   content: "";
   position: absolute;
   top: 50%;
@@ -1054,17 +1066,33 @@
     grid-template-columns: 1fr;
     gap: 28px;
   }
+  /* overflow-y: hidden is REQUIRED, not tidiness. When one axis is set to a non-visible
+     value and the other is left `visible`, the visible one computes to `auto` — so
+     overflow-x alone silently made this strip scrollable VERTICALLY as well, and the tabs
+     overflow their box by about a pixel, which is all it takes. The result was a year strip
+     you could drag up and down. Same footgun as rule 3 in this file's header.
+
+     Snapping is proximity, not mandatory: the strip is a set of years to browse past, and
+     mandatory snap would fight a flick that is meant to travel several tabs. */
   .swh-events__rail ol {
     flex-direction: row;
     overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
     gap: 0;
+  }
+  .swh-events__tab {
+    scroll-snap-align: start;
   }
   /* On narrow screens the rail becomes a horizontal strip of years — the panel below it
      is still the vertical scroller, so the timeline direction is unchanged. */
   .swh-events__tab {
     width: auto;
     flex: none;
-    padding: 10px 16px 0;
+    /* 2px of bottom slack, not 0: the year and title line-boxes round up to about a pixel
+       past the strip's height, and with overflow-y now hidden that pixel would be clipped
+       off the title's descenders instead of merely adding a scrollbar. */
+    padding: 10px 16px 2px;
     border-left: 0;
     border-top: 2px solid var(--hairline);
   }
@@ -1689,6 +1717,9 @@
    horizontally scrollable row rather than a truncated one. */
 .swh-slider[data-reduced="true"] {
   overflow-x: auto;
+  /* Explicit for the same reason as the events rail: overflow-x alone computes overflow-y
+     to auto, which hands a horizontal strip a vertical scroll it was never meant to have. */
+  overflow-y: hidden;
   scrollbar-width: thin;
 }
 
@@ -1995,11 +2026,18 @@
   box-shadow: var(--focus-ring);
 }
 
-/* Below 900px the left edge belongs to the thumb and to the browser's back gesture. The
-   same three links are already in the footer. */
+/* The rail used to be display:none below 900px. That rule dated from when it sat on the
+   LEFT edge, where it collided with the browser's back-gesture strip; it has since moved to
+   the right and the reason went with it.
+
+   What does NOT survive the move to a phone is the reveal. The rest position is 30% past
+   the edge and hover pulls it in — and there is no hover on a touch screen, so the toggle
+   would sit permanently clipped with about 7px of itself off-screen. On coarse pointers it
+   therefore rests fully in view and the tap goes straight to opening the profiles, which is
+   the gesture a phone actually has. Everything else is unchanged from desktop. */
 @media (max-width: 899px) {
   .swh-rail {
-    display: none;
+    transform: translateX(0);
   }
 }
 

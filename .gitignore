@@ -1,5 +1,8 @@
 node_modules/
 .next/
+# `pnpm build:static` — the ~23MB upload bundle for Bluehost. A build artifact, and one
+# that goes stale the moment content changes; regenerate it rather than committing it.
+out/
 next-env.d.ts
 tsconfig.tsbuildinfo
 tools/out/

@@ -16,7 +16,7 @@ export type Region =
   | "Upper Egypt"
   | "Sinai & Red Sea"
   | "International"
-  | "Other";
+  | "Egypt (nationwide)";
 
 export type Client = {
   slug: string;
@@ -68,7 +68,7 @@ export const CLIENTS: readonly Client[] = [
   { slug: "albo-group", name: "Albo Group", location: "Cairo", region: "Greater Cairo", types: [], sector: "enterprise", logo: "/assets/clients/albo-group.webp" },
   { slug: "alesraa-jewelry", name: "Alesraa Jewelry", location: "Dokki/ Sheikh Zayed", region: "Giza", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/alesraa-jewelry.webp" },
   { slug: "amadura-jewelry", name: "Amadura Jewelry", location: "Korba/Nasr City", region: "Greater Cairo", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/amadura-jewelry.webp" },
-  { slug: "amelie-fine-jewelry", name: "Amelie Fine Jewelry", location: "Online", region: "Other", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/amelie-fine-jewelry.webp" },
+  { slug: "amelie-fine-jewelry", name: "Amelie Fine Jewelry", location: "Online", region: "Egypt (nationwide)", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/amelie-fine-jewelry.webp" },
   { slug: "ammar-jewelry", name: "Ammar Jewelry", location: "Mansoura", region: "Delta & Canal", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/ammar-jewelry.webp" },
   { slug: "amr-el-maghrabi-jewellery", name: "Amr El Maghrabi Jewellery", location: "New Cairo", region: "Greater Cairo", types: ["Wholesale"], sector: "jewellery", logo: "/assets/clients/amr-el-maghrabi-jewellery.webp" },
   { slug: "amr-el-sergany", name: "Amr El sergany", location: "almaza", region: "Greater Cairo", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/amr-el-sergany.webp" },
@@ -132,7 +132,7 @@ export const CLIENTS: readonly Client[] = [
   { slug: "el-fady-gold-shoubra-new-cairo-rehab", name: "El Fady Gold Shoubra/ New Cairo/ Rehab/", location: "Madinity", region: "Greater Cairo", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/el-fady-gold-shoubra-new-cairo-rehab.webp" },
   { slug: "el-fady-jewellery", name: "El Fady Jewellery", location: "Sagha", region: "Greater Cairo", types: ["Wholesale"], sector: "jewellery", logo: "/assets/clients/el-fady-jewellery.webp" },
   { slug: "el-fareed-gold", name: "El Fareed Gold", location: "Agami-Alexandria", region: "Alexandria", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/el-fareed-gold.webp" },
-  { slug: "el-fath-jewelry", name: "El Fath Jewelry", location: "Egypt", region: "Other", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/el-fath-jewelry.webp" },
+  { slug: "el-fath-jewelry", name: "El Fath Jewelry", location: "Egypt", region: "Egypt (nationwide)", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/el-fath-jewelry.webp" },
   { slug: "el-fath-tarek-omar", name: "El Fath Tarek Omar", location: "El-Bihira", region: "Delta & Canal", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/el-fath-tarek-omar.webp" },
   { slug: "el-forsan-jewelry", name: "El Forsan Jewelry", location: "Mataraya", region: "Greater Cairo", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/el-forsan-jewelry.webp" },
   { slug: "el-galla-jewellery", name: "El GALLA Jewellery", location: "Cairo - Sagha", region: "Greater Cairo", types: ["Wholesale"], sector: "jewellery", logo: "/assets/clients/el-galla-jewellery.webp" },
@@ -160,7 +160,7 @@ export const CLIENTS: readonly Client[] = [
   { slug: "el-masa-jewellery", name: "El-Masa Jewellery", location: "Shoubra & El-Marg & October", region: "Giza", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/el-masa-jewellery.webp" },
   { slug: "el-waady-jewelry", name: "El-Waady Jewelry", location: "Emraties", region: "International", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/el-waady-jewelry.webp" },
   { slug: "elaseel-jewelery", name: "Elaseel Jewelery", location: "Mokatam", region: "Greater Cairo", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/elaseel-jewelery.webp" },
-  { slug: "elbaily-gold-gold", name: "ElBaily Gold", location: "", region: "Other", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/elbaily-gold-gold.webp" },
+  { slug: "elbaily-gold-gold", name: "ElBaily Gold", location: "Egypt", region: "Egypt (nationwide)", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/elbaily-gold-gold.webp" },
   { slug: "elegant-gold", name: "Elegant Gold", location: "Damettia", region: "Delta & Canal", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/elegant-gold.webp" },
   { slug: "eleve-jewellery", name: "Eleve Jewellery", location: "New Cairo", region: "Greater Cairo", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/eleve-jewellery.webp" },
   { slug: "elish-jewelry", name: "Elish Jewelry", location: "Midan el-gamea", region: "Greater Cairo", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/elish-jewelry.webp" },
@@ -310,14 +310,14 @@ export const CLIENTS: readonly Client[] = [
   { slug: "naser-el-bendaq", name: "Naser EL- Bendaq", location: "Alexandria", region: "Alexandria", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/naser-el-bendaq.webp" },
   { slug: "nassar-jewelry", name: "Nassar Jewelry", location: "El manial", region: "Greater Cairo", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/nassar-jewelry.webp" },
   { slug: "nassar-jewelry-2", name: "Nassar Jewelry", location: "Cairo", region: "Greater Cairo", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/nassar-jewelry-2.webp" },
-  { slug: "nasser-jewelry", name: "Nasser Jewelry", location: "", region: "Other", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/nasser-jewelry.webp" },
+  { slug: "nasser-jewelry", name: "Nasser Jewelry", location: "Egypt", region: "Egypt (nationwide)", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/nasser-jewelry.webp" },
   { slug: "nazmy-heiba", name: "Nazmy Heiba", location: "Hadayak el ahram", region: "Giza", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/nazmy-heiba.webp" },
   { slug: "neama-gold", name: "Neama Gold", location: "Zahra el maddi", region: "Greater Cairo", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/neama-gold.webp" },
   { slug: "negm-el-deen-jewelery", name: "Negm el deen Jewelery", location: "Cairo", region: "Greater Cairo", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/negm-el-deen-jewelery.webp" },
   { slug: "negmet-el-zatoun", name: "Negmet EL- Zatoun", location: "Cairo", region: "Greater Cairo", types: [], sector: "enterprise", logo: "/assets/clients/negmet-el-zatoun.webp" },
   { slug: "new-classic-jewellery", name: "New Classic Jewellery", location: "Heliopolis", region: "Greater Cairo", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/new-classic-jewellery.webp" },
   { slug: "new-gold-jewellery", name: "New Gold Jewellery", location: "Dokki", region: "Giza", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/new-gold-jewellery.webp" },
-  { slug: "nour-el-eslam-jewelry", name: "Nour El Eslam Jewelry", location: "Egypt", region: "Other", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/nour-el-eslam-jewelry.webp" },
+  { slug: "nour-el-eslam-jewelry", name: "Nour El Eslam Jewelry", location: "Egypt", region: "Egypt (nationwide)", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/nour-el-eslam-jewelry.webp" },
   { slug: "nour-elaslam-jewelry", name: "Nour Elaslam Jewelry", location: "El obour", region: "Greater Cairo", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/nour-elaslam-jewelry.webp" },
   { slug: "noura-jewellery", name: "Noura Jewellery", location: "Qalybia", region: "Delta & Canal", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/noura-jewellery.webp" },
   { slug: "novella-jewelry", name: "Novella Jewelry", location: "Mar.V Mall | New Cairo", region: "Greater Cairo", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/novella-jewelry.webp" },
@@ -398,5 +398,5 @@ export const CLIENTS: readonly Client[] = [
   { slug: "ziad-jewellry", name: "Ziad Jewellry", location: "Nasr City", region: "Greater Cairo", types: ["Retail"], sector: "jewellery", logo: "/assets/clients/ziad-jewellry.webp" },
 ];
 
-export const REGIONS: readonly Region[] = ["Greater Cairo", "Giza", "Alexandria", "Delta & Canal", "Upper Egypt", "Sinai & Red Sea", "International", "Other"];
+export const REGIONS: readonly Region[] = ["Greater Cairo", "Giza", "Alexandria", "Delta & Canal", "Upper Egypt", "Sinai & Red Sea", "International", "Egypt (nationwide)"];
 export const BUSINESS_TYPES: readonly BusinessType[] = ["Manufacturing", "Wholesale", "Retail"];

@@ -1540,8 +1540,19 @@
 }
 
 @media (max-width: 799px) {
+  /* Roughly half the screen, not 62vh.
+     At 62vh the map filled the phone on its own: you scrolled it into view and the search
+     field, the region chips and the results heading were all still below the fold, so the
+     map read as the whole page and the thing it filters was invisible. Half a viewport
+     leaves the other half for the bar and the first row of cards, which is what makes the
+     pills legible as a FILTER rather than as decoration. The margins under it are tightened
+     to the same end. Still comfortably above the 267px the pin spread needs at zoom 6, so
+     fitZoom is unaffected — see check-customers.mjs. */
   .swh-map__frame {
-    height: clamp(320px, 62vh, 460px);
+    height: clamp(300px, 46vh, 420px);
+  }
+  .swh-map {
+    margin-bottom: 24px;
   }
   /* Desktop-sized pills on a phone cover the country they sit on. Shrunk hard here, which
      also buys back a zoom level via the proportional padding in regionGeo.ts. The name
@@ -1571,10 +1582,15 @@
     font-size: 9px;
   }
   .swh-map__bar {
-    gap: 18px 24px;
+    gap: 14px 24px;
+    margin-top: 16px;
   }
   .swh-map__search .swh-filters__search {
     width: 100%;
+  }
+  .swh-map__result {
+    padding-bottom: 14px;
+    margin-bottom: 22px;
   }
 }
 

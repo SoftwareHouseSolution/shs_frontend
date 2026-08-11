@@ -63,8 +63,16 @@ REGION_RULES = [
                        "gamea", "gama", "kom")),
 ]
 
+# The fallback bucket is a PLACE, not "Other". Five rows in the PDF give no city — two are
+# blank, two say "Egypt", one says "Online" — and a chip reading "Other" tells a visitor
+# nothing about where those clients are. "Egypt (nationwide)" says the true thing: Egyptian
+# clients whose governorate the source does not record. Blank locations are emitted as
+# "Egypt" for the same reason, so the card does not render a missing line.
+FALLBACK_REGION = "Egypt (nationwide)"
+FALLBACK_LOCATION = "Egypt"
+
 REGION_ORDER = ["Greater Cairo", "Giza", "Alexandria", "Delta & Canal",
-                "Upper Egypt", "Sinai & Red Sea", "International", "Other"]
+                "Upper Egypt", "Sinai & Red Sea", "International", FALLBACK_REGION]
 
 
 def region_of(loc):
@@ -72,7 +80,7 @@ def region_of(loc):
     for name, keys in REGION_RULES:
         if any(k in s for k in keys):
             return name
-    return "Other"
+    return FALLBACK_REGION
 
 
 def col_lines(page, ymin):
@@ -358,7 +366,7 @@ export type Region =
   | "Upper Egypt"
   | "Sinai & Red Sea"
   | "International"
-  | "Other";
+  | "Egypt (nationwide)";
 
 export type Client = {
   slug: string;
@@ -405,7 +413,7 @@ def main():
         # line ("Wholesale Diamond"), not a business type — it must not become a facet.
         types = sorted({"Wholesale" if t == "Wholesalel" else t for t in types} - {"Diamond"})
         clients.append({"slug": slug, "name": dedupe_words(r["name"]),
-                        "location": " ".join(r["location"].split()),
+                        "location": " ".join(r["location"].split()) or FALLBACK_LOCATION,
                         "region": region_of(r["location"]), "types": types,
                         "sector": r["sector"], "logo": f"/assets/clients/{slug}.webp"})
     clients.sort(key=lambda c: c["name"].lower())

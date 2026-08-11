@@ -64,8 +64,10 @@ export function offsetFromCentre(point: LatLng, zoom: number) {
    price pills do. CSS raises the hovered and selected pill above its neighbours so any
    pill can always be read and clicked.
 
-   "International" and "Other" have no place on a map of Egypt and are deliberately absent;
-   ClientMap renders them as chips beneath it instead of inventing coordinates. */
+   "International" and "Egypt (nationwide)" have no place on a map of Egypt and are
+   deliberately absent — the second one is the bucket for clients whose governorate the
+   source does not record, so there is no honest point to put it. ClientMap renders both as
+   chips beneath the map instead of inventing coordinates. */
 export const REGION_ANCHORS: Record<string, LatLng> = {
   "Greater Cairo": { lat: 30.05, lng: 31.25 },
   Giza: { lat: 29.15, lng: 30.35 },

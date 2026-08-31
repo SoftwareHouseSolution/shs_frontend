@@ -2327,6 +2327,370 @@
   }
 }
 
+/* ── Customer video modal ───────────────────────────────────────────────────────── */
+/* Sizing note — read before touching .swh-vmodal__panel.
+
+   The panel is sized by WIDTH ALONE, with aspect-ratio supplying the height. The height
+   limit is folded into the same min() by converting the available height into the width
+   that would produce it: `calc((100svh - pad*2) * 16 / 9)`.
+
+   The obvious alternative — let the panel shrink-wrap the <video> and cap the video with
+   max-width/max-height — was written first and is WRONG. A replaced element's max-content
+   contribution is its intrinsic width (2560px), and a percentage max-width cannot resolve
+   while the shrink-to-fit parent is still being measured, so the panel took the full
+   stage width and the video sat 1080px wide inside a 1386px black box. Measured, not
+   assumed. Do not reintroduce it.
+
+   Setting BOTH a definite width and max-height would be equally wrong: aspect-ratio only
+   recomputes the other axis when that axis is `auto`, so a clamped max-height would
+   silently letterbox instead of shrinking the box.
+
+   No 100vw anywhere (rule 2). Widths come from % of the stage, which is inset:0 and so
+   definite; heights from svh, which has no scrollbar to include. */
+
+.swh-vmodal {
+  --vm-pad: clamp(14px, 3vmin, 40px);
+  --vm-enter: 0.52s cubic-bezier(0.16, 1, 0.3, 1);
+  --vm-exit: 0.26s cubic-bezier(0.4, 0, 1, 1);
+  position: fixed;
+  inset: 0;
+  /* Above the navbar — a modal that a fixed header could sit on top of is not modal. */
+  z-index: calc(var(--nav-z) + 20);
+  overflow: hidden;
+}
+
+.swh-vmodal__scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 12, 15, 0.62);
+  backdrop-filter: blur(6px) saturate(0.9);
+  opacity: 0;
+  transition: opacity var(--vm-exit);
+}
+.swh-vmodal[data-open="true"] .swh-vmodal__scrim {
+  opacity: 1;
+  transition: opacity var(--vm-enter);
+}
+
+.swh-vmodal__stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--vm-pad);
+  pointer-events: none; /* the scrim underneath stays clickable around the panel */
+}
+
+.swh-vmodal__panel {
+  position: relative;
+  /* --vm-avail-h is the stage's content height expressed once, so both orientations
+     below read the same number. */
+  --vm-avail-h: calc(100svh - var(--vm-pad) * 2);
+  aspect-ratio: 16 / 9;
+  width: min(1080px, 100%, calc(var(--vm-avail-h) * 16 / 9));
+  border-radius: var(--r-card);
+  overflow: hidden;
+  background: #0b0d10;
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.45),
+    0 2px 10px rgba(0, 0, 0, 0.3);
+  pointer-events: auto;
+  /* Enter: rise + settle. Exit is faster and does not scale — a closing dialog should
+     get out of the way, not perform. */
+  opacity: 0;
+  transform: translateY(16px) scale(0.965);
+  transition:
+    opacity var(--vm-exit),
+    transform var(--vm-exit);
+}
+.swh-vmodal[data-open="true"] .swh-vmodal__panel {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity var(--vm-enter),
+    transform var(--vm-enter);
+}
+
+/* The portrait recut is 1440x2560. No px width cap here — on a phone the viewport is
+   always the tighter constraint, and on a desktop browser narrowed below 768px the height
+   term already keeps it sane. */
+.swh-vmodal__panel[data-orient="portrait"] {
+  aspect-ratio: 9 / 16;
+  width: min(100%, calc(var(--vm-avail-h) * 9 / 16));
+}
+
+/* The panel's ratio is the file's ratio exactly (16:9 and 9:16), so `cover` crops nothing
+   and, unlike `contain`, cannot leave a sub-pixel letterbox seam against the black. */
+.swh-vmodal__video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  cursor: pointer;
+}
+
+/* ── Buffering ──────────────────────────────────────────────────────────────────── */
+
+.swh-vmodal__spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  margin: -22px 0 0 -22px;
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: swh-vmodal-spin 0.85s linear infinite;
+}
+@keyframes swh-vmodal-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Overlaid controls ──────────────────────────────────────────────────────────── */
+
+.swh-vmodal__big-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 76px;
+  height: 76px;
+  margin: -38px 0 0 -38px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--ink);
+  cursor: pointer;
+  animation: swh-vmodal-pop 0.36s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transition:
+    transform 0.22s ease,
+    background 0.22s ease;
+}
+.swh-vmodal__big-play:hover {
+  transform: scale(1.06);
+  background: #fff;
+}
+.swh-vmodal__big-play svg {
+  width: 34px;
+  height: 34px;
+  margin-left: 3px; /* optical centring of the triangle */
+}
+@keyframes swh-vmodal-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+}
+
+.swh-vmodal__sound-nudge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px 9px 12px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: rgba(12, 14, 18, 0.62);
+  backdrop-filter: blur(10px);
+  color: #fff;
+  font: var(--nav-link);
+  letter-spacing: -0.35px;
+  cursor: pointer;
+  animation: swh-vmodal-nudge 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both;
+  transition: background 0.22s ease;
+}
+.swh-vmodal__sound-nudge:hover {
+  background: var(--accent);
+}
+.swh-vmodal__sound-nudge svg {
+  width: 17px;
+  height: 17px;
+}
+@keyframes swh-vmodal-nudge {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+}
+
+.swh-vmodal__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(12, 14, 18, 0.55);
+  backdrop-filter: blur(10px);
+  color: #fff;
+  cursor: pointer;
+  transition:
+    background 0.22s ease,
+    transform 0.22s ease;
+}
+.swh-vmodal__close:hover {
+  background: rgba(12, 14, 18, 0.85);
+  transform: rotate(90deg);
+}
+.swh-vmodal__close svg {
+  width: 19px;
+  height: 19px;
+}
+
+/* ── Transport bar ──────────────────────────────────────────────────────────────── */
+
+.swh-vmodal__bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 42px 18px 16px;
+  background: linear-gradient(to top, rgba(6, 8, 11, 0.82), rgba(6, 8, 11, 0));
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+}
+.swh-vmodal__panel[data-ui="true"] .swh-vmodal__bar {
+  opacity: 1;
+  transform: none;
+}
+/* Hidden controls must not stay in the tab order, or Tab lands on an invisible button. */
+.swh-vmodal__panel[data-ui="false"] .swh-vmodal__bar {
+  visibility: hidden;
+}
+
+.swh-vmodal__btn {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+.swh-vmodal__btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+.swh-vmodal__btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.swh-vmodal__time {
+  flex: none;
+  color: rgba(255, 255, 255, 0.92);
+  font-family: var(--f-mono, var(--f-sans));
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.2px;
+}
+.swh-vmodal__time i {
+  color: rgba(255, 255, 255, 0.45);
+  font-style: normal;
+}
+
+/* A real <input type="range"> rather than a div: it brings arrow-key seeking, Home/End
+   and a screen-reader value for free. --vm-pct is written by the component. */
+.swh-vmodal__seek {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.swh-vmodal__seek::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(
+    to right,
+    #fff 0,
+    #fff var(--vm-pct, 0%),
+    rgba(255, 255, 255, 0.28) var(--vm-pct, 0%)
+  );
+}
+.swh-vmodal__seek::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.28);
+}
+.swh-vmodal__seek::-moz-range-progress {
+  height: 4px;
+  border-radius: 2px;
+  background: #fff;
+}
+.swh-vmodal__seek::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  margin-top: -4px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  transform: scale(0.75);
+  transition: transform 0.18s ease;
+}
+.swh-vmodal__seek:hover::-webkit-slider-thumb,
+.swh-vmodal__seek:focus-visible::-webkit-slider-thumb {
+  transform: scale(1);
+}
+.swh-vmodal__seek::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+}
+
+/* Same dark-halo ring the hero uses — the panel is always a dark surface. */
+.swh-vmodal button:focus-visible,
+.swh-vmodal input:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-over);
+}
+
+@media (max-width: 599px) {
+  .swh-vmodal__bar {
+    gap: 8px;
+    padding: 38px 12px 12px;
+  }
+  .swh-vmodal__time {
+    font-size: 11px;
+  }
+  .swh-vmodal__big-play {
+    width: 64px;
+    height: 64px;
+    margin: -32px 0 0 -32px;
+  }
+  .swh-vmodal__big-play svg {
+    width: 28px;
+    height: 28px;
+  }
+}
+
 /* ── Reduced motion ─────────────────────────────────────────────────────────────── */
 /* Suppresses AUTOMATIC motion only. Dots, arrows and the pause control keep working —
    reduced motion removes involuntary movement, not user control. */
@@ -2374,6 +2738,24 @@
   /* The figures are content, not an effect. With the entrance suppressed they must be
      visible outright rather than left at opacity 0 waiting for a transition that will
      never be perceived. */
+  /* Specificity matters here exactly as it does for .hero-slide__img above: the enter
+     transition is declared on .swh-vmodal[data-open="true"] .swh-vmodal__panel (0,2,1), so
+     the bare class would lose and the panel would still glide in. */
+  .swh-vmodal[data-open="true"] .swh-vmodal__panel,
+  .swh-vmodal[data-open="true"] .swh-vmodal__scrim,
+  .swh-vmodal__panel,
+  .swh-vmodal__scrim,
+  .swh-vmodal__bar {
+    transition-duration: 0.01ms;
+  }
+  /* The spinner keeps turning — it reports state, and a frozen ring reads as a hang. */
+  .swh-vmodal__big-play,
+  .swh-vmodal__sound-nudge {
+    animation: none;
+  }
+  .swh-vmodal__close:hover {
+    transform: none;
+  }
   .swh-figures__item {
     opacity: 1;
     translate: none;

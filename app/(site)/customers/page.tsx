@@ -12,6 +12,7 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/hero/PageHeader";
 import { ClientMap } from "@/components/clients/ClientMap";
+import { CustomerVideoModal } from "@/components/clients/CustomerVideoModal";
 import { CLIENTS } from "@/content/clients";
 import { PAGES } from "@/content/pages";
 
@@ -36,6 +37,9 @@ export default function CustomersPage() {
           with a map of where the clients actually are; that file is kept on disk for
           reference and is no longer imported anywhere. */}
       <ClientMap clients={CLIENTS} />
+      {/* Client component, and the only one that renders on top of the page. It returns
+          null until it opens, so it costs nothing on the server render. */}
+      <CustomerVideoModal />
     </>
   );
 }

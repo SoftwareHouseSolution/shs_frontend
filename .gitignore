@@ -11,3 +11,8 @@ tools/out/
 .DS_Store
 Thumbs.db
 __pycache__/
+
+# Camera masters for the customers-page video (121MB + 118MB). Kept on disk so the web
+# encodes in public/assets/video/ can be regenerated, never committed: GitHub rejects any
+# blob over 100MB, and public/ is copied verbatim into the Bluehost upload bundle.
+video-masters/

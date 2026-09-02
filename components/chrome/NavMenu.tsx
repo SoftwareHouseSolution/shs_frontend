@@ -13,11 +13,13 @@
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import type { NavGroup } from "@/content/nav";
+import { href as localeHref, type Locale } from "@/content/i18n";
 
 const CLOSE_GRACE_MS = 120;
 
 type Props = {
   group: NavGroup;
+  lang: Locale;
   id: string;
   open: boolean;
   pathname: string;
@@ -28,7 +30,7 @@ type Props = {
   onStep: (id: string, dir: -1 | 1) => void;
 };
 
-export function NavMenu({ group, id, open, pathname, onOpen, onClose, onStep }: Props) {
+export function NavMenu({ group, lang, id, open, pathname, onOpen, onClose, onStep }: Props) {
   const itemRef = useRef<HTMLLIElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -145,7 +147,7 @@ export function NavMenu({ group, id, open, pathname, onOpen, onClose, onStep }: 
         onClick={() => (open ? onClose() : onOpen(id))}
         onKeyDown={onTriggerKeyDown}
       >
-        {group.label}
+        {group.label[lang]}
         <svg className="swh-nav__chev" viewBox="0 0 10 10" aria-hidden="true" focusable="false">
           <path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.6" />
         </svg>
@@ -162,13 +164,13 @@ export function NavMenu({ group, id, open, pathname, onOpen, onClose, onStep }: 
           {group.children.map((c) => (
             <li key={c.href}>
               <Link
-                href={c.href}
-                aria-current={pathname === c.href ? "page" : undefined}
+                href={localeHref(lang, c.href)}
+                aria-current={pathname === localeHref(lang, c.href) ? "page" : undefined}
                 /* Arrow, not a bare `onClose`: the handler would pass the MouseEvent as
                    the id, and the guard in SiteNav would then never match. */
                 onClick={() => onClose()}
               >
-                {c.label}
+                {c.label[lang]}
               </Link>
             </li>
           ))}

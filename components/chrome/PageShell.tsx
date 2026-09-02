@@ -19,8 +19,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Footer } from "@/components/sections/Footer";
+import type { Locale } from "@/content/i18n";
 
-export function PageShell({ children }: { children: React.ReactNode }) {
+export function PageShell({ children, lang }: { children: React.ReactNode; lang: Locale }) {
   const footerRef = useRef<HTMLDivElement>(null);
   const [footerH, setFooterH] = useState(0);
 
@@ -43,7 +44,7 @@ export function PageShell({ children }: { children: React.ReactNode }) {
       </div>
       <div aria-hidden="true" style={{ height: footerH }} />
       <div className="sticky-footer" ref={footerRef}>
-        <Footer />
+        <Footer lang={lang} />
       </div>
     </>
   );

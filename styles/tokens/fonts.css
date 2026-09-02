@@ -5,7 +5,19 @@
    PORT NOTE: this is the ONLY design-system file whose content differs from the original. The five
    src url()s were changed from "../assets/fonts/…" to "/assets/fonts/…" so they resolve against
    Next's public root instead of styles/assets/. Nothing else — family, weight, style, display —
-   was touched. Every other token file and styles.css is byte-identical to the design system. */
+   was touched. Every other token file and styles.css is byte-identical to the design system.
+
+   ARABIC. Cairo is appended below, added when the site went bilingual. None of the five faces
+   above carry a single Arabic glyph — Crimson Text least of all — so without it an Arabic page
+   falls back to whatever the operating system happens to have and loses its typographic voice
+   mid-page. app/rtl.css re-points --f-serif and --f-sans at Cairo under [dir="rtl"], so nothing
+   here changes what an English page loads.
+
+   Self-hosted, matching the five above rather than linking Google's CDN: this app ships as a
+   static export to shared hosting, and a webfont fetched from a third party is one more thing
+   that can be slow, blocked or offline on a page the host otherwise serves entirely itself.
+   Two files, split on the same unicode-range boundary Google uses — a visitor reading English
+   never downloads the Arabic subset, and vice versa. */
 
 @font-face{
   font-family:"Crimson Text";
@@ -31,4 +43,23 @@
   font-family:"Rethink Sans";
   src:url("/assets/fonts/RethinkSans-Variable.woff2") format("woff2");
   font-weight:400 800;font-style:normal;font-display:swap;
+}
+
+/* Cairo — Arabic UI/display. Variable, 400-700. */
+@font-face{
+  font-family:"Cairo";
+  src:url("/assets/fonts/Cairo-Arabic.woff2") format("woff2");
+  font-weight:400 700;font-style:normal;font-display:swap;
+  /* Arabic, Arabic Supplement/Extended, presentation forms, and the joiners. Lifted from
+     Google's own subsetting so the split matches the file that was downloaded. */
+  unicode-range:U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC;
+}
+@font-face{
+  font-family:"Cairo";
+  src:url("/assets/fonts/Cairo-Latin.woff2") format("woff2");
+  font-weight:400 700;font-style:normal;font-display:swap;
+  /* The Latin runs inside Arabic copy — "ERP", "POS", "Software House Solutions", every
+     figure — so that they are set in the same family rather than dropping to a fallback
+     halfway through a sentence. */
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
 }

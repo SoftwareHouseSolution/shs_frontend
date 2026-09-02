@@ -2,7 +2,12 @@
    node tools/check-nav.mjs   (override with PORT_URL) */
 import { chromium } from "playwright";
 
-const URL = process.env.PORT_URL ?? "http://localhost:3001/";
+/* SITE_LANG picks which language build to check. Every route is under /en or /ar now, and
+   the bare "/" is only a redirect stub — pointing a headless browser at it lands on the
+   gate, not on a page. Default "en" so an unset environment behaves as this script always
+   did. Run it with SITE_LANG=ar to check the Arabic build. */
+const LANG = process.env.SITE_LANG ?? "en";
+const URL = (process.env.PORT_URL ?? "http://localhost:3001/").replace(/\/$/, "") + `/${LANG}`;
 const results = [];
 const rec = (name, pass, detail) => {
   results.push({ name, pass, detail });
@@ -86,23 +91,35 @@ const browser = await chromium.launch();
   rec("no role=menu / menuitem used",
     (await p.locator('.swh-nav [role="menu"], .swh-nav [role="menuitem"]').count()) === 0);
 
+  /* Nav hrefs carry the locale prefix now, so the expected values are built rather than
+     written out — running this with SITE_LANG=ar checks the Arabic menu with no further
+     edits. Next also normalises Link hrefs to a trailing slash, so both forms are
+     accepted; which one appears is a router detail, not something this test is about. */
+  const leaf = (slug) => `/${LANG}/${slug}`;
+  const isLeaf = async (slug) =>
+    await p.evaluate(
+      (want) => {
+        const h = document.activeElement?.getAttribute("href") ?? "";
+        return h === want || h === want + "/";
+      },
+      leaf(slug),
+    );
+
   // Keyboard: ArrowDown opens and focuses the first item.
   await p.locator("#navtrig-partners").focus();
   await p.keyboard.press("ArrowDown");
   await p.waitForTimeout(200);
   rec("ArrowDown opens and focuses first item",
-    await p.evaluate(() => document.activeElement?.getAttribute("href") === "/technology-partners"),
+    await isLeaf("technology-partners"),
     await p.evaluate(() => document.activeElement?.getAttribute("href")));
 
   await p.keyboard.press("ArrowDown");
   rec("ArrowDown moves to next item",
-    await p.evaluate(() => document.activeElement?.getAttribute("href") === "/business-partners"));
+    await isLeaf("business-partners"));
   await p.keyboard.press("End");
-  rec("End jumps to last item",
-    await p.evaluate(() => document.activeElement?.getAttribute("href") === "/become-a-partner"));
+  rec("End jumps to last item", await isLeaf("become-a-partner"));
   await p.keyboard.press("ArrowDown");
-  rec("ArrowDown wraps to first",
-    await p.evaluate(() => document.activeElement?.getAttribute("href") === "/technology-partners"));
+  rec("ArrowDown wraps to first", await isLeaf("technology-partners"));
   await p.keyboard.press("Escape");
   await p.waitForTimeout(150);
   rec("Escape closes and returns focus to the trigger",
@@ -113,8 +130,7 @@ const browser = await chromium.launch();
   // ArrowUp opens focusing the last item.
   await p.keyboard.press("ArrowUp");
   await p.waitForTimeout(200);
-  rec("ArrowUp opens and focuses last item",
-    await p.evaluate(() => document.activeElement?.getAttribute("href") === "/become-a-partner"));
+  rec("ArrowUp opens and focuses last item", await isLeaf("become-a-partner"));
   await p.keyboard.press("Escape");
 
   // Focus rings must be visible.

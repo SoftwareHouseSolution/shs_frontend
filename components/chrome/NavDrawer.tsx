@@ -11,18 +11,22 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { PillButton } from "@/components/ds/PillButton";
 import { NAV, isGroup } from "@/content/nav";
-import { SITE } from "@/content/site";
+import { demoHrefFor } from "@/content/site";
+import { UI } from "@/content/ui";
+import { href as localeHref, type Locale } from "@/content/i18n";
 import { BadgeSlot } from "./BadgeSlot";
-import { WhatsAppLink } from "./WhatsAppLink";
+import { LanguageToggle } from "./LanguageToggle";
 import { useFocusTrap } from "./useFocusTrap";
 
 type Props = {
   open: boolean;
   onClose: () => void;
   pathname: string;
+  lang: Locale;
 };
 
-export function NavDrawer({ open, onClose, pathname }: Props) {
+export function NavDrawer({ open, onClose, pathname, lang }: Props) {
+  const ui = UI[lang];
   const panelRef = useRef<HTMLDivElement>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
   useFocusTrap(panelRef, open);
@@ -40,12 +44,15 @@ export function NavDrawer({ open, onClose, pathname }: Props) {
     const prevOverflow = body.style.overflow;
     body.style.overflow = "hidden";
     document.documentElement.style.setProperty("--swh-lock-pad", `${scrollbar}px`);
-    body.style.paddingRight = `${scrollbar}px`;
+    /* The scrollbar is on the END side, which is the LEFT in Arabic — padding the right
+       there would leave a gap on one side and let the bar jump on the other. The logical
+       property does the choosing, and app/rtl.css moves the navbar's own offset to match. */
+    body.style.paddingInlineEnd = `${scrollbar}px`;
 
     return () => {
       document.removeEventListener("keydown", onKey);
       body.style.overflow = prevOverflow;
-      body.style.paddingRight = "";
+      body.style.paddingInlineEnd = "";
       document.documentElement.style.setProperty("--swh-lock-pad", "0px");
     };
   }, [open, onClose]);
@@ -58,9 +65,9 @@ export function NavDrawer({ open, onClose, pathname }: Props) {
         className="swh-drawer__panel"
         role="dialog"
         aria-modal="true"
-        aria-label="Site menu"
+        aria-label={ui.siteMenu}
       >
-        <button type="button" className="swh-drawer__close" onClick={onClose} aria-label="Close menu">
+        <button type="button" className="swh-drawer__close" onClick={onClose} aria-label={ui.closeMenu}>
           ×
         </button>
 
@@ -68,19 +75,17 @@ export function NavDrawer({ open, onClose, pathname }: Props) {
           {NAV.map((entry) =>
             isGroup(entry) ? (
               <li
-                key={entry.label}
+                key={entry.id}
                 className="swh-drawer__group"
-                data-open={expanded === entry.label}
+                data-open={expanded === entry.id}
               >
                 <button
                   type="button"
                   className="swh-drawer__trigger"
-                  aria-expanded={expanded === entry.label}
-                  onClick={() =>
-                    setExpanded((cur) => (cur === entry.label ? null : entry.label))
-                  }
+                  aria-expanded={expanded === entry.id}
+                  onClick={() => setExpanded((cur) => (cur === entry.id ? null : entry.id))}
                 >
-                  {entry.label}
+                  {entry.label[lang]}
                   <svg className="swh-nav__chev" viewBox="0 0 10 10" aria-hidden="true" focusable="false">
                     <path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.6" />
                   </svg>
@@ -90,11 +95,11 @@ export function NavDrawer({ open, onClose, pathname }: Props) {
                     {entry.children.map((c) => (
                       <li key={c.href}>
                         <Link
-                          href={c.href}
-                          aria-current={pathname === c.href ? "page" : undefined}
+                          href={localeHref(lang, c.href)}
+                          aria-current={pathname === localeHref(lang, c.href) ? "page" : undefined}
                           onClick={onClose}
                         >
-                          {c.label}
+                          {c.label[lang]}
                         </Link>
                       </li>
                     ))}
@@ -104,11 +109,11 @@ export function NavDrawer({ open, onClose, pathname }: Props) {
             ) : (
               <li key={entry.href} className="swh-drawer__solo">
                 <Link
-                  href={entry.href}
-                  aria-current={pathname === entry.href ? "page" : undefined}
+                  href={localeHref(lang, entry.href)}
+                  aria-current={pathname === localeHref(lang, entry.href) ? "page" : undefined}
                   onClick={onClose}
                 >
-                  {entry.label}
+                  {entry.label[lang]}
                 </Link>
               </li>
             ),
@@ -116,13 +121,17 @@ export function NavDrawer({ open, onClose, pathname }: Props) {
         </ul>
 
         <div className="swh-drawer__foot">
-          <PillButton variant="primary" arrow href={SITE.demoHref} fullWidth>
-            Book a demo
+          <PillButton variant="primary" arrow href={demoHrefFor(lang, pathname)} fullWidth onClick={onClose}>
+            {ui.bookDemo}
           </PillButton>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <WhatsAppLink />
-            <BadgeSlot />
-          </div>
+          <LanguageToggle lang={lang} onNavigate={onClose} />
+          {/* WhatsApp was here too, and was invisible: .swh-wa took its colour from
+              --nav-fg, and the drawer renders INSIDE <header class="swh-nav">, so over the
+              hero that resolved to --paper — a white glyph on the white panel. It is gone
+              rather than recoloured, because the contact rail now carries WhatsApp as a
+              full-size branded button and rests fully in view at this width, so this was a
+              duplicate of a control already on screen behind the drawer. */}
+          <BadgeSlot />
         </div>
       </div>
     </div>

@@ -17,17 +17,21 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BrandLogo } from "@/components/ds/BrandLogo";
 import { PillButton } from "@/components/ds/PillButton";
-import { NAV, isGroup, NAV_H_PX } from "@/content/nav";
-import { SITE } from "@/content/site";
+import { NAV, isGroup, entryId, NAV_H_PX } from "@/content/nav";
+import { SITE, demoHrefFor } from "@/content/site";
+import { UI } from "@/content/ui";
+import { href as localeHref, type Locale } from "@/content/i18n";
 import { BadgeSlot } from "./BadgeSlot";
+import { LanguageToggle } from "./LanguageToggle";
 import { NavDrawer } from "./NavDrawer";
 import { NavMenu } from "./NavMenu";
-import { WhatsAppLink } from "./WhatsAppLink";
 
-const idOf = (label: string) => label.toLowerCase().replace(/[^a-z]+/g, "-");
-
-export function SiteNav() {
+/* `lang` arrives as a prop from the server layout rather than being read off the pathname
+   here. Both would work, but the prop is what the layout already knows for certain, and it
+   means the nav renders in the right language on the server rather than after hydration. */
+export function SiteNav({ lang }: { lang: Locale }) {
   const pathname = usePathname();
+  const ui = UI[lang];
   const [solid, setSolid] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -89,8 +93,8 @@ export function SiteNav() {
     <header className="swh-nav" data-nav-state={solid ? "solid" : "over"}>
       <div className="swh-nav__surface" />
 
-      <nav className="swh-nav__inner" aria-label="Primary">
-        <Link className="swh-nav__brand" href="/" aria-label={`${SITE.name} — home`}>
+      <nav className="swh-nav__inner" aria-label={ui.primaryNavAria}>
+        <Link className="swh-nav__brand" href={localeHref(lang, "/")} aria-label={`${SITE.name} — ${ui.homeAria}`}>
           {/* onAccent is a real BrandLogo prop: over the hero it whitens the mark and sets
               the wordmark to --paper; on the solid bar it swaps to the ink-S variant, which
               is the only version of the mark that survives a light background. No src prop
@@ -102,10 +106,11 @@ export function SiteNav() {
           {NAV.map((entry) =>
             isGroup(entry) ? (
               <NavMenu
-                key={entry.label}
-                id={idOf(entry.label)}
+                key={entry.id}
+                id={entry.id}
                 group={entry}
-                open={openId === idOf(entry.label)}
+                lang={lang}
+                open={openId === entry.id}
                 pathname={pathname}
                 onOpen={open}
                 onClose={close}
@@ -115,14 +120,14 @@ export function SiteNav() {
               <li className="swh-nav__item" key={entry.href}>
                 <Link
                   className="swh-nav__link"
-                  id={`navtrig-${idOf(entry.label)}`}
-                  href={entry.href}
-                  aria-current={pathname === entry.href ? "page" : undefined}
+                  id={`navtrig-${entryId(entry)}`}
+                  href={localeHref(lang, entry.href)}
+                  aria-current={pathname === localeHref(lang, entry.href) ? "page" : undefined}
                   /* Arrow, not a bare `close`: the handler would pass the PointerEvent as
                      the id, and the guard would then never match. */
                   onPointerEnter={() => close()}
                 >
-                  {entry.label}
+                  {entry.label[lang]}
                 </Link>
               </li>
             ),
@@ -130,17 +135,21 @@ export function SiteNav() {
         </ul>
 
         <div className="swh-nav__cluster">
+          {/* WhatsApp used to sit here. It moved to the top of the social rail, where it
+              is a full-size branded button rather than a 38px monochrome glyph competing
+              with the language toggle and the demo CTA for the same corner. See
+              components/chrome/SocialRail.tsx. */}
           <BadgeSlot />
-          <WhatsAppLink />
+          <LanguageToggle lang={lang} />
           <span className="swh-cta">
-            <PillButton variant="primary" arrow href={SITE.demoHref}>
-              Book a demo
+            <PillButton variant="primary" arrow href={demoHrefFor(lang, pathname)}>
+              {ui.bookDemo}
             </PillButton>
           </span>
           <button
             type="button"
             className="swh-burger"
-            aria-label="Open menu"
+            aria-label={ui.openMenu}
             aria-expanded={drawerOpen}
             onClick={() => setDrawerOpen(true)}
           >
@@ -151,7 +160,12 @@ export function SiteNav() {
         </div>
       </nav>
 
-      <NavDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} pathname={pathname} />
+      <NavDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        pathname={pathname}
+        lang={lang}
+      />
     </header>
   );
 }

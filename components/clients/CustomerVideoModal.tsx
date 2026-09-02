@@ -21,18 +21,22 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useFocusTrap } from "@/components/chrome/useFocusTrap";
+import { UI } from "@/content/ui";
+import type { Locale } from "@/content/i18n";
 
 /* false — the popup opens on every visit to /customers.
    true  — it opens only the first time per browser tab (sessionStorage). */
 const OPEN_ONCE_PER_SESSION = false;
 const SESSION_KEY = "swh:customers-video-seen";
 
-/* Web encodes, not the camera masters: 1600x900 and 1080x1920, H.264 CRF 26, +faststart
-   so the first frames play before the file has finished arriving. The 121MB/118MB
-   originals are parked in video-masters/ (gitignored) — GitHub rejects any blob over
-   100MB, and shipping a quarter-gigabyte to a phone to open a popup was never viable
-   regardless. Posters are frame 0 of each, so the panel opens on the image rather than on
-   black. Re-encode from video-masters/ if these ever need regenerating. */
+/* Web encodes, not the camera masters. The ~125MB originals are parked in video-masters/
+   (gitignored) — GitHub rejects any blob over 100MB, and shipping a quarter-gigabyte to a
+   phone to open a popup was never viable regardless.
+
+   The encode settings live in tools/encode-video.mjs and are NOT repeated here: they were
+   duplicated in this comment once and went stale the first time the files were re-encoded.
+   `pnpm encode:video` regenerates both from the masters. Posters are frame 0 of each, so
+   the panel opens on the image rather than on black. */
 const DESKTOP_SRC = "/assets/video/IMG_7784.mp4";
 const MOBILE_SRC = "/assets/video/IMG_7785_Mobile.mp4";
 const DESKTOP_POSTER = "/assets/video/IMG_7784-poster.jpg";
@@ -50,7 +54,8 @@ const fmt = (s: number) => {
   return `${Math.floor(n / 60)}:${String(Math.floor(n % 60)).padStart(2, "0")}`;
 };
 
-export function CustomerVideoModal() {
+export function CustomerVideoModal({ lang }: { lang: Locale }) {
+  const ui = UI[lang];
   const [mounted, setMounted] = useState(false); // in the DOM at all
   const [open, setOpen] = useState(false); // drives the enter/exit transition
   const [portrait, setPortrait] = useState(false);
@@ -121,12 +126,15 @@ export function CustomerVideoModal() {
     const prevOverflow = body.style.overflow;
     body.style.overflow = "hidden";
     document.documentElement.style.setProperty("--swh-lock-pad", `${scrollbar}px`);
-    body.style.paddingRight = `${scrollbar}px`;
+    /* The END side, not the right: the scrollbar sits on the LEFT in Arabic, so padding
+       the right there pads the wrong edge and the page jumps sideways as the modal opens.
+       NavDrawer does the same thing for the same reason. */
+    body.style.paddingInlineEnd = `${scrollbar}px`;
 
     return () => {
       document.removeEventListener("keydown", onKey);
       body.style.overflow = prevOverflow;
-      body.style.paddingRight = "";
+      body.style.paddingInlineEnd = "";
       document.documentElement.style.setProperty("--swh-lock-pad", "0px");
     };
   }, [mounted, close]);
@@ -210,7 +218,7 @@ export function CustomerVideoModal() {
           data-ui={uiVisible || !playing}
           role="dialog"
           aria-modal="true"
-          aria-label="A look inside Software House Solutions"
+          aria-label={ui.videoDialogAria}
           onPointerMove={wakeUi}
           onFocus={wakeUi}
         >
@@ -248,7 +256,7 @@ export function CustomerVideoModal() {
               type="button"
               className="swh-vmodal__big-play"
               onClick={togglePlay}
-              aria-label="Play video"
+              aria-label={ui.playVideo}
             >
               <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                 <path d="M8 5.5v13l11-6.5z" fill="currentColor" />
@@ -270,7 +278,7 @@ export function CustomerVideoModal() {
                   strokeLinecap="round"
                 />
               </svg>
-              Tap for sound
+              {ui.tapForSound}
             </button>
           )}
 
@@ -278,7 +286,7 @@ export function CustomerVideoModal() {
             type="button"
             className="swh-vmodal__close"
             onClick={close}
-            aria-label="Close video"
+            aria-label={ui.closeVideo}
           >
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path
@@ -291,12 +299,30 @@ export function CustomerVideoModal() {
             </svg>
           </button>
 
-          <div className="swh-vmodal__bar">
+          {/* dir="ltr", ALWAYS — this bar does not mirror in Arabic.
+
+              A transport bar measures TIME, not text. Left to inherit the page direction it
+              came out genuinely broken rather than merely unfamiliar: the range input's
+              thumb travelled right-to-left while its track gradient, which is a physical
+              `to right`, kept filling left-to-right — so the played portion and the play
+              head sat at opposite ends of the bar and moved away from each other. The time
+              label reversed too, reading "0:28 / 0:06" with the duration first.
+
+              Forcing the direction here fixes all of it at once — flex order, the input's
+              travel, and the bidi run in the label — and matches what an Arabic speaker
+              already uses every day: YouTube, Netflix and Vimeo all keep the timeline
+              left-to-right in their RTL interfaces. Same reasoning as the play triangle,
+              which app/rtl.css also declines to mirror.
+
+              `lang` is deliberately NOT overridden: the content is still Arabic, and the
+              aria-labels on these controls must still be announced as Arabic. Only the
+              layout direction is pinned. */}
+          <div className="swh-vmodal__bar" dir="ltr">
             <button
               type="button"
               className="swh-vmodal__btn"
               onClick={togglePlay}
-              aria-label={playing ? "Pause" : "Play"}
+              aria-label={playing ? ui.pause : ui.play}
             >
               {playing ? (
                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -318,8 +344,8 @@ export function CustomerVideoModal() {
               step="any"
               value={time}
               onChange={seek}
-              aria-label="Seek"
-              aria-valuetext={`${fmt(time)} of ${fmt(duration)}`}
+              aria-label={ui.seek}
+              aria-valuetext={ui.videoPosition(fmt(time), fmt(duration))}
             />
 
             <span className="swh-vmodal__time">
@@ -330,7 +356,7 @@ export function CustomerVideoModal() {
               type="button"
               className="swh-vmodal__btn"
               onClick={toggleSound}
-              aria-label={muted ? "Unmute" : "Mute"}
+              aria-label={muted ? ui.unmute : ui.mute}
             >
               {muted ? (
                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">

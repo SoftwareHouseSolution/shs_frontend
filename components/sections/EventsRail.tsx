@@ -17,8 +17,14 @@ import { SectionHeading } from "@/components/ds/SectionHeading";
 import { PillButton } from "@/components/ds/PillButton";
 import { useReducedMotion } from "@/components/chrome/useReducedMotion";
 import { EVENTS } from "@/content/events";
+import { HOME } from "@/content/home";
+import { UI } from "@/content/ui";
+import { href as localeHref, type Locale } from "@/content/i18n";
 
-export function EventsRail() {
+export function EventsRail({ lang }: { lang: Locale }) {
+  const events = EVENTS[lang];
+  const copy = HOME[lang];
+  const ui = UI[lang];
   const [active, setActive] = useState(0);
   const reduce = useReducedMotion();
   const scrollerRef = useRef<HTMLDivElement>(null);
@@ -56,21 +62,18 @@ export function EventsRail() {
     >
       <div style={{ width: "100%", maxWidth: 1600, margin: "0 auto", padding: "0 var(--gutter)", boxSizing: "border-box" }}>
         <Reveal style={{ display: "flex", flexDirection: "column", gap: "16px", marginBottom: "48px", maxWidth: "620px" }}>
-          <Eyebrow>News &amp; events</Eyebrow>
-          <SectionHeading level="head">Where you will find us.</SectionHeading>
-          <p style={{ margin: 0, font: "var(--body-copy)", color: "var(--body)" }}>
-            We exhibit at the trade&rsquo;s own events, and we turn up on site when a client opens
-            their doors.
-          </p>
+          <Eyebrow>{copy.eventsEyebrow}</Eyebrow>
+          <SectionHeading level="head">{copy.eventsHeading}</SectionHeading>
+          <p style={{ margin: 0, font: "var(--body-copy)", color: "var(--body)" }}>{copy.eventsBody}</p>
         </Reveal>
 
         <Reveal delay={0.08}>
           <div className="swh-events">
             {/* A list of buttons, not links: these move the panel beside them rather than
                 navigating anywhere. aria-current marks which one is showing. */}
-            <nav className="swh-events__rail" aria-label="Events">
+            <nav className="swh-events__rail" aria-label={ui.eventsRailAria}>
               <ol>
-                {EVENTS.map((e, i) => (
+                {events.map((e, i) => (
                   <li key={e.title}>
                     <button
                       type="button"
@@ -78,7 +81,7 @@ export function EventsRail() {
                       aria-current={i === active}
                       onClick={() => goTo(i)}
                     >
-                      <span className="swh-events__tab-year">{e.year ?? "Recent"}</span>
+                      <span className="swh-events__tab-year">{e.year ?? ui.recent}</span>
                       <span className="swh-events__tab-title">{e.title}</span>
                     </button>
                   </li>
@@ -93,9 +96,9 @@ export function EventsRail() {
               className="swh-events__scroller"
               tabIndex={0}
               role="group"
-              aria-label="Event details"
+              aria-label={ui.eventDetailsAria}
             >
-              {EVENTS.map((e, i) => (
+              {events.map((e, i) => (
                 <article
                   key={e.title}
                   className="swh-events__panel"
@@ -112,7 +115,7 @@ export function EventsRail() {
                     decoding="async"
                   />
                   <div className="swh-events__body">
-                    <p className="swh-events__year">{e.year ?? "Recent"}</p>
+                    <p className="swh-events__year">{e.year ?? ui.recent}</p>
                     <h3 className="swh-events__title">{e.title}</h3>
                     <p className="swh-events__text">{e.paras[0]}</p>
                   </div>
@@ -122,8 +125,8 @@ export function EventsRail() {
           </div>
 
           <div style={{ display: "flex", justifyContent: "center", marginTop: "40px" }}>
-            <PillButton variant="secondary" arrow href="/news-events">
-              All news &amp; events
+            <PillButton variant="secondary" arrow href={localeHref(lang, "/news-events")}>
+              {copy.eventsCta}
             </PillButton>
           </div>
         </Reveal>

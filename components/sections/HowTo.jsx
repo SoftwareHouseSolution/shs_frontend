@@ -5,17 +5,18 @@ import { SectionHeading } from "@/components/ds/SectionHeading";
 import { StepCard } from "@/components/ds/StepCard";
 import { PillButton } from "@/components/ds/PillButton";
 import { Section } from "./Section";
-import { STEPS } from "./data";
+import { HOME } from "@/content/home";
 
-export function HowTo() {
+export function HowTo({ lang }) {
+  const c = HOME[lang];
   return (
     <Section id="how-to">
       <Reveal style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", width: "100%", flexWrap: "wrap", gap: "20px", marginBottom: "56px" }}>
-        <SectionHeading level="head">Map your success.</SectionHeading>
-        <PillButton variant="secondary" href="#contact">Discover More</PillButton>
+        <SectionHeading level="head">{c.howToHeading}</SectionHeading>
+        <PillButton variant="secondary" href="#contact">{c.discoverMore}</PillButton>
       </Reveal>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "40px", width: "100%" }}>
-        {STEPS.map((s, i) => (
+        {c.steps.map((s, i) => (
           <Reveal key={i} delay={i * 0.08} style={{ flex: "1 1 260px" }}>
             <StepCard n={s.n} title={s.title}>{s.body}</StepCard>
           </Reveal>

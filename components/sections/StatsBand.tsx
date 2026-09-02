@@ -16,8 +16,11 @@ import { Reveal } from "@/components/ds/Reveal";
 import { SectionHeading } from "@/components/ds/SectionHeading";
 import { PillButton } from "@/components/ds/PillButton";
 import { SITE } from "@/content/site";
+import { HOME } from "@/content/home";
+import { href as localeHref, type Locale } from "@/content/i18n";
 
-export function StatsBand() {
+export function StatsBand({ lang }: { lang: Locale }) {
+  const c = HOME[lang];
   return (
     <section
       style={{
@@ -39,15 +42,13 @@ export function StatsBand() {
       >
         <Reveal style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "20px", textAlign: "center", width: "100%" }}>
           <SectionHeading level="head" align="center">
-            Ready to transform your jewellery business?
+            {c.bandHeading}
           </SectionHeading>
           <p style={{ margin: 0, font: "var(--body-copy)", color: "var(--body)", maxWidth: "58ch" }}>
-            Whether you are opening your first store, managing multiple branches or expanding
-            internationally, our jewellery management system covers inventory, sales, production,
-            accounting and business performance in one platform.
+            {c.bandBody}
           </p>
-          <PillButton variant="primary" arrow href={SITE.demoHref}>
-            Schedule your free demo
+          <PillButton variant="primary" arrow href={localeHref(lang, SITE.demoHref)}>
+            {c.bandCta}
           </PillButton>
         </Reveal>
       </div>

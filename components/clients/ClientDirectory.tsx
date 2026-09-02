@@ -16,14 +16,14 @@ import {
   type Region,
   type Sector,
 } from "@/content/clients";
+import { BUSINESS_TYPE_LABEL, REGION_LABEL, SECTOR_LABEL } from "@/content/clients";
+import { UI } from "@/content/ui";
+import type { Locale } from "@/content/i18n";
 import { ClientCard } from "./ClientCard";
 
 type Sort = "az" | "za" | "region";
 
-const SECTORS: { value: Sector; label: string }[] = [
-  { value: "jewellery", label: "Jewellery" },
-  { value: "enterprise", label: "Enterprise" },
-];
+const SECTORS: readonly Sector[] = ["jewellery", "enterprise"];
 
 /* Return a new Set rather than mutating — React is holding the old one. */
 function toggle<T>(set: ReadonlySet<T>, v: T): Set<T> {
@@ -33,7 +33,14 @@ function toggle<T>(set: ReadonlySet<T>, v: T): Set<T> {
   return next;
 }
 
-export function ClientDirectory({ clients }: { clients: readonly Client[] }) {
+export function ClientDirectory({
+  clients,
+  lang,
+}: {
+  clients: readonly Client[];
+  lang: Locale;
+}) {
+  const ui = UI[lang];
   const [q, setQ] = useState("");
   const [sectors, setSectors] = useState<ReadonlySet<Sector>>(new Set());
   const [types, setTypes] = useState<ReadonlySet<BusinessType>>(new Set());
@@ -80,43 +87,48 @@ export function ClientDirectory({ clients }: { clients: readonly Client[] }) {
       <div className="swh-directory__inner">
         <div className="swh-filters">
           <label className="swh-filters__field">
-            <span className="swh-filters__label">Search</span>
+            <span className="swh-filters__label">{ui.search}</span>
             <input
               className="swh-filters__search"
               type="search"
               value={q}
-              placeholder="Client or location"
+              placeholder={ui.clientOrLocation}
               onChange={(e) => setQ(e.target.value)}
             />
           </label>
 
           <fieldset className="swh-filters__group">
-            <legend className="swh-filters__label">Sector</legend>
-            {SECTORS.map((s) =>
-              chip("sector", s.value, s.label, sectors.has(s.value), () => setSectors(toggle(sectors, s.value))),
+            <legend className="swh-filters__label">{ui.facetSector}</legend>
+            {SECTORS.map((v) =>
+              chip("sector", v, SECTOR_LABEL[lang][v], sectors.has(v), () => setSectors(toggle(sectors, v))),
             )}
           </fieldset>
 
           <fieldset className="swh-filters__group">
-            <legend className="swh-filters__label">Business</legend>
-            {BUSINESS_TYPES.map((t) => chip("type", t, t, types.has(t), () => setTypes(toggle(types, t))))}
+            <legend className="swh-filters__label">{ui.facetBusiness}</legend>
+            {/* The chip's data-value stays the untranslated KEY; only its text changes. */}
+            {BUSINESS_TYPES.map((t) =>
+              chip("type", t, BUSINESS_TYPE_LABEL[lang][t], types.has(t), () => setTypes(toggle(types, t))),
+            )}
           </fieldset>
 
           <fieldset className="swh-filters__group">
-            <legend className="swh-filters__label">Region</legend>
-            {REGIONS.map((r) => chip("region", r, r, regions.has(r), () => setRegions(toggle(regions, r))))}
+            <legend className="swh-filters__label">{ui.facetRegion}</legend>
+            {REGIONS.map((r) =>
+              chip("region", r, REGION_LABEL[lang][r], regions.has(r), () => setRegions(toggle(regions, r))),
+            )}
           </fieldset>
 
           <label className="swh-filters__field">
-            <span className="swh-filters__label">Sort</span>
+            <span className="swh-filters__label">{ui.sort}</span>
             <select
               className="swh-filters__sort"
               value={sort}
               onChange={(e) => setSort(e.target.value as Sort)}
             >
-              <option value="az">Name A–Z</option>
-              <option value="za">Name Z–A</option>
-              <option value="region">Region</option>
+              <option value="az">{ui.sortAZ}</option>
+              <option value="za">{ui.sortZA}</option>
+              <option value="region">{ui.sortRegion}</option>
             </select>
           </label>
 
@@ -124,7 +136,7 @@ export function ClientDirectory({ clients }: { clients: readonly Client[] }) {
             {/* aria-live: the count is the only feedback that a chip did anything, so a
                 screen-reader user has to hear it change. */}
             <p className="swh-filters__count" aria-live="polite">
-              {shown.length} of {clients.length} clients
+              {ui.countClients(shown.length, clients.length)}
             </p>
             {dirty ? (
               <button
@@ -137,18 +149,18 @@ export function ClientDirectory({ clients }: { clients: readonly Client[] }) {
                   setRegions(new Set());
                 }}
               >
-                Clear filters
+                {ui.clearFilters}
               </button>
             ) : null}
           </div>
         </div>
 
         {shown.length === 0 ? (
-          <p className="swh-filters__empty">No clients match those filters. Try clearing one.</p>
+          <p className="swh-filters__empty">{ui.noFilterMatch}</p>
         ) : (
           <ul className="swh-client-grid">
             {shown.map((c) => (
-              <ClientCard key={c.slug} client={c} />
+              <ClientCard key={c.slug} client={c} lang={lang} />
             ))}
           </ul>
         )}

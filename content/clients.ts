@@ -400,3 +400,49 @@ export const CLIENTS: readonly Client[] = [
 
 export const REGIONS: readonly Region[] = ["Greater Cairo", "Giza", "Alexandria", "Delta & Canal", "Upper Egypt", "Sinai & Red Sea", "International", "Egypt (nationwide)"];
 export const BUSINESS_TYPES: readonly BusinessType[] = ["Manufacturing", "Wholesale", "Retail"];
+
+/* ── Display labels ──────────────────────────────────────────────────────────────────
+   The Region and BusinessType unions above are KEYS, not copy: the extractor writes them,
+   the map anchors are keyed by them and the filter compares them. They were previously
+   rendered straight to the screen, which is exactly why they need a lookup now — an
+   Arabic page must not show "Delta & Canal".
+
+   Client NAMES and LOCATIONS are deliberately NOT translated. They are proper nouns taken
+   verbatim from the client's own company profile, and transliterating 367 Egyptian trading
+   names and place names would invent spellings the businesses themselves do not use. Arab
+   bilingual sites in this trade list them in Latin script for the same reason. */
+
+import type { Locale } from "./i18n";
+
+export const REGION_LABEL: Record<Locale, Record<Region, string>> = {
+  en: {
+    "Greater Cairo": "Greater Cairo",
+    Giza: "Giza",
+    Alexandria: "Alexandria",
+    "Delta & Canal": "Delta & Canal",
+    "Upper Egypt": "Upper Egypt",
+    "Sinai & Red Sea": "Sinai & Red Sea",
+    International: "International",
+    "Egypt (nationwide)": "Egypt (nationwide)",
+  },
+  ar: {
+    "Greater Cairo": "القاهرة الكبرى",
+    Giza: "الجيزة",
+    Alexandria: "الإسكندرية",
+    "Delta & Canal": "الدلتا والقناة",
+    "Upper Egypt": "صعيد مصر",
+    "Sinai & Red Sea": "سيناء والبحر الأحمر",
+    International: "خارج مصر",
+    "Egypt (nationwide)": "مصر (جميع المحافظات)",
+  },
+};
+
+export const BUSINESS_TYPE_LABEL: Record<Locale, Record<BusinessType, string>> = {
+  en: { Manufacturing: "Manufacturing", Wholesale: "Wholesale", Retail: "Retail" },
+  ar: { Manufacturing: "تصنيع", Wholesale: "جملة", Retail: "تجزئة" },
+};
+
+export const SECTOR_LABEL: Record<Locale, Record<Sector, string>> = {
+  en: { jewellery: "Jewellery", enterprise: "Enterprise" },
+  ar: { jewellery: "مجوهرات", enterprise: "مؤسسات" },
+};

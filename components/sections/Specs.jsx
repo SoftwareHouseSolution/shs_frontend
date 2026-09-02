@@ -5,24 +5,22 @@ import { Eyebrow } from "@/components/ds/Eyebrow";
 import { SectionHeading } from "@/components/ds/SectionHeading";
 import { SpecTable } from "@/components/ds/SpecTable";
 import { Section } from "./Section";
+import { HOME } from "@/content/home";
 
-export function Specs() {
+export function Specs({ lang }) {
+  const c = HOME[lang];
   return (
     <Section id="specs">
       <Reveal style={{ marginBottom: "40px", textAlign: "center" }}>
-        <Eyebrow>Specs</Eyebrow>
-        <SectionHeading level="head" align="center" style={{ marginTop: "12px" }}>Why choose SWH?</SectionHeading>
+        <Eyebrow>{c.specsEyebrow}</Eyebrow>
+        <SectionHeading level="head" align="center" style={{ marginTop: "12px" }}>{c.specsHeading}</SectionHeading>
       </Reveal>
       <Reveal style={{ width: "100%" }}>
         <SpecTable
-          columns={[{ label: "SWH", highlight: true }, { label: "Generic vendor" }, { label: "In-house" }]}
-          rows={[
-            { cells: [{ ok: true, text: "40 yrs Gold & Diamond domain" }, { ok: false, text: "Generic ERP" }, { ok: false, text: "Build from zero" }] },
-            { cells: [{ ok: true, text: "POS-integrated ERP" }, { ok: true, text: "Add-on POS" }, { ok: false, text: "Manual entry" }] },
-            { cells: [{ ok: true, text: "Local support + training" }, { ok: false, text: "Remote only" }, { ok: false, text: "None" }] },
-            { cells: [{ ok: true, text: "Regional presence" }, { ok: false, text: "Single market" }, { ok: false, text: "None" }] },
-            { cells: [{ ok: true, text: "1,750+ jewellery clients" }, { ok: true, text: "Varies" }, { ok: false, text: "Unproven" }] },
-          ]}
+          /* The first column is the highlighted one in both languages: it is SWH's own
+             column, not a position in a left-to-right reading order. */
+          columns={c.specColumns.map((label, i) => (i === 0 ? { label, highlight: true } : { label }))}
+          rows={c.specRows.map((cells) => ({ cells }))}
         />
       </Reveal>
     </Section>

@@ -9,6 +9,12 @@ import { PNG } from "pngjs";
 import { mkdir } from "node:fs/promises";
 
 const BASE = "http://localhost:3311";
+/* SITE_LANG picks which language build to check. Every route is under /en or /ar now, and
+   the bare "/" is only a redirect stub — pointing a headless browser at it lands on the
+   gate, not on a page. Default "en" so an unset environment behaves as this script always
+   did. Run it with SITE_LANG=ar to check the Arabic build. */
+const LANG = process.env.SITE_LANG ?? "en";
+const HOME = `${BASE}/${LANG}`;
 const OUT = "tools/out";
 await mkdir(OUT, { recursive: true });
 
@@ -25,7 +31,7 @@ const errors = [];
 p.on("console", (m) => m.type() === "error" && errors.push(m.text()));
 p.on("pageerror", (e) => errors.push(String(e)));
 
-await p.goto(BASE, { waitUntil: "domcontentloaded" });
+await p.goto(HOME, { waitUntil: "domcontentloaded" });
 await p.waitForTimeout(2500);
 
 rec("no horizontal scroll", await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1),
@@ -98,24 +104,47 @@ await p.waitForTimeout(8200);
 const after = await p.locator(".hero-carousel__dot[aria-current='true']").getAttribute("aria-label");
 rec("carousel advances while hovered", before !== after, `${before} -> ${after}`);
 
-// Social rail — right edge, resting 30% past it.
+/* Contact rail — right edge, resting FULLY IN VIEW.
+
+   It used to rest 30% past the edge and be pulled in by hover, and this block asserted
+   that. The overhang went when WhatsApp moved into the rail from the navbar: a primary
+   contact action that is a third off-screen until hovered is not one. The assertions are
+   rewritten rather than deleted, because what can silently regress is the same thing it
+   always was — the rail's rest position — only the correct value changed. */
 rec("rail is anchored to the right edge",
   await p.locator(".swh-rail").evaluate((el) => {
     const s = getComputedStyle(el);
     return s.right === "0px" && (s.left === "auto" || parseFloat(s.left) > window.innerWidth / 2);
   }),
   await p.locator(".swh-rail").evaluate((el) => `right:${getComputedStyle(el).right}`));
-rec("rail rests 30% out",
+rec("rail rests fully in view — nothing clipped by the edge",
   await p.locator(".swh-rail").evaluate((el) => {
-    const m = new DOMMatrix(getComputedStyle(el).transform);
-    const w = el.getBoundingClientRect().width;
-    return Math.abs(m.m41 - w * 0.3) < 2; // positive now: pushed OFF the right edge
+    const m41 = new DOMMatrix(getComputedStyle(el).transform).m41;
+    return Math.abs(m41) < 1 && el.getBoundingClientRect().right <= window.innerWidth + 1;
   }),
-  await p.locator(".swh-rail").evaluate((el) => getComputedStyle(el).transform));
-await p.locator(".swh-rail").hover();
-await p.waitForTimeout(500);
-rec("rail pulls fully in on hover",
-  await p.locator(".swh-rail").evaluate((el) => Math.abs(new DOMMatrix(getComputedStyle(el).transform).m41) < 1));
+  await p.locator(".swh-rail").evaluate((el) =>
+    `transform=${getComputedStyle(el).transform} right=${Math.round(el.getBoundingClientRect().right)}`));
+
+/* The WhatsApp button is the point of the rail now, so it gets its own assertions: it must
+   be reachable without opening anything, be the brand green rather than inheriting the
+   monochrome treatment of the profile links, and be large enough to be a real tap target. */
+rec("WhatsApp button is visible without opening the rail",
+  await p.locator(".swh-rail__wa").isVisible());
+rec("WhatsApp button is brand green and comfortably sized",
+  await p.locator(".swh-rail__wa").evaluate((el) => {
+    const s = getComputedStyle(el);
+    const r = el.getBoundingClientRect();
+    return s.backgroundColor === "rgb(37, 211, 102)" && r.width >= 48 && r.height >= 48;
+  }),
+  await p.locator(".swh-rail__wa").evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    return `${getComputedStyle(el).backgroundColor} ${Math.round(r.width)}x${Math.round(r.height)}`;
+  }));
+rec("WhatsApp button opens the company's own line in a new tab",
+  await p.locator(".swh-rail__wa").evaluate((el) =>
+    el.getAttribute("href")?.startsWith("https://wa.me/") === true && el.getAttribute("target") === "_blank"),
+  await p.locator(".swh-rail__wa").getAttribute("href"));
+rec("WhatsApp is gone from the navbar", (await p.locator(".swh-nav .swh-wa").count()) === 0);
 await p.locator(".swh-rail__toggle").click();
 await p.waitForTimeout(500);
 rec("tap reveals 3 profiles", (await p.locator(".swh-rail__link:visible").count()) === 3);
@@ -142,13 +171,13 @@ await p.locator(".swh-footer").screenshot({ path: `${OUT}/v-footer.png` });
 
 // Nav: no Blogs, solid on interior pages.
 rec("Blogs removed from nav", (await p.locator('.swh-nav__list a:text-is("Blogs")').count()) === 0);
-const res = await p.request.get(`${BASE}/blogs`);
-rec("/blogs returns 404", res.status() === 404, String(res.status()));
+const res = await p.request.get(`${HOME}/blogs`);
+rec(`/${LANG}/blogs returns 404`, res.status() === 404, String(res.status()));
 
 /* Interior pages: the bar is transparent over the header at scroll 0, and the header's own
    scrim must be light enough that the band the bar sits in is not effectively black. */
 for (const route of ["/technology-partners", "/about-company"]) {
-  await p.goto(`${BASE}${route}`, { waitUntil: "domcontentloaded" });
+  await p.goto(`${HOME}${route}`, { waitUntil: "domcontentloaded" });
   await p.waitForTimeout(2000);
   const navState = await p.locator(".swh-nav").getAttribute("data-nav-state");
   rec(`${route}: nav is transparent at scroll 0`, navState === "over", String(navState));
@@ -172,7 +201,7 @@ for (const route of ["/technology-partners", "/about-company"]) {
 }
 
 // Dropdown opens on hover, and does not stay pinned after a click elsewhere.
-await p.goto(BASE, { waitUntil: "domcontentloaded" });
+await p.goto(HOME, { waitUntil: "domcontentloaded" });
 await p.waitForTimeout(1500);
 await p.locator(".swh-nav__trigger", { hasText: "Partners" }).hover();
 await p.waitForTimeout(400);
@@ -193,18 +222,28 @@ await p.screenshot({ path: `${OUT}/v-figures-proof.png` });
 
 /* ── Mobile ──────────────────────────────────────────────────────────────────── */
 const m = await b.newPage({ viewport: { width: 390, height: 844 } });
-await m.goto(BASE, { waitUntil: "domcontentloaded" });
+await m.goto(HOME, { waitUntil: "domcontentloaded" });
 await m.waitForTimeout(2500);
 rec("mobile: no horizontal scroll",
   await m.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1),
   await m.evaluate(() => `${document.documentElement.scrollWidth} vs ${window.innerWidth}`));
-/* The rail SHOWS on mobile now. It used to be display:none, from when it sat on the left
-   edge; the assertion is inverted rather than deleted because the thing that can silently
-   regress is not its presence but its rest position — hover cannot pull it in on a touch
-   screen, so if the translateX(0) override is ever lost the toggle goes back to sitting
-   partly off the edge with no gesture that can retrieve it. */
+/* The rail SHOWS on mobile. It used to be display:none, from when it sat on the left edge;
+   the assertion is inverted rather than deleted because the thing that can silently regress
+   is not its presence but its rest position — there is no hover on a touch screen, so a
+   rail that drifts back off the edge cannot be retrieved by any gesture at all. */
 rec("mobile: rail visible",
   await m.locator(".swh-rail").evaluate((el) => getComputedStyle(el).display !== "none"));
+/* The phone is where the WhatsApp button matters most and where a thumb needs the most
+   room, so it is checked against a larger floor than the desktop assertion above. */
+rec("mobile: WhatsApp button is a full thumb target",
+  await m.locator(".swh-rail__wa").evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    return r.width >= 54 && r.height >= 54 && r.left >= 0 && r.right <= window.innerWidth + 1;
+  }),
+  await m.locator(".swh-rail__wa").evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    return `${Math.round(r.width)}x${Math.round(r.height)} at ${Math.round(r.left)}..${Math.round(r.right)}`;
+  }));
 rec("mobile: rail rests fully in view (no hover to pull it in)",
   await m.locator(".swh-rail").evaluate((el) => {
     const m41 = new DOMMatrix(getComputedStyle(el).transform).m41;

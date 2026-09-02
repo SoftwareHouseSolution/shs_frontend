@@ -7,10 +7,11 @@ import "./prototype.css";
 // Site chrome (nav, drawer, carousel, page headers). Last, so it can layer on the tokens
 // and the prototype rules without either being able to override it.
 import "./chrome.css";
+// Right-to-left corrections, last of all: every rule in it is scoped to [dir="rtl"], so it
+// is inert on an English page and can only ever add to the cascade, never reorder it.
+import "./rtl.css";
 
-import { SiteNav } from "@/components/chrome/SiteNav";
-import { SkipLink } from "@/components/chrome/SkipLink";
-import { SocialRail } from "@/components/chrome/SocialRail";
+import { DEFAULT_LOCALE, HTML_LANG, DIR } from "@/content/i18n";
 import { SITE } from "@/content/site";
 
 export const metadata: Metadata = {
@@ -21,32 +22,27 @@ export const metadata: Metadata = {
   description: `${SITE.name} — POS-integrated ERP for the gold and diamond trade, plus enterprise software, hardware and networking. Leading the market since ${SITE.since}.`,
 };
 
-/* This file stays a SERVER component so `metadata` above works. SiteNav is a client
-   component; the directive lives on the imported file, not the importer, and rendering it
-   here keeps it a sibling of {children} rather than an ancestor — so its state changes
-   re-render the bar only, never a page section. */
+/* THE DOCUMENT. Deliberately thin: it owns <html> and <body> and nothing else.
+
+   Why the chrome is NOT here any more. Every page now lives under app/[lang]/, and the
+   nav, the skip link and the social rail all need to know which language they are in.
+   A root layout receives no params — it sits above the dynamic segment — so they moved
+   down one level to app/[lang]/layout.tsx, which does.
+
+   Why <html lang> is the DEFAULT locale rather than the real one. Same reason: this file
+   cannot see the route's params. app/[lang]/layout.tsx therefore puts the true `lang` and
+   `dir` on #app, which it does own, and #app contains every visible element on the page —
+   so the Arabic pages render right-to-left in the SERVER HTML, with no flash and no
+   dependency on JavaScript. HtmlLangSync then copies the pair up onto <html> after mount,
+   which is what fixes the scrollbar side and the UA's own text-selection direction.
+
+   The consequence to remember: an assistive technology reading the document element alone
+   sees "en" for a beat on an Arabic page. Everything it actually reads is inside #app and
+   correctly marked. If Next ever lets a root layout read params, move it back up. */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body>
-        {/* <div id="app"> is load-bearing, not a wrapper habit. #app{overflow-x:hidden} is what
-            contains the hero's .ds-back cards (translateX ±60%) and the sage block that spans
-            left:-110%/right:-110%. Moving the rule to html or body changes scroll-container
-            semantics and reintroduces a horizontal scrollbar. It must also never be given a
-            height: overflow-x:hidden computes overflow-y to auto, so a fixed height would move
-            scrolling out of the viewport and break window.scrollY along with every scroll
-            effect on the page. */}
-        <div id="app">
-          <SkipLink />
-          <SiteNav />
-          {children}
-          {/* Fixed to the left edge, so it is deliberately a sibling of {children} rather
-              than something a page has to opt into. Safe inside #app: a fixed element is
-              only clipped by an ancestor's overflow when that ancestor is a containing
-              block, and #app carries no transform or filter (see the comment above). */}
-          <SocialRail />
-        </div>
-      </body>
+    <html lang={HTML_LANG[DEFAULT_LOCALE]} dir={DIR[DEFAULT_LOCALE]}>
+      <body>{children}</body>
     </html>
   );
 }

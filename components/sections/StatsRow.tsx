@@ -25,10 +25,14 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Eyebrow } from "@/components/ds/Eyebrow";
 import { useReducedMotion } from "@/components/chrome/useReducedMotion";
 import { STATS } from "@/content/site";
+import { HOME } from "@/content/home";
+import type { Locale } from "@/content/i18n";
 
 const RAMP_MS = 1400; // how long one figure takes to arrive
 const STAGGER_MS = 110; // offset between neighbouring figures
-const TOTAL_MS = RAMP_MS + STAGGER_MS * (STATS.length - 1);
+/* Both languages carry the same five figures — only the labels differ — so the timeline
+   is a constant rather than something that has to be recomputed per locale. */
+const TOTAL_MS = RAMP_MS + STAGGER_MS * (STATS.en.length - 1);
 
 const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
@@ -37,7 +41,9 @@ const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayout
    slot machine spin. */
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 4);
 
-export function StatsRow() {
+export function StatsRow({ lang }: { lang: Locale }) {
+  const stats = STATS[lang];
+  const copy = HOME[lang];
   const reduce = useReducedMotion();
   const rowRef = useRef<HTMLUListElement>(null);
   const [elapsed, setElapsed] = useState(TOTAL_MS);
@@ -81,14 +87,14 @@ export function StatsRow() {
   }, [reduce]);
 
   return (
-    <section className="swh-figures" aria-label="Company figures">
+    <section className="swh-figures" aria-label={copy.figuresAria}>
       <div className="swh-figures__inner">
         <div className="swh-figures__eyebrow">
-          <Eyebrow>Trusted by the jewellery industry</Eyebrow>
+          <Eyebrow>{copy.figuresEyebrow}</Eyebrow>
         </div>
 
         <ul className="swh-figures__row" ref={rowRef} data-in={shown ? "true" : "false"}>
-          {STATS.map((s, i) => {
+          {stats.map((s, i) => {
             const local = Math.max(0, Math.min(1, (elapsed - i * STAGGER_MS) / RAMP_MS));
             return (
               <li
@@ -100,7 +106,12 @@ export function StatsRow() {
                     the document outline unreadable for a screen reader. */}
                 <p className="swh-figures__value">
                   {"to" in s
-                    ? s.prefix + Math.round(s.to * easeOut(local)).toLocaleString("en-GB") + s.suffix
+                    ? /* "en-GB" in BOTH languages, deliberately: the grouped form is
+                         1,750 in Arabic here too. Egyptian business writing uses Western
+                         digits, and content/site.ts and the Arabic body copy both write the
+                         figure that way — "ar-EG" would render ١٬٧٥٠ and contradict the
+                         sentence beside it. */
+                      s.prefix + Math.round(s.to * easeOut(local)).toLocaleString("en-GB") + s.suffix
                     : s.text}
                 </p>
                 <span className="swh-figures__label">{s.label}</span>

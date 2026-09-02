@@ -12,74 +12,27 @@
    Slide 1 is video, slides 2-4 are stills. The video carries no ken-burns of its own —
    see the .hero-slide__video note at the render site.
 
-   Copy for slides 2-4 is SWH's own rotating hero messages from the legacy site, recorded
-   in extract/impeccable_frontend_prd/product.md. Typos cleaned, meaning kept. Slide 1 is
-   the client's newer hero copy from ui_ux/…/website start and end and numbers.docx. */
+   Slide copy lives in content/home.ts, one array per language — its provenance is
+   documented there. This file owns the motion and the controls, not the words. */
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PillButton } from "@/components/ds/PillButton";
 import { Eyebrow } from "@/components/ds/Eyebrow";
 import { useReducedMotion } from "@/components/chrome/useReducedMotion";
-import { SITE } from "@/content/site";
+import { HOME } from "@/content/home";
+import { UI } from "@/content/ui";
+import { href as localeHref, type Locale } from "@/content/i18n";
 
 /** Must match --hero-hold in app/chrome.css. */
 const HOLD_MS = 7000;
 
-type Slide = {
-  /** Photo slide: the still. Video slide: the poster frame. */
-  image: string;
-  /** Video slides only. WebM is listed first so browsers that support it skip the MP4. */
-  video?: { webm: string; mp4: string };
-  eyebrow: string;
-  title: string;
-  body: string;
-  cta: { label: string; href: string };
-};
+export function HeroCarousel({ lang }: { lang: Locale }) {
+  /* Slide copy, media and CTA targets all live in content/home.ts now — one array per
+     language, same length and same media in both, so the dot count and the crossfade
+     bookkeeping below are unaffected by which language is showing. */
+  const SLIDES = HOME[lang].hero;
+  const ui = UI[lang];
 
-const SLIDES: Slide[] = [
-  {
-    /* SWH's own product footage, not stock: an iMac running the SoftwareHouse sign-in
-       screen. Copy is from the client's "website start and end and numbers.docx"; the
-       one edit is "Jewelry" -> "jewellery", because the rest of the site is consistently
-       British and mixed spelling in a single viewport reads as a mistake. */
-    image: "/assets/video/hero-workstation-poster.jpg",
-    video: { webm: "/assets/video/hero-workstation.webm", mp4: "/assets/video/hero-workstation.mp4" },
-    eyebrow: "Gold & Diamond ERP",
-    title: "Empowering the jewellery industry since 1988.",
-    body: "For more than three decades we have built ERP systems that help gold and diamond businesses simplify operations, manage inventory with precision, and grow.",
-    cta: { label: "Explore our solutions", href: "/solutions" },
-  },
-  {
-    image: "/assets/imagery/slider_01.jpg",
-    eyebrow: "Software Solutions Services",
-    title: "Built for your maximum satisfaction.",
-    body: "We endeavour to offer you the best solutions to achieve your maximum satisfaction.",
-    cta: { label: "Explore solutions", href: "/solutions" },
-  },
-  {
-    image: "/assets/imagery/slider_02.jpg",
-    eyebrow: "Enterprise Resource Planning",
-    title: "Effective software, delivered.",
-    body: "We are the masters in offering effective software development solutions.",
-    cta: { label: "See our services", href: "/services" },
-  },
-  {
-    image: "/assets/imagery/slider_03.jpg",
-    /* The legacy line ended "...and we prove it with our certifications". That clause is
-       dropped until the certificates are documented — PRODUCT.md records them as
-       unconfirmed, and the rest of the sentence carries the meaning without the claim. */
-    eyebrow: "Gold & Diamond Solutions",
-    title: "Credence, built on quality standards.",
-    body: "Developing credence by ensuring quality standards across every jewellery segment.",
-    /* "Contact us", not "Book a demo": demoHref is /#contact, the contact section on this
-       same page, so the old label promised a booking flow that does not exist. The nav and
-       the drawer keep "Book a demo" — a persistent CTA can afford to name the outcome,
-       whereas this one sits directly above the form it scrolls to. */
-    cta: { label: "Contact us", href: SITE.demoHref },
-  },
-];
-
-export function HeroCarousel() {
   /* index and prev live in one state object so the updater stays pure — calling a second
      setter from inside an updater would fire twice under StrictMode. */
   const [{ index, prev }, setSlide] = useState({ index: 0, prev: -1 });
@@ -90,12 +43,21 @@ export function HeroCarousel() {
   const rootRef = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  const goTo = useCallback((next: number) => {
-    setSlide((s) => {
-      const target = ((next % SLIDES.length) + SLIDES.length) % SLIDES.length;
-      return target === s.index ? s : { index: target, prev: s.index };
-    });
-  }, []);
+  /* `count`, not SLIDES itself: HOME[lang].hero is a fresh array reference on nothing —
+     it is module-scope data — but depending on the array would still be depending on an
+     object, and the only thing this needs is how many slides there are. Both languages
+     have four, so in practice this never changes; it is in the dep list so that adding a
+     slide to one language and not the other cannot produce a stale modulus. */
+  const count = SLIDES.length;
+  const goTo = useCallback(
+    (next: number) => {
+      setSlide((s) => {
+        const target = ((next % count) + count) % count;
+        return target === s.index ? s : { index: target, prev: s.index };
+      });
+    },
+    [count],
+  );
 
   /* setTimeout keyed on `index`, not setInterval: a manual advance restarts the clock
      instead of racing a fixed-phase interval. */
@@ -112,6 +74,7 @@ export function HeroCarousel() {
 
      The pause button owns the video too. It is the WCAG 2.2.2 control for this region, so
      stopping "the slideshow" while footage keeps playing behind the copy would be a lie. */
+  const hasVideo = SLIDES[index]?.video !== undefined;
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
@@ -123,7 +86,7 @@ export function HeroCarousel() {
        visitor toggling the OS setting still re-runs this. */
     const reduceNow =
       reduce || (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
-    const wanted = SLIDES[index]?.video !== undefined && !reduceNow && !paused;
+    const wanted = hasVideo && !reduceNow && !paused;
     if (wanted) {
       /* Autoplay can still be refused (a muted inline video rarely is). Swallowing the
          rejection leaves the poster up, which is the correct fallback anyway. */
@@ -134,7 +97,7 @@ export function HeroCarousel() {
          stopped; a reduced-motion visitor should be left on the poster frame exactly. */
       if (reduceNow) v.currentTime = 0;
     }
-  }, [index, reduce, paused]);
+  }, [index, hasVideo, reduce, paused]);
 
   /* Pause while the tab is hidden so a backgrounded page does not burn through slides. */
   useEffect(() => {
@@ -165,7 +128,7 @@ export function HeroCarousel() {
       data-nav-hero=""
       role="group"
       aria-roledescription="carousel"
-      aria-label="Featured"
+      aria-label={ui.carouselAria}
       onKeyDown={onKeyDown}
       /* NO pointer hold. It used to stop the slideshow whenever the pointer was anywhere
          over the hero, which on a 100svh hero is most of the time a visitor spends near
@@ -229,8 +192,8 @@ export function HeroCarousel() {
             <h1 className="hero-carousel__title">{active.title}</h1>
             <p className="hero-carousel__body">{active.body}</p>
             <div className="hero-carousel__actions">
-              <PillButton variant="primary" arrow href={active.cta.href}>
-                {active.cta.label}
+              <PillButton variant="primary" arrow href={localeHref(lang, active.ctaHref)}>
+                {active.ctaLabel}
               </PillButton>
             </div>
           </div>
@@ -247,7 +210,7 @@ export function HeroCarousel() {
             setPaused((p) => !p);
             setUserControlled(true);
           }}
-          aria-label={paused ? "Play slideshow" : "Pause slideshow"}
+          aria-label={paused ? ui.playSlideshow : ui.pauseSlideshow}
         >
           {paused ? (
             <svg viewBox="0 0 12 12" aria-hidden="true" focusable="false">
@@ -269,7 +232,7 @@ export function HeroCarousel() {
               type="button"
               className="hero-carousel__dot"
               aria-current={i === index}
-              aria-label={`Show slide ${i + 1} of ${SLIDES.length}`}
+              aria-label={ui.showSlide(i + 1, SLIDES.length)}
               onClick={() => {
                 setUserControlled(true);
                 goTo(i);

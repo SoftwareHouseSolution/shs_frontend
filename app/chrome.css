@@ -119,6 +119,23 @@
 
 /* ── Global adjustments ─────────────────────────────────────────────────────────── */
 
+/* Available to a screen reader, drawn nowhere. `display: none` and `visibility: hidden`
+   both remove the node from the accessibility tree, which is the opposite of what this is
+   for; clipping a 1px box leaves it in the tree and still announced. `white-space: nowrap`
+   stops a long string wrapping inside that 1px box and being read one word per line by
+   some older combinations. */
+.swh-vh {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 /* html{scroll-behavior:smooth} plus a fixed bar would land every in-page anchor
    (#services, #specs, #how-to, #contact) underneath it. */
 [id] {
@@ -328,22 +345,59 @@
   margin-left: var(--nav-cluster-gap);
 }
 
-.swh-wa {
+/* ── Language toggle ────────────────────────────────────────────────────────────────
+   components/chrome/LanguageToggle.tsx. A capsule in the nav cluster, a full-width row in
+   the drawer's foot. It is a LINK to the same page in the other language, not a button —
+   see the note in that file.
+
+   COLOUR follows --nav-fg, like every other control in the bar, so the outline and label
+   invert with the header as it crosses the hero. `color: inherit` was wrong here: the
+   cluster sets no colour of its own, so the pill inherited --ink from the body and stayed
+   near-black over a dark hero photograph. */
+.swh-lang {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid currentColor;
+  border-radius: var(--r-pill);
+  background: transparent;
   color: var(--nav-fg);
-  transition: background var(--t-menu), color var(--t-menu);
+  font: var(--nav-link);
+  letter-spacing: -0.35px;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  /* Matches the bar's own cross-fade, so the toggle does not snap while everything around
+     it eases. */
+  transition:
+    background var(--t-menu),
+    color var(--t-menu),
+    border-color var(--t-menu);
 }
-.swh-wa:hover {
-  background: color-mix(in srgb, var(--nav-fg) 12%, transparent);
+.swh-lang:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--cta-fg);
 }
-.swh-wa svg {
-  width: 20px;
-  height: 20px;
+.swh-lang:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+/* In the drawer it is a full-width row on a white panel. --nav-fg cannot be used there:
+   the drawer is rendered inside <header class="swh-nav">, so it inherits whichever value
+   the bar currently holds — and over the hero that is --paper, i.e. white on white. The
+   drawer's own links solve it the same way, with an explicit --ink. */
+.swh-drawer__foot .swh-lang {
+  justify-content: center;
+  width: 100%;
+  padding: 14px 12px;
+  color: var(--ink);
+  border-color: var(--hairline);
+}
+.swh-drawer__foot .swh-lang:hover {
+  border-color: var(--accent);
+  color: var(--cta-fg);
 }
 
 .swh-badges {
@@ -422,13 +476,6 @@
     display: inline-flex;
   }
 }
-@media (min-width: 1024px) and (max-width: 1199px) {
-  .swh-wa {
-    width: 34px;
-    height: 34px;
-  }
-}
-
 /* ── Mobile drawer ──────────────────────────────────────────────────────────────── */
 
 .swh-drawer {
@@ -768,10 +815,13 @@
 }
 
 /* ── Tap targets ────────────────────────────────────────────────────────────────── */
-/* Four controls sit under the 44px floor: the carousel's play/pause (32), the nav's
-   WhatsApp button (38), the drawer's close (40) and the burger (42). All four are correct
-   at their drawn size — a 44px WhatsApp circle would overpower a 64px bar — so the fix
-   grows the hit area only. The pseudo-element is transparent and unpainted, so nothing
+/* Four controls sit under the 44px floor: the carousel's play/pause (32), the drawer's
+   close (40), the burger (42) and the rail's toggle and profile links (42). All are correct
+   at their drawn size, so the fix grows the hit area only.
+
+   .swh-rail__wa is deliberately NOT in this list. It is drawn at 52px (56 on a phone), so
+   it already clears the floor — and its ::after carries the hover label, which this rule
+   would overwrite. The pseudo-element is transparent and unpainted, so nothing
    moves and nothing reflows; it just gives the finger the margin the eye does not need.
 
    Not gated behind `pointer: coarse`. A 32px target is a poor target with a trackpad too,
@@ -779,14 +829,12 @@
 /* .swh-drawer__close is deliberately absent — it is already position:absolute, so it is
    already a containing block, and relative here would drop it out of its corner. */
 .hero-carousel__toggle,
-.swh-wa,
 .swh-burger,
 .swh-rail__toggle,
 .swh-rail__link {
   position: relative;
 }
 .hero-carousel__toggle::after,
-.swh-wa::after,
 .swh-drawer__close::after,
 .swh-burger::after,
 .swh-rail__toggle::after,
@@ -1519,10 +1567,10 @@
   margin-bottom: 36px;
   border-bottom: 1px solid var(--hairline);
 }
+/* Was a flex row: the region name, then a mono "225 OF 367" beside it. The count is no
+   longer drawn (it is announced instead — see ClientMap.tsx), so the heading is a single
+   run of text again and needs no layout of its own. */
 .swh-map__result-title {
-  display: flex;
-  align-items: baseline;
-  gap: 14px;
   margin: 0;
   font-family: var(--f-serif);
   font-weight: 400;
@@ -1530,13 +1578,6 @@
   letter-spacing: var(--sub-ls);
   line-height: 1.05;
   color: var(--ink);
-}
-.swh-map__result-title span {
-  font-family: var(--f-mono);
-  font-size: var(--caption-size);
-  letter-spacing: var(--caption-ls);
-  text-transform: uppercase;
-  color: var(--muted);
 }
 
 @media (max-width: 799px) {
@@ -1887,19 +1928,33 @@
   }
 }
 
-/* ── Social rail ────────────────────────────────────────────────────────────────── */
-/* components/chrome/SocialRail.tsx. Fixed to the RIGHT edge, resting 30% outside it.
+/* ── Contact rail ───────────────────────────────────────────────────────────────── */
+/* components/chrome/SocialRail.tsx. Fixed to the RIGHT edge (the LEFT in Arabic — see
+   app/rtl.css), resting fully in view.
 
-   The rest position is --rail-out, a transform — never a `right` offset. A transform is
-   outside layout, so the overhang cannot widen the document or trip a horizontal
-   scrollbar at any width. (Off the LEFT edge that is free; off the right it is not, which
-   is why this must stay a transform now that the rail has moved sides.) */
+   It carries the WhatsApp button, which moved here out of the navbar, plus a toggle that
+   reveals the three social profiles. The rail used to rest 30% past the edge and be pulled
+   in by hover; that overhang is gone, because the button it now leads with is the site's
+   primary contact action rather than decoration. The long note at the top of SocialRail.tsx
+   records the reasoning.
+
+   Consequence worth keeping in mind: with no rest transform there is nothing to overhang,
+   so the old constraint that the offset MUST be a transform (a `right` offset would have
+   widened the document and tripped a horizontal scrollbar) no longer applies. Do not
+   reintroduce an overhang as a `right` value if it ever comes back. */
 
 :root {
-  --rail-w: 58px;
-  --rail-out: 30%; /* 70% in view, 30% past the edge */
+  /* Sized by the WhatsApp button: 52 + 2×6 padding + the 1px left border. */
+  --rail-w: 65px;
+  --rail-wa: 52px; /* the primary contact button */
+  --rail-btn: 42px; /* the toggle and the profile links */
   --rail-r: 20px;
   --t-rail: 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+  /* WhatsApp brand green. Hardcoded rather than tokenised on purpose: it is another
+     company's trademark colour, not part of this palette, and it must not drift if the
+     SWH palette is retuned. */
+  --wa-green: #25d366;
+  --wa-green-hover: #1eb257;
 }
 
 .swh-rail {
@@ -1908,15 +1963,12 @@
   top: 50%;
   z-index: calc(var(--nav-z) - 2); /* under the nav and its drawer, over the page */
   translate: 0 -50%;
-  transform: translateX(var(--rail-out));
+  /* Rests FULLY IN VIEW. It used to sit 30% past the edge and get pulled in by hover; the
+     note at the top of components/chrome/SocialRail.tsx records why that went away when
+     WhatsApp moved in. No transform here at all now, which also means the rail can never
+     widen the document — the thing the old percentage offset had to be a transform to
+     avoid. */
   transition: transform var(--t-rail);
-}
-/* Focus gets the same pull-in as hover. A control sitting 30% off-screen that a keyboard
-   can reach but not see is the failure mode of this whole pattern. */
-.swh-rail:hover,
-.swh-rail:focus-within,
-.swh-rail[data-open="true"] {
-  transform: translateX(0);
 }
 
 .swh-rail__body {
@@ -1953,12 +2005,141 @@
     -26px 16px 56px rgba(22, 25, 29, 0.22);
 }
 
+/* ── The WhatsApp button ─────────────────────────────────────────────────────────────
+   Filled brand green with a white mark, larger than everything under it, and the only
+   control in the rail that starts a conversation rather than opening a profile. Rendered
+   in --ink like the profile links it would read as a fourth social icon and lose exactly
+   the recognition that makes people press it.
+
+   THREE THINGS KEEP IT FROM READING AS A BOLTED-ON CHAT WIDGET, which is the failure mode
+   of every floating WhatsApp button:
+
+   1. The elevation is NEUTRAL. It used to cast a green glow — rgba(37,211,102,.34) — and a
+      coloured halo under a coloured button is the single strongest "third-party plugin"
+      signal there is. The shadow now uses the same ink-based, offset-and-blur language as
+      the capsule behind it (see the note on .swh-rail__body), so the button sits in the
+      site's lighting rather than under its own.
+   2. It does not BOUNCE. scale(1.06) on hover is a toy's gesture. A 1px lift and a deeper
+      green say the same thing in the register the rest of this site speaks in.
+   3. It says what it is. A bare circular glyph is a guess until you press it; the hover
+      label below turns it into a named action, which is what makes an anonymous icon
+      read as considered rather than as decoration.
+
+   The inset hairline is what stops the green disc from looking pasted onto the white
+   capsule: it gives the fill an edge of its own at the one place the two meet. */
+.swh-rail__wa {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--rail-wa);
+  height: var(--rail-wa);
+  flex: none;
+  border-radius: 50%;
+  background: var(--wa-green);
+  color: #fff;
+  box-shadow:
+    inset 0 0 0 1px rgba(9, 61, 30, 0.14),
+    0 1px 2px rgba(22, 25, 29, 0.14),
+    0 4px 10px rgba(22, 25, 29, 0.16);
+  transition:
+    background var(--t-menu),
+    translate var(--t-menu),
+    box-shadow var(--t-menu);
+}
+.swh-rail__wa:hover {
+  background: var(--wa-green-hover);
+  translate: 0 -1px;
+  box-shadow:
+    inset 0 0 0 1px rgba(9, 61, 30, 0.18),
+    0 2px 4px rgba(22, 25, 29, 0.16),
+    0 8px 18px rgba(22, 25, 29, 0.22);
+}
+.swh-rail__wa:active {
+  translate: 0 0;
+  box-shadow:
+    inset 0 0 0 1px rgba(9, 61, 30, 0.2),
+    0 1px 2px rgba(22, 25, 29, 0.18);
+}
+.swh-rail__wa svg {
+  width: 28px;
+  height: 28px;
+}
+.swh-rail__wa:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* The hover label. Text comes from the button's own data-label (set in SocialRail.tsx from
+   content/ui.ts), so it is translated with everything else and this rule needs no copy.
+
+   It is supplementary, never the accessible name — the anchor's aria-label already carries
+   the full sentence and the phone number, and a pseudo-element is not reliably announced
+   anyway. Which is also why it may safely be hover-and-focus only: nothing is lost on a
+   touch screen, where there is no hover to give.
+
+   It opens INWARD, away from the viewport edge, so it cannot widen the document — the same
+   constraint the rail itself lives under. app/rtl.css swaps the side. */
+.swh-rail__wa::after {
+  content: attr(data-label);
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 12px);
+  translate: 0 -50%;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--ink);
+  color: var(--paper);
+  font: 600 12px/1 var(--f-sans);
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  /* `transform` composes on top of `translate` above, so the vertical centring survives
+     the slide — the same pairing .swh-rail itself used. */
+  transform: translateX(6px);
+  transition:
+    opacity var(--t-menu),
+    transform var(--t-menu);
+  box-shadow: 0 4px 14px rgba(22, 25, 29, 0.22);
+}
+.swh-rail__wa:hover::after,
+.swh-rail__wa:focus-visible::after {
+  opacity: 1;
+  transform: translateX(0);
+}
+/* A label that slides is motion for its own sake; a label that appears is information.
+   Reduced motion keeps the second and drops the first. */
+@media (prefers-reduced-motion: reduce) {
+  .swh-rail__wa::after {
+    transform: none;
+    transition: opacity var(--t-menu);
+  }
+  .swh-rail__wa,
+  .swh-rail__wa:hover,
+  .swh-rail__wa:active {
+    translate: 0 0;
+  }
+}
+
+/* Separates the contact action from the profile toggle, so the two do not read as one
+   stack of equivalent icons. Inset from the capsule's edges rather than full-bleed — a
+   rule that touches both walls cuts the capsule in half. */
+.swh-rail__rule {
+  display: block;
+  width: 24px;
+  height: 1px;
+  margin: 6px 0 4px;
+  flex: none;
+  background: var(--hairline);
+}
+
 .swh-rail__toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
+  width: var(--rail-btn);
+  height: var(--rail-btn);
   flex: none;
   padding: 0;
   border: 0;
@@ -2019,8 +2200,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
+  width: var(--rail-btn);
+  height: var(--rail-btn);
   border-radius: 50%;
   /* --ink, not --body. A grey tuned for a paragraph of text is too weak for an 19px solid
      glyph: text gets contrast from stroke rhythm, an icon is one flat silhouette and reads
@@ -2046,14 +2227,18 @@
    LEFT edge, where it collided with the browser's back-gesture strip; it has since moved to
    the right and the reason went with it.
 
-   What does NOT survive the move to a phone is the reveal. The rest position is 30% past
-   the edge and hover pulls it in — and there is no hover on a touch screen, so the toggle
-   would sit permanently clipped with about 7px of itself off-screen. On coarse pointers it
-   therefore rests fully in view and the tap goes straight to opening the profiles, which is
-   the gesture a phone actually has. Everything else is unchanged from desktop. */
+   The old "rest fully in view on coarse pointers" override is gone too — the rail now does
+   that at every width, so the exception has nothing left to except. What a phone does get
+   is a BIGGER WhatsApp button: 56px is a comfortable thumb target where 52px is merely a
+   legal one, and this is the control a phone visitor is most likely to be reaching for. */
 @media (max-width: 899px) {
-  .swh-rail {
-    transform: translateX(0);
+  :root {
+    --rail-wa: 56px;
+    --rail-w: 69px;
+  }
+  .swh-rail__wa svg {
+    width: 30px;
+    height: 30px;
   }
 }
 

@@ -1,12 +1,16 @@
 "use client";
 
-/* The social rail on the right edge.
+/* The contact rail on the right edge: a WhatsApp button, and a toggle that reveals the
+   three social profiles beneath it.
 
-   It sits 70% inside the viewport and 30% outside it. That is not decoration: an element
-   flush to the edge reads as part of the browser chrome and gets ignored, whereas one
-   that is visibly cut off by the edge reads as a thing that continues — so the eye treats
-   it as reachable rather than as furniture. Pointing at it pulls the remaining 30% in;
-   pressing it opens the three profiles.
+   IT USED TO REST 30% OFF-SCREEN, pulled in by hover. That was a good shape for a purely
+   decorative social toggle — an element flush to the edge reads as browser chrome and gets
+   ignored, whereas one visibly cut off reads as a thing that continues. It is the wrong
+   shape now that the rail carries WhatsApp, which is the site's primary contact action and
+   its only working enquiry channel. A conversion control that is a third off-screen until
+   you happen to hover it is not a conversion control. The rail therefore rests fully in
+   view at every width; hover still lifts the shadow, and the toggle still owns the reveal,
+   so both affordances survive the change.
 
    ── WHY IT IS BUILT THE WAY IT IS ───────────────────────────────────────────────────
 
@@ -15,29 +19,28 @@
      ancestor's overflow if that ancestor is also a containing block, which #app
      deliberately is not.
 
-   - The rest position is a transform, never a `right` offset. Transforms do not
-     participate in layout, so the 30% overhang cannot widen the page or trip a horizontal
-     scrollbar. This matters more on the right than it did on the left: overflow past the
-     left edge is free in LTR, overflow past the right edge is not.
-
-   - `focus-within` gets the same treatment as `hover`. Tabbing to a control that is 30%
-     off-screen and stays there is the version of this pattern that fails an audit.
-
    - The links are `inert` while collapsed, not merely invisible. Without it the three
      profiles stay in the tab order behind a closed panel.
 
    - Icons come from components/chrome/SocialIcon.tsx, shared with the footer, so the two
      places cannot drift.
 
-   The rail hides itself below 900px. On a phone the screen edges are thumb territory that
-   belongs to the page and to the browser's own gestures, and the same three links are
-   already in the footer. */
+   The rail is present at every width. On a phone the WhatsApp button is the fastest route
+   to a reply the company actually answers, which is worth an edge to itself; the three
+   profiles stay behind the toggle.
+
+   In Arabic it mirrors to the LEFT edge — app/rtl.css flips the anchor, the body's rounded
+   corners and the direction the shadow is cast. */
 
 import { useEffect, useRef, useState } from "react";
 import { SOCIAL } from "@/content/site";
+import { UI } from "@/content/ui";
+import type { Locale } from "@/content/i18n";
 import { SocialIcon } from "./SocialIcon";
+import { WhatsAppLink } from "./WhatsAppLink";
 
-export function SocialRail() {
+export function SocialRail({ lang }: { lang: Locale }) {
+  const ui = UI[lang];
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -62,12 +65,24 @@ export function SocialRail() {
   return (
     <div className="swh-rail" ref={rootRef} data-open={open ? "true" : "false"}>
       <div className="swh-rail__body">
+        {/* WhatsApp sits ABOVE the toggle and outside the reveal, so it is never behind a
+            tap. It is the one control here that is a conversation rather than a profile
+            link — the company answers this line, and it is the site's only working enquiry
+            channel (there is no form backend; see components/sections/Contact.jsx). That is
+            why it is brand-green and larger than everything below it instead of a fourth
+            monochrome glyph in the stack.
+
+            Same component the drawer uses, so the mark and the aria-label cannot drift;
+            only the class differs. */}
+        <WhatsAppLink lang={lang} className="swh-rail__wa" hoverLabel={ui.whatsappLabel} />
+        <span className="swh-rail__rule" aria-hidden="true" />
+
         <button
           type="button"
           className="swh-rail__toggle"
           aria-expanded={open}
           aria-controls="swh-rail-links"
-          aria-label={open ? "Hide social links" : "Show social links"}
+          aria-label={open ? ui.hideSocial : ui.showSocial}
           onClick={() => setOpen((v) => !v)}
         >
           {/* Two strokes, rotated 45° when open, so the same mark is both "add" and
@@ -87,7 +102,7 @@ export function SocialRail() {
                   href={s.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={`${s.label} — opens in a new tab`}
+                  aria-label={`${s.label} ${ui.opensInNewTab}`}
                 >
                   <SocialIcon name={s.label} />
                 </a>

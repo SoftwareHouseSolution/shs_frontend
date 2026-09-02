@@ -3,7 +3,12 @@
 import { chromium } from "playwright";
 
 const BASE = (process.env.PORT_URL ?? "http://localhost:3001/").replace(/\/$/, "");
-const URL = BASE + "/customers";
+/* SITE_LANG picks which language build to check. Every route is under /en or /ar now, and
+   the bare "/" is only a redirect stub — pointing a headless browser at it lands on the
+   gate, not on a page. Default "en" so an unset environment behaves as this script always
+   did. Run it with SITE_LANG=ar to check the Arabic build. */
+const LANG = process.env.SITE_LANG ?? "en";
+const URL = `${BASE}/${LANG}/customers`;
 const results = [];
 const rec = (name, pass, detail) => {
   results.push({ name, pass });

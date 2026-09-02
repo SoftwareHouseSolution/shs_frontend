@@ -34,13 +34,32 @@ Via FTP: point the client at `public_html` and drag everything inside `out/`.
 
 ## What the routes look like
 
-Every page is a folder with an `index.html`, so Apache resolves them with no rewrite rules:
+The site is bilingual, and the language is part of the URL. Every page exists twice, once
+under `/en/` and once under `/ar/`, and each is a folder with an `index.html` — so Apache
+resolves all of them with no rewrite rules:
 
 ```
-public_html/index.html              ->  /
-public_html/about-company/index.html ->  /about-company/
-public_html/404.html                 ->  any unknown URL
+public_html/index.html                  ->  /              language gate (see below)
+public_html/en/index.html               ->  /en/           English home
+public_html/en/about-company/index.html ->  /en/about-company/
+public_html/ar/index.html               ->  /ar/           Arabic home
+public_html/ar/about-company/index.html ->  /ar/about-company/
+public_html/404.html                    ->  any unknown URL
 ```
+
+**The bare `/` is a language gate, not a page.** It is a tiny HTML file that forwards the
+visitor to `/en/` or `/ar/` depending on what their browser asks for, falling back to
+English. It exists because `output: "export"` produces plain files — there is no server to
+issue a redirect and no middleware to run — so the forward has to happen in the document
+itself. It works with JavaScript off (a `<meta http-equiv="refresh">` inside `<noscript>`)
+and, failing even that, shows two links.
+
+If you would rather Apache did the redirect, `.htaccess` can do it and the gate becomes
+harmless dead weight; nothing else in the build depends on it.
+
+`out/index.html` must therefore survive the upload like any other file. Deleting it because
+"the home page is under /en/ now" leaves the domain root serving a directory listing or a
+404, which is the first thing anyone typing the bare domain will hit.
 
 ## Updating the site later
 
@@ -54,7 +73,8 @@ but are never served.
 - `pnpm build` and `pnpm start` are unchanged and still work — the static export is gated
   behind `STATIC_EXPORT=1`, which `pnpm build:static` sets. This is deliberate: `output:
   "export"` disables `next start`, which `tools/check-home.mjs` and `tools/check-nav.mjs`
-  need.
+  need. Those scripts check English by default; set `SITE_LANG=ar` to run them against the
+  Arabic build.
 - The contact form is markup only. Nothing on the site posts to a backend, so there is
   nothing to configure server-side. If a working form is wanted later, that is the one part
   of this deploy that needs more than static files.

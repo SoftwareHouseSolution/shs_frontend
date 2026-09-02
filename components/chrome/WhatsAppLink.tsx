@@ -1,15 +1,39 @@
 import { SITE } from "@/content/site";
+import { UI } from "@/content/ui";
+import type { Locale } from "@/content/i18n";
 
-/* Inline SVG using currentColor so it inherits --nav-fg and flips with the bar.
-   No icon dependency — one glyph does not justify a package. */
-export function WhatsAppLink({ className = "swh-wa" }: { className?: string }) {
+/* Inline SVG using currentColor, so the caller's class decides the colour.
+   No icon dependency — one glyph does not justify a package.
+
+   `className` is REQUIRED, with no default. It used to default to "swh-wa", the navbar
+   variant, and there is no navbar variant any more: the only place this renders is the top
+   of the contact rail (components/chrome/SocialRail.tsx). A default pointing at a class
+   that no stylesheet defines is worse than making the caller say which one it wants.
+
+   The phone number is appended to the label rather than translated into it: a number is a
+   number in both languages, and no `dir` is needed because an aria-label is read, not
+   laid out. */
+export function WhatsAppLink({
+  lang,
+  className,
+  hoverLabel,
+}: {
+  lang: Locale;
+  className: string;
+  /** Short text for a CSS-rendered hover label, read back with content: attr(data-label).
+      It is passed as a data attribute rather than rendered as a child so this component
+      stays unaware of the rail's markup — the caller's stylesheet decides whether there is
+      a label at all, and omitting it simply produces no pseudo-element content. */
+  hoverLabel?: string;
+}) {
   return (
     <a
       className={className}
       href={SITE.whatsapp}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label={`Message us on WhatsApp at ${SITE.phone}`}
+      aria-label={`${UI[lang].whatsappAria} ${SITE.phone}`}
+      data-label={hoverLabel}
     >
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path

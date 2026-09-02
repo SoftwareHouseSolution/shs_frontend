@@ -20,27 +20,25 @@ import React from "react";
 import Link from "next/link";
 import { BrandLogo } from "@/components/ds/BrandLogo";
 import { SocialIcon } from "@/components/chrome/SocialIcon";
-import { NAV, isGroup } from "@/content/nav";
-import { SITE, SOCIAL } from "@/content/site";
+import { groupById } from "@/content/nav";
+import { SITE, SITE_L, SOCIAL } from "@/content/site";
+import { UI } from "@/content/ui";
+import { href as localeHref } from "@/content/i18n";
 import { Container } from "./Container";
 
-/* Two columns of real destinations, taken from the navbar's own tree. "Company" is the
+/* Three columns of real destinations, taken from the navbar's own tree. "Company" is the
    About group; "Explore" is everything a visitor at the bottom of the page is most likely
-   still hunting for. Both are resolved by label so a nav rename surfaces here as a build
+   still hunting for. Groups are resolved by ID, never by label — labels are per-language
+   now, and groupById throws on an unknown id so a nav restructure surfaces here as a build
    error rather than as an empty column. */
-const groupNamed = (label) => {
-  const g = NAV.find((e) => isGroup(e) && e.label === label);
-  if (!g) throw new Error(`Footer: no nav group "${label}"`);
-  return g.children;
-};
-
-const COLUMNS = [
-  { heading: "Company", links: groupNamed("About") },
-  { heading: "Explore", links: [...groupNamed("Solutions"), ...groupNamed("Customers")] },
-  { heading: "Work with us", links: [...groupNamed("Partners"), ...groupNamed("Careers")] },
+const COLUMNS = (ui) => [
+  { key: "company", heading: ui.footerCompany, links: groupById("about") },
+  { key: "explore", heading: ui.footerExplore, links: [...groupById("solutions"), ...groupById("customers")] },
+  { key: "work", heading: ui.footerWorkWithUs, links: [...groupById("partners"), ...groupById("careers")] },
 ];
 
-export function Footer() {
+export function Footer({ lang }) {
+  const ui = UI[lang];
   return (
     <footer className="swh-footer">
       <Container>
@@ -50,32 +48,35 @@ export function Footer() {
               .sticky-footer, which is position:fixed — its rect never changes, so the
               mapping would freeze the brand column at a permanent ~0.9 scale. */}
           <div className="swh-footer__brand">
-            <Link href="/" className="swh-footer__mark" aria-label={`${SITE.name} — home`}>
+            <Link href={localeHref(lang, "/")} className="swh-footer__mark" aria-label={`${SITE.name} — ${ui.homeAria}`}>
               <BrandLogo variant="lockup" height={44} />
             </Link>
             <p className="swh-footer__blurb">
-              POS-integrated ERP for the gold and diamond trade, plus enterprise software,
-              hardware and networking. Leading the market since {SITE.since}.
+              {ui.footerBlurb} {SITE.since}.
             </p>
+            {/* The number and the address are LTR runs. Left unmarked inside an RTL
+                column the bidi algorithm pushes the "+" of the phone number to the wrong
+                end; `dir="ltr"` on the two that are not prose fixes it without affecting
+                the English footer, where it is already the ambient direction. */}
             <ul className="swh-footer__contact">
-              <li>{SITE.address}</li>
-              <li>
+              <li>{SITE_L[lang].address}</li>
+              <li dir="ltr" style={{ unicodeBidi: "isolate" }}>
                 <a href={SITE.phoneHref}>{SITE.phone}</a>
               </li>
-              <li>
+              <li dir="ltr" style={{ unicodeBidi: "isolate" }}>
                 <a href={`mailto:${SITE.salesEmail}`}>{SITE.salesEmail}</a>
               </li>
             </ul>
           </div>
 
-          <nav className="swh-footer__nav" aria-label="Footer">
-            {COLUMNS.map((col) => (
-              <div className="swh-footer__col" key={col.heading}>
+          <nav className="swh-footer__nav" aria-label={ui.footerNavAria}>
+            {COLUMNS(ui).map((col) => (
+              <div className="swh-footer__col" key={col.key}>
                 <h2 className="swh-footer__heading">{col.heading}</h2>
                 <ul>
                   {col.links.map((l) => (
                     <li key={l.href}>
-                      <Link href={l.href}>{l.label}</Link>
+                      <Link href={localeHref(lang, l.href)}>{l.label[lang]}</Link>
                     </li>
                   ))}
                 </ul>
@@ -92,7 +93,7 @@ export function Footer() {
                   href={s.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={`${s.label} — opens in a new tab`}
+                  aria-label={`${s.label} ${ui.opensInNewTab}`}
                 >
                   <SocialIcon name={s.label} />
                 </a>
@@ -103,7 +104,7 @@ export function Footer() {
                 href={SITE.whatsapp}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label={`WhatsApp ${SITE.phone} — opens in a new tab`}
+                aria-label={`WhatsApp ${SITE.phone} ${ui.opensInNewTab}`}
               >
                 <SocialIcon name="WhatsApp" />
               </a>
@@ -114,7 +115,7 @@ export function Footer() {
               new Date().getFullYear() renders identically today and quietly introduces a
               server/client mismatch class. Leave it literal. */}
           <p className="swh-footer__legal">
-            © {SITE.name} · 2026 <span>All Rights Reserved</span>
+            © {SITE.name} · 2026 <span>{ui.allRightsReserved}</span>
           </p>
         </div>
       </Container>

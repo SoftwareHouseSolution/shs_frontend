@@ -15,6 +15,8 @@ import { StepCard } from "@/components/ds/StepCard";
 import { SpecTable } from "@/components/ds/SpecTable";
 import { PillButton } from "@/components/ds/PillButton";
 import type { Photo, StubBlock } from "@/content/pages";
+import { UI } from "@/content/ui";
+import { href as localeHref, type Locale } from "@/content/i18n";
 
 const body = { margin: 0, font: "var(--body-copy)", color: "var(--body)" } as const;
 
@@ -34,7 +36,7 @@ function PhotoGrid({ photos }: { photos: Photo[] }) {
   );
 }
 
-function Block({ block }: { block: StubBlock }) {
+function Block({ block, lang }: { block: StubBlock; lang: Locale }) {
   switch (block.kind) {
     case "intro":
       return (
@@ -187,9 +189,11 @@ function Block({ block }: { block: StubBlock }) {
           <PillButton
             variant="primary"
             arrow
-            href={block.href}
+            /* localeHref passes absolute URLs and mailto: through untouched and prefixes
+               only real internal paths, so this one call covers all three CTA shapes. */
+            href={localeHref(lang, block.href)}
             {...(external
-              ? { target: "_blank", rel: "noopener noreferrer", "aria-label": `${block.label} — opens in a new tab` }
+              ? { target: "_blank", rel: "noopener noreferrer", "aria-label": `${block.label} ${UI[lang].opensInNewTab}` }
               : {})}
           >
             {block.label}
@@ -205,7 +209,7 @@ function Block({ block }: { block: StubBlock }) {
    every prop as required and `<Section>` alone fails to typecheck. Inlining the same
    values keeps this new code independent of the prototype sections instead of bending
    either one to fit. Values match Section.jsx and Container.jsx exactly. */
-export function StubBody({ blocks }: { blocks: StubBlock[] }) {
+export function StubBody({ blocks, lang }: { blocks: StubBlock[]; lang: Locale }) {
   return (
     <section
       style={{
@@ -230,7 +234,7 @@ export function StubBody({ blocks }: { blocks: StubBlock[] }) {
             /* delay={i * 0.08} is the design system's stagger literal, the same one
                Services.jsx calls "the motion fingerprint". */
             <Reveal key={`${b.kind}-${i}`} delay={i * 0.08}>
-              <Block block={b} />
+              <Block block={b} lang={lang} />
             </Reveal>
           ))}
         </div>

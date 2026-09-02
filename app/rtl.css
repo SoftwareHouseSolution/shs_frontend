@@ -1,0 +1,338 @@
+/* ═══════════════════════════════════════════════════════════════════════════════════
+   RIGHT-TO-LEFT CORRECTIONS
+
+   Imported last in app/layout.tsx. EVERY rule in this file is scoped under [dir="rtl"],
+   which app/[lang]/layout.tsx puts on #app server-side. On an English page not one of
+   these selectors matches, so this file cannot change the LTR site — that is the whole
+   reason the flips live here instead of being rewritten into chrome.css as logical
+   properties. Touching 38 physical declarations in a stylesheet that was tuned pixel by
+   pixel against a prototype is a large diff with a real chance of drift; adding an inert
+   override file is a small one with none.
+
+   Specificity: [dir="rtl"] .x is (0,2,0) against chrome.css's (0,1,0), so these win
+   without !important. Where the original rule sits inside a media query, the override
+   repeats that query — a bare rule would otherwise apply at every width.
+
+   ONE rule at the bottom of this file is not scoped to [dir="rtl"]: the language toggle's
+   Arabic label, which is Arabic text sitting on an English page. It is here because it
+   belongs to the same problem, and it says so at the site.
+
+   Rule of thumb applied throughout: MIRROR layout (which edge a panel is anchored to,
+   which side a border draws on, which way a drawer slides), do NOT mirror media
+   transport controls or the horizontal axis of a photograph.
+   ═══════════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Type ───────────────────────────────────────────────────────────────────────────
+   The display scale in styles/tokens/typography.css carries aggressively negative
+   letter-spacing — down to -12.8px on the hero. That tracking IS the Latin design, but
+   Arabic is a joined script: negative tracking pulls the glyphs of a word into each
+   other and, in some engines, disturbs the joins outright. It is reset to normal for
+   every Arabic text element. Size, weight, line-height and colour are untouched, so the
+   typographic hierarchy survives — only the tracking goes.
+
+   Crimson Text (--f-serif) has no Arabic glyphs at all, so an Arabic heading set in it
+   falls back to whatever the OS offers and the page loses its voice mid-sentence.
+   --f-serif and --f-sans are both re-pointed at Cairo, which is bundled alongside the
+   Latin faces in styles/tokens/fonts.css. */
+[dir="rtl"] {
+  --f-serif: "Cairo", "Segoe UI", Tahoma, sans-serif;
+  --f-sans: "Cairo", "Segoe UI", Tahoma, sans-serif;
+  /* The mono roles keep a Latin mono first: they are used for eyebrows and figures, which
+     are mostly digits and Latin product names even in Arabic. Cairo backs them for the
+     cases that are not. */
+  --f-mono: "Reddit Mono", "Cairo", ui-monospace, monospace;
+  --f-mono-data: "Roboto Mono", "Cairo", ui-monospace, monospace;
+}
+
+/* Two layers, because the tracking arrives by two different routes.
+
+   LAYER 1 — the tokens. SectionHeading and the page/hero header classes all read their
+   tracking from --hero-ls / --head-ls / --sub-ls / --mutedxl-ls / --caption-ls, so
+   redefining those here neutralises every display heading on the site with no !important
+   and no per-component rule. This is the token layer doing its job. */
+[dir="rtl"] {
+  --hero-ls: normal;
+  --head-ls: normal;
+  --sub-ls: normal;
+  --mutedxl-ls: normal;
+  --caption-ls: normal;
+}
+
+/* LAYER 2 — the literals, and the one place !important is justified in this codebase.
+   The design-system components in components/ds/ set letter-spacing as an INLINE style
+   with a hardcoded value (Eyebrow 0.08em, PillButton -0.35px, Testimonial -1px, and so
+   on). Inline styles outrank every selector, and those files are the ported design system
+   — the port note in styles/tokens/fonts.css records that they are not edited. So the
+   only way to reach them from CSS is !important, and it is scoped to [dir="rtl"] so it
+   cannot touch the English page.
+
+   The two BrandLogo instances are exempt: the wordmark's 0.02em is part of a Latin
+   logotype, not tracking applied to running text, and it reads the same in both
+   languages. */
+[dir="rtl"]
+  :is(h1, h2, h3, h4, h5, h6, p, li, a, button, span, input, label, td, th, legend, figcaption):not(
+    .swh-nav__brand *,
+    .swh-footer__mark *
+  ) {
+  letter-spacing: normal !important;
+}
+
+/* SectionHeading (components/ds/SectionHeading.jsx) defaults to align="left" and writes it
+   as an inline `text-align:left`. In Arabic that pins every section heading to the far
+   side of its own paragraph — visible on /ar/news-events, where the timeline entry titles
+   sat left while their body copy sat right.
+
+   Matching on the style ATTRIBUTE is unusual, and it is the least bad of three options.
+   Editing the component to default to `align="start"` would be the real fix, but the ds/
+   files are the ported design system and this repo does not edit them (see the port note
+   in styles/tokens/fonts.css). A blanket `text-align: right !important` would be wrong: it
+   would also flatten the deliberate align="center" on Specs, StatsBand and Contact, which
+   are centred in both languages. This targets exactly the headings that asked for the
+   START edge and got a hardcoded LEFT, and nothing else.
+
+   Both spellings are covered because the space is a serializer detail, not a guarantee. */
+[dir="rtl"] [style*="text-align:left"],
+[dir="rtl"] [style*="text-align: left"] {
+  text-align: right !important;
+}
+
+/* Arabic has no case, so the uppercase transform on eyebrows and mono labels does nothing
+   visually — but it does defeat the font's own shaping in a few engines. Off. */
+[dir="rtl"] .swh-page-header__eyebrow,
+[dir="rtl"] .swh-filters__label,
+[dir="rtl"] .swh-figures__label {
+  text-transform: none;
+}
+
+/* Cairo sits on a smaller optical body than Crimson Text at the same px size, and the
+   display scale was set against the serif. A small bump keeps the Arabic headings weighing
+   the same on the page as the English ones. */
+[dir="rtl"] .swh-page-header__title,
+[dir="rtl"] .hero-carousel__title {
+  line-height: 1.15;
+}
+
+/* ── Navigation bar ─────────────────────────────────────────────────────────────── */
+
+/* --swh-lock-pad compensates for the scrollbar when the drawer locks the body. It has to
+   move to whichever edge the scrollbar is on, which flips with the direction. */
+[dir="rtl"] .swh-nav {
+  left: var(--swh-lock-pad);
+  right: 0;
+}
+
+/* Dropdown panels hang from the start edge of their trigger. */
+[dir="rtl"] .swh-nav__panel {
+  left: auto;
+  right: 0;
+}
+
+[dir="rtl"] .swh-nav__cluster {
+  margin-left: 0;
+  margin-right: var(--nav-cluster-gap);
+}
+
+/* Below the drawer breakpoint the auto margin moves to the cluster (see chrome.css) —
+   and an auto margin is directional, so it flips too. The query must match the original. */
+@media (max-width: 1023px) {
+  [dir="rtl"] .swh-nav__cluster {
+    margin-left: 0;
+    margin-right: auto;
+  }
+}
+
+/* ── Drawer ─────────────────────────────────────────────────────────────────────── */
+
+/* The drawer mirrors WITH THE BURGER that opens it. In LTR the burger sits at the right
+   end of the bar and the panel slides in from the right; in RTL the whole nav cluster
+   moves to the left, so the panel comes from the left — a panel arriving from the far side
+   of the screen from the control that summoned it is the version that feels broken.
+
+   Only the resting offset needs reversing: the open state is translateX(0) either way. */
+[dir="rtl"] .swh-drawer__panel {
+  right: auto;
+  left: 0;
+  transform: translateX(-100%);
+}
+[dir="rtl"] .swh-drawer[data-open="true"] .swh-drawer__panel {
+  transform: translateX(0);
+}
+[dir="rtl"] .swh-drawer__close {
+  right: auto;
+  left: 16px;
+}
+[dir="rtl"] .swh-drawer__trigger,
+[dir="rtl"] .swh-drawer__solo a,
+[dir="rtl"] .swh-drawer__sub a {
+  text-align: right;
+}
+
+/* ── Breadcrumb ─────────────────────────────────────────────────────────────────── */
+
+/* The separator sits after the slash in source order, so its gap moves to the other side.
+   The glyph itself stays "/" — it is a separator, not a directional arrow, and the
+   bidirectional algorithm places it correctly between two Arabic runs on its own. */
+[dir="rtl"] .swh-crumb li + li::before {
+  margin-right: 0;
+  margin-left: 8px;
+}
+
+/* ── Events rail ────────────────────────────────────────────────────────────────── */
+
+/* The rail line is a border, and it is the timeline — it has to be on the reading-start
+   edge or the active marker ends up on the far side of the label it marks. */
+[dir="rtl"] .swh-events__tab {
+  padding: 14px 18px 14px 0;
+  text-align: right;
+  border-left: 0;
+  border-right: 2px solid var(--hairline);
+}
+[dir="rtl"] .swh-events__tab:hover {
+  border-right-color: var(--accent-soft);
+}
+[dir="rtl"] .swh-events__tab[aria-current="true"] {
+  border-right-color: var(--accent);
+}
+
+/* On narrow screens the rail becomes a horizontal strip and the marker moves to the top
+   border, which is direction-neutral — so the side border is simply cleared. */
+@media (max-width: 899px) {
+  [dir="rtl"] .swh-events__tab {
+    border-right: 0;
+  }
+}
+
+/* ── Timeline (news & events page) ──────────────────────────────────────────────── */
+
+[dir="rtl"] .swh-timeline__item {
+  padding-left: 0;
+  padding-right: 34px;
+}
+[dir="rtl"] .swh-timeline__item::before {
+  left: auto;
+  right: 5px;
+}
+[dir="rtl"] .swh-timeline__marker {
+  left: auto;
+  right: 0;
+}
+@media (max-width: 599px) {
+  [dir="rtl"] .swh-timeline__item {
+    padding-left: 0;
+    padding-right: 26px;
+  }
+}
+
+/* ── Client directory filters ───────────────────────────────────────────────────── */
+
+[dir="rtl"] .swh-filters__bar {
+  margin-left: 0;
+  margin-right: auto;
+}
+@media (max-width: 899px) {
+  [dir="rtl"] .swh-filters__bar {
+    margin-right: 0;
+  }
+}
+
+/* ── Figures row ────────────────────────────────────────────────────────────────── */
+
+/* The divider is a border on each item and must fall BETWEEN items, so it moves to the
+   other side along with the first-item reset that stops it drawing an outer edge. */
+[dir="rtl"] .swh-figures__item {
+  border-left: 0;
+  border-right: 1px solid var(--hairline);
+}
+[dir="rtl"] .swh-figures__item:first-child {
+  border-right: 0;
+}
+@media (max-width: 899px) {
+  [dir="rtl"] .swh-figures__item:last-child,
+  [dir="rtl"] .swh-figures__item:nth-child(odd) {
+    border-right: 0;
+  }
+}
+
+/* ── Contact rail ───────────────────────────────────────────────────────────────── */
+
+/* Mirrors to the left edge. Only the anchor moves now — the rail rests fully in view in
+   both directions, so there is no resting transform left to reverse. */
+[dir="rtl"] .swh-rail {
+  right: auto;
+  left: 0;
+}
+[dir="rtl"] .swh-rail__body {
+  border-radius: 0 var(--rail-r) var(--rail-r) 0;
+  border-right: 1px solid var(--hairline);
+  border-left: 0;
+  /* Light now falls across the left edge, so the shadow casts the other way. */
+  box-shadow:
+    1px 0 2px rgba(22, 25, 29, 0.06),
+    6px 6px 16px rgba(22, 25, 29, 0.1),
+    18px 12px 42px rgba(22, 25, 29, 0.16);
+}
+/* The WhatsApp button's hover label opens INWARD, and inward is the other way here: the
+   rail is anchored to the left edge in Arabic, so the label leaves from the button's right
+   and slides the opposite direction. */
+[dir="rtl"] .swh-rail__wa::after {
+  right: auto;
+  left: calc(100% + 12px);
+  transform: translateX(-6px);
+}
+[dir="rtl"] .swh-rail__wa:hover::after,
+[dir="rtl"] .swh-rail__wa:focus-visible::after {
+  transform: translateX(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  [dir="rtl"] .swh-rail__wa::after {
+    transform: none;
+  }
+}
+
+/* The lift on approach has to be flipped too, or the rail's shadow snaps to the other side
+   the moment a pointer reaches it. */
+[dir="rtl"] .swh-rail:hover .swh-rail__body,
+[dir="rtl"] .swh-rail:focus-within .swh-rail__body,
+[dir="rtl"] .swh-rail[data-open="true"] .swh-rail__body {
+  box-shadow:
+    1px 0 2px rgba(22, 25, 29, 0.08),
+    8px 8px 20px rgba(22, 25, 29, 0.14),
+    26px 16px 56px rgba(22, 25, 29, 0.22);
+}
+
+/* ── Video modal ────────────────────────────────────────────────────────────────── */
+
+[dir="rtl"] .swh-vmodal__sound-nudge {
+  left: auto;
+  right: 16px;
+}
+[dir="rtl"] .swh-vmodal__sound-nudge {
+  animation-name: swh-vmodal-nudge-rtl;
+}
+@keyframes swh-vmodal-nudge-rtl {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+}
+[dir="rtl"] .swh-vmodal__close {
+  right: auto;
+  left: 14px;
+}
+/* The play triangle is NOT mirrored. A play glyph points right in every RTL media player
+   worth copying — it indicates the direction of time, not of text — so its optical
+   centring offset stays where it is. */
+
+/* ── The language toggle's own label ────────────────────────────────────────────────
+   The toggle shows the OTHER language's name in that language, so an English page carries
+   one Arabic word — "العربية" — inside an otherwise Latin bar. It is marked lang="ar" for
+   a screen reader; this makes the FONT follow the same marking, because .swh-lang's `font`
+   shorthand resolves --f-sans to DM Sans on an English page and DM Sans has no Arabic
+   glyphs at all. Without this the one word the control exists to show drops to whatever
+   the operating system happens to supply.
+
+   Not scoped to [dir="rtl"] like the rest of this file, and deliberately so: the case it
+   fixes is Arabic text on a LEFT-to-right page. */
+.swh-lang[lang="ar"] {
+  font-family: "Cairo", "Segoe UI", Tahoma, sans-serif;
+}

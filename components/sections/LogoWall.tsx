@@ -16,6 +16,9 @@ import { Reveal } from "@/components/ds/Reveal";
 import { PillButton } from "@/components/ds/PillButton";
 import { InfiniteSlider } from "@/components/core/infinite-slider";
 import { CLIENTS } from "@/content/clients";
+import { HOME } from "@/content/home";
+import { UI } from "@/content/ui";
+import { href as localeHref, type Locale } from "@/content/i18n";
 
 const VIP = ["kirmena-jewellery", "gold-era-jewelry", "king-gold-jewellery"];
 
@@ -38,21 +41,21 @@ const MARQUEE = (() => {
   return pool.filter((_, i) => i % stride === 0).slice(0, MARQUEE_COUNT);
 })();
 
-export function LogoWall() {
+export function LogoWall({ lang }: { lang: Locale }) {
+  const c = HOME[lang];
   return (
     <section className="swh-proof">
       <div className="swh-proof__inner">
         <Reveal style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "36px", width: "100%" }}>
-          <p className="swh-proof__lede">
-            Trusted by 1,750+ jewellery stores &amp; manufacturers across Egypt, Dubai, KSA &amp; USA
-          </p>
+          <p className="swh-proof__lede">{c.proofLede}</p>
 
           <ul className="swh-proof__vip">
-            {VIP_LOGOS.map((c) => (
-              <li key={c.slug}>
+            {/* `v`, not `c`: `c` is the page copy in this scope now. */}
+            {VIP_LOGOS.map((v) => (
+              <li key={v.slug}>
                 {/* eager, not lazy: these three are above the fold on most desktops, and a
                     logo that fades in late is the one thing worse than a logo that moves. */}
-                <img src={c.logo} alt={c.name} decoding="async" />
+                <img src={v.logo} alt={v.name} decoding="async" />
               </li>
             ))}
           </ul>
@@ -67,7 +70,7 @@ export function LogoWall() {
           gap={72}
           speed={44}
           speedOnHover={14}
-          aria-label="A selection of our 1,750+ clients"
+          aria-label={c.proofStripAria}
         >
           {/* NOT lazy, deliberately. The strip is an overflow:hidden box whose content is
               moved by a transform, so all but the first few marks sit outside the clip at
@@ -75,12 +78,12 @@ export function LogoWall() {
               indefinitely and the strip would scroll visible holes into view. They are
               ~5KB each, so the whole set is smaller than one hero still; fetchPriority
               keeps them behind the hero in the queue. */}
-          {MARQUEE.map((c) => (
+          {MARQUEE.map((m) => (
             <img
-              key={c.slug}
+              key={m.slug}
               className="swh-proof__mark"
-              src={c.logo}
-              alt={c.name}
+              src={m.logo}
+              alt={m.name}
               decoding="async"
               fetchPriority="low"
             />
@@ -93,8 +96,8 @@ export function LogoWall() {
           {/* 1,750+ is the roster; CLIENTS.length is only how many logos we have clearance
               to publish. The button now names the roster so it matches the band above it,
               the /customers lede and StatsBand rather than contradicting all three. */}
-          <PillButton variant="secondary" arrow href="/customers">
-            See all 1,750+ clients
+          <PillButton variant="secondary" arrow href={localeHref(lang, "/customers")}>
+            {c.proofCta}
           </PillButton>
         </Reveal>
       </div>

@@ -18,6 +18,7 @@
    unbounded dwell would keep growing. */
 
 import { Breadcrumb, type Crumb } from "./Breadcrumb";
+import type { Locale } from "@/content/i18n";
 
 type Props = {
   title: string;
@@ -25,15 +26,16 @@ type Props = {
   lede: string;
   image: string;
   crumbs: Crumb[];
+  lang: Locale;
 };
 
-export function PageHeader({ title, eyebrow, lede, image, crumbs }: Props) {
+export function PageHeader({ title, eyebrow, lede, image, crumbs, lang }: Props) {
   return (
     <header className="swh-page-header" data-nav-hero="">
       <img className="swh-page-header__img" src={image} alt="" decoding="async" fetchPriority="high" />
       <div className="swh-page-header__scrim" aria-hidden="true" />
       <div className="swh-page-header__inner">
-        <Breadcrumb items={crumbs} />
+        <Breadcrumb items={crumbs} lang={lang} />
         {/* Classed rather than inline-styled so the mobile rule can reach it — see
             .swh-page-header__eyebrow in app/chrome.css for why it goes away on a phone. */}
         <p className="swh-page-header__eyebrow">{eyebrow}</p>

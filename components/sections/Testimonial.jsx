@@ -7,10 +7,15 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Container } from "./Container";
 import { ScrollReveal } from "./ScrollReveal";
-import { QUOTE } from "./data";
+import { HOME } from "@/content/home";
 import { A } from "./assetPath";
 
-export function Testimonial() {
+export function Testimonial({ lang }) {
+  const c = HOME[lang];
+  /* Split per render rather than stored pre-split in content/home.ts: the word-by-word
+     fill is this component's business, and a translator should never be handed an array
+     of loose words to translate one at a time. */
+  const words = c.quote.split(" ");
   const ref = useRef(null);
   const [p, setP] = useState(0);
   useEffect(() => {
@@ -32,8 +37,8 @@ export function Testimonial() {
       <Container>
         <div ref={ref} style={{ maxWidth: "1100px", margin: "0 auto" }}>
           <p style={{ margin: 0, fontFamily: "var(--f-serif)", fontSize: "clamp(30px,5vw,64px)", lineHeight: 1.1, letterSpacing: "-1px" }}>
-            {QUOTE.map((w, i) => {
-              const on = p * QUOTE.length > i;
+            {words.map((w, i) => {
+              const on = p * words.length > i;
               return <span key={i} style={{ color: on ? "var(--ink)" : "#DADADA", transition: "color .2s" }}>{w} </span>;
             })}
           </p>
@@ -41,7 +46,7 @@ export function Testimonial() {
             <ScrollReveal style={{ display: "inline-flex" }}>
               <img src={A("testimonials/uncle.png")} alt="" style={{ height: "44px", width: "44px", objectFit: "contain" }} />
             </ScrollReveal>
-            <span style={{ font: "var(--body-copy)", color: "var(--body)" }}>Mr. Mohammed Wassem — Wassem Jewellery</span>
+            <span style={{ font: "var(--body-copy)", color: "var(--body)" }}>{c.quoteAttribution}</span>
           </div>
         </div>
       </Container>

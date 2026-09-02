@@ -127,12 +127,27 @@ const walk = async (dir) => {
   return { files, bytes };
 };
 
-const pages = (await readdir(OUT, { withFileTypes: true }))
-  .filter((e) => e.isDirectory() && e.name !== "_next" && e.name !== "assets")
-  .map((e) => e.name);
+/* Routes are reported PER LANGUAGE. The top level of out/ is now just the two locale
+   directories plus the "/" gate and the 404, so listing it alone would say almost nothing
+   about whether the export is complete. What is worth seeing is that both languages came
+   out with the SAME route list — a count that differs between them means one language's
+   generateStaticParams did not run, which is exactly the truncation this report exists
+   to catch. */
+const SKIP = new Set(["_next", "assets", "404", "_not-found"]);
+const routesUnder = async (dir) =>
+  (await readdir(dir, { withFileTypes: true }))
+    .filter((e) => e.isDirectory() && !SKIP.has(e.name) && !e.name.startsWith("__next"))
+    .map((e) => e.name)
+    .sort();
+
+const locales = await routesUnder(OUT);
 const { files, bytes } = await walk(OUT);
 
 console.log(`\nout/  ${files} files, ${(bytes / 1024 / 1024).toFixed(1)} MB`);
-console.log(`routes: / , ${pages.sort().join(" , ")}`);
+console.log(`/            language gate — redirects to /en/ or /ar/`);
+for (const l of locales) {
+  const routes = await routesUnder(path.join(OUT, l));
+  console.log(`/${l}/  ${routes.length + 1} routes: / , ${routes.join(" , ")}`);
+}
 console.log(`wrote out/.htaccess and ${flattened} flattened prefetch payloads`);
 console.log(`\nUpload the CONTENTS of out/ to public_html — including the dotfile.`);

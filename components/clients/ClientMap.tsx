@@ -30,14 +30,20 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Client, Region } from "@/content/clients";
-import { REGIONS } from "@/content/clients";
+import { REGIONS, REGION_LABEL } from "@/content/clients";
+import { UI } from "@/content/ui";
+import type { Locale } from "@/content/i18n";
 import { ClientCard } from "./ClientCard";
 import { REGION_ANCHORS, embedUrl, fitZoom, offsetFromCentre } from "./regionGeo";
 
 /* Over-scan in px per side. Google's controls sit within ~64px of the corners. */
 const BLEED = 68;
 
-export function ClientMap({ clients }: { clients: readonly Client[] }) {
+export function ClientMap({ clients, lang }: { clients: readonly Client[]; lang: Locale }) {
+  const ui = UI[lang];
+  /* Region KEYS drive the filter and the map anchors; REGION_LABEL is only ever used to
+     print one. Filtering on a translated string would break the moment a label changed. */
+  const regionName = (r: Region) => REGION_LABEL[lang][r];
   const [active, setActive] = useState<Region | null>(null);
   const [q, setQ] = useState("");
   const frameRef = useRef<HTMLDivElement>(null);
@@ -84,6 +90,9 @@ export function ClientMap({ clients }: { clients: readonly Client[] }) {
         return true;
       })
       .slice()
+      /* Collated as "en" in both languages on purpose: client names are Latin in both
+         (see content/clients.ts), so an Arabic collator would order them by codepoint
+         rather than alphabetically. */
       .sort((a, b) => a.name.localeCompare(b.name, "en"));
   }, [clients, active, q]);
 
@@ -175,10 +184,14 @@ export function ClientMap({ clients }: { clients: readonly Client[] }) {
                     <button
                       type="button"
                       className="swh-map__tag"
+                      /* The untranslated region KEY, so tooling and tests have a stable
+                         handle on a pin whose visible label changes with the language —
+                         the same reason ClientDirectory's chips carry data-facet/value. */
+                      data-region={r}
                       aria-pressed={active === r}
                       onClick={() => select(r)}
                     >
-                      <span className="swh-map__tag-name">{r}</span>
+                      <span className="swh-map__tag-name">{regionName(r)}</span>
                       <span className="swh-map__tag-n">{n}</span>
                     </button>
                   </li>
@@ -189,29 +202,30 @@ export function ClientMap({ clients }: { clients: readonly Client[] }) {
 
           <div className="swh-map__bar">
             <label className="swh-map__search">
-              <span className="swh-filters__label">Find a client</span>
+              <span className="swh-filters__label">{ui.findAClient}</span>
               <input
                 className="swh-filters__search"
                 type="search"
                 value={q}
-                placeholder="Name or location"
+                placeholder={ui.nameOrLocation}
                 onChange={(e) => setQ(e.target.value)}
               />
             </label>
 
             {offMap.length > 0 && (
               <div className="swh-map__off">
-                <span className="swh-filters__label">Not on the map</span>
+                <span className="swh-filters__label">{ui.notOnTheMap}</span>
                 <div className="swh-map__off-chips">
                   {offMap.map((r) => (
                     <button
                       key={r}
                       type="button"
                       className="swh-filters__chip"
+                      data-region={r}
                       aria-pressed={active === r}
                       onClick={() => select(r)}
                     >
-                      {r} <span className="swh-map__off-n">{counts.get(r)}</span>
+                      {regionName(r)} <span className="swh-map__off-n">{counts.get(r)}</span>
                     </button>
                   ))}
                 </div>
@@ -220,13 +234,19 @@ export function ClientMap({ clients }: { clients: readonly Client[] }) {
           </div>
         </div>
 
-        <div className="swh-map__result" id="clients" ref={resultRef}>
-          <h2 className="swh-map__result-title">
-            {active ?? "Every client"}
-            <span aria-live="polite">
-              {shown.length} of {clients.length}
-            </span>
-          </h2>
+        {/* data-active carries the key of the selected region, or nothing when the roster
+            is unfiltered — the heading text beside it is localised and cannot be asserted on. */}
+        <div className="swh-map__result" id="clients" ref={resultRef} data-active={active ?? ""}>
+          <h2 className="swh-map__result-title">{active ? regionName(active) : ui.everyClient}</h2>
+          {/* The running count used to be drawn beside the heading. It is now announced
+              only, because it was the same number three times over on a page that already
+              shows a count on every region pin and then lays the matching cards out
+              underneath — but it cannot simply be deleted, because it is the ONLY feedback
+              a screen-reader user gets that pressing a pin did anything. Visually hidden,
+              still live, still polite. */}
+          <p className="swh-vh" aria-live="polite">
+            {ui.countOf(shown.length, clients.length)}
+          </p>
           {active !== null || q !== "" ? (
             <button
               type="button"
@@ -236,19 +256,19 @@ export function ClientMap({ clients }: { clients: readonly Client[] }) {
                 setQ("");
               }}
             >
-              Show all {clients.length}
+              {ui.showAll}
             </button>
           ) : null}
         </div>
 
         {shown.length === 0 ? (
           <p className="swh-filters__empty">
-            No client matches “{q}”{active ? ` in ${active}` : ""}. Try a shorter search.
+            {ui.noClientMatch(q, active ? ui.inRegion(regionName(active)) : "")}
           </p>
         ) : (
           <ul className="swh-client-grid">
             {shown.map((c) => (
-              <ClientCard key={c.slug} client={c} />
+              <ClientCard key={c.slug} client={c} lang={lang} />
             ))}
           </ul>
         )}

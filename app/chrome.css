@@ -1557,6 +1557,74 @@
   color: var(--muted);
 }
 
+/* ── Featured-client strip ───────────────────────────────────────────────────────── */
+/* components/clients/FeaturedClients.tsx. Sits between the map panel and the "Every
+   client" heading. */
+
+.swh-featured {
+  margin-bottom: 52px;
+  /* The strip is endless, but this one is boxed inside the gutter, so it has two hard
+     edges the home page's full-bleed band does not. The mask fades the marks out over the
+     last 88px instead of guillotining them mid-wordmark, which is what sells the loop. */
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 88px,
+    #000 calc(100% - 88px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 88px,
+    #000 calc(100% - 88px),
+    transparent 100%
+  );
+}
+.swh-featured__strip {
+  padding: 4px 0;
+}
+/* Slot sizing, same reasoning as .swh-proof__mark: these marks run from 0.5:1 to 13:1, so
+   they are fitted to a fixed box rather than to a height — otherwise Gemma Azzurr's 13:1
+   wordmark renders three times the width of the median mark and reads as a banner with
+   logos beside it. Sized ABOVE the home page's 56px strip marks, not below it: these are
+   sixteen named accounts rather than a sample of the roster, so the strip is here to be
+   read logo by logo and each mark has to survive that. */
+.swh-featured__mark {
+  flex: none;
+  height: 112px;
+  width: auto;
+  max-width: 380px;
+  object-fit: contain;
+  /* An <img> with no intrinsic box measures 0 until it decodes, and a 0-width group lets
+     the slider compute its duration from nothing on the first paint. */
+  min-width: 40px;
+}
+
+@media (max-width: 799px) {
+  .swh-featured {
+    margin-bottom: 28px;
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 40px,
+      #000 calc(100% - 40px),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 40px,
+      #000 calc(100% - 40px),
+      transparent 100%
+    );
+  }
+  .swh-featured__mark {
+    height: 78px;
+    max-width: 260px;
+  }
+}
+
 .swh-map__result {
   display: flex;
   align-items: baseline;

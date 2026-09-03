@@ -34,6 +34,7 @@ import { REGIONS, REGION_LABEL } from "@/content/clients";
 import { UI } from "@/content/ui";
 import type { Locale } from "@/content/i18n";
 import { ClientCard } from "./ClientCard";
+import { FeaturedClients } from "./FeaturedClients";
 import { REGION_ANCHORS, embedUrl, fitZoom, offsetFromCentre } from "./regionGeo";
 
 /* Over-scan in px per side. Google's controls sit within ~64px of the corners. */
@@ -233,6 +234,13 @@ export function ClientMap({ clients, lang }: { clients: readonly Client[]; lang:
             )}
           </div>
         </div>
+
+        {/* Sixteen named accounts on an endless strip, immediately above the heading.
+            It is NOT filtered by the region selection: it is a fixed, client-chosen
+            billboard, and a "featured" row that emptied itself when you pressed Alexandria
+            would read as a bug rather than as a filter. The roster below is the thing the
+            map filters. */}
+        <FeaturedClients lang={lang} />
 
         {/* data-active carries the key of the selected region, or nothing when the roster
             is unfiltered — the heading text beside it is localised and cannot be asserted on. */}

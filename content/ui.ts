@@ -65,6 +65,8 @@ export type UIStrings = {
   nameOrLocation: string;
   notOnTheMap: string;
   everyClient: string;
+  /** Accessible name for the featured-client marquee above the results heading. */
+  featuredClientsAria: string;
   /** "{shown} of {total}". Announced to screen readers only — it is no longer drawn.
       See the note at the result heading in components/clients/ClientMap.tsx. */
   countOf: (shown: number, total: number) => string;
@@ -143,6 +145,7 @@ const en: UIStrings = {
   nameOrLocation: "Name or location",
   notOnTheMap: "Not on the map",
   everyClient: "Every client",
+  featuredClientsAria: "Featured clients",
   countOf: (shown, total) => `${shown} of ${total}`,
   showAll: "Show all clients",
   noClientMatch: (query, where) => `No client matches “${query}”${where}. Try a shorter search.`,
@@ -211,6 +214,7 @@ const ar: UIStrings = {
   nameOrLocation: "الاسم أو الموقع",
   notOnTheMap: "خارج الخريطة",
   everyClient: "كل العملاء",
+  featuredClientsAria: "عملاء مميزون",
   countOf: (shown, total) => `${shown} من ${total}`,
   showAll: "عرض كل العملاء",
   noClientMatch: (query, where) => `لا يوجد عميل يطابق «${query}»${where}. جرّب بحثًا أقصر.`,

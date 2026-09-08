@@ -34,6 +34,11 @@
       resize, a late image), the animation is rebuilt at the SAME PROGRESS rather than
       from zero.
 
+   5. NO BLANK EDGE IN ARABIC. The travel direction is derived from the track's computed
+      `direction`, not hardcoded to screen-left. The long note at the keyframes explains
+      why a flex `max-content` track anchors to the opposite edge under RTL and what that
+      cost before it was handled.
+
    Reduced motion turns the whole thing into a plain horizontally scrollable row: the
    duplicate copy is dropped, nothing moves, and the content is still reachable. */
 
@@ -58,7 +63,8 @@ type InfiniteSliderProps = {
   speed?: number;
   /** Speed while the pointer is over the strip, in px per second. 0 pauses it. */
   speedOnHover?: number;
-  /** Run right-to-left instead of left-to-right. */
+  /** Travel against the ambient reading direction: rightward in an LTR context, leftward
+      in an RTL one. The default follows the page — see the note at the keyframes. */
   reverse?: boolean;
   className?: string;
   style?: CSSProperties;
@@ -131,8 +137,28 @@ export function InfiniteSlider({
       const rate = prev ? prev.playbackRate : 1;
       prev?.cancel();
 
-      const from = reverse ? -distance : 0;
-      const to = reverse ? 0 : -distance;
+      /* THE TRAVEL DIRECTION FOLLOWS THE WRITING DIRECTION, and it has to.
+
+         `translate3d` is physical — negative is always screen-left — but the track it moves
+         is `display: flex; width: max-content`, so which edge the content is anchored to is
+         NOT. Under `direction: rtl` the track's inline-start is its RIGHT edge: the groups
+         lay out right-to-left and the box extends leftward, off-screen. Translating that
+         negatively drags it further left and drains the window from the right, leaving a
+         band of blank paper that grows to a full loop-distance and then snaps back. On
+         /ar/customers that measured 218px of white beside the logos; the home page's
+         LogoWall strip had the same 198px.
+
+         So the sign is taken from the computed direction, and `reverse` flips it again on
+         top. In Arabic the strip now travels rightward, with marks entering from the left,
+         which is the mirror of the English behaviour rather than a different behaviour.
+
+         Read from the element rather than passed in: the direction is set on #app by the
+         server layout, so it is already correct at first layout, and a language change is a
+         navigation that unmounts this component — there is no live direction flip to track. */
+      const rtl = getComputedStyle(track).direction === "rtl";
+      const span = rtl ? distance : -distance;
+      const from = reverse ? span : 0;
+      const to = reverse ? 0 : span;
       const anim = track.animate(
         [{ transform: `translate3d(${from}px, 0, 0)` }, { transform: `translate3d(${to}px, 0, 0)` }],
         { duration, iterations: Infinity, easing: "linear" },

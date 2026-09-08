@@ -48,8 +48,13 @@ await p.evaluate(() => document.querySelector(".swh-figures").scrollIntoView());
 await p.waitForTimeout(2200);
 const clients = await p.locator(".swh-figures__value").nth(1).innerText();
 rec("client figure counts to 1,750+", clients.trim() === "1,750+", clients);
-rec("regions read KSA & USA",
-  (await p.locator(".swh-proof__lede").innerText()).includes("KSA & USA"));
+/* The four regions, in whichever language is being checked. Asserting the English string
+   would make this script report a failure on a correctly translated Arabic page. */
+const REGIONS_IN_LEDE = { en: ["Egypt", "Dubai", "KSA", "USA"], ar: ["مصر", "دبي", "السعودية", "الولايات المتحدة"] }[LANG];
+const lede = await p.locator(".swh-proof__lede").innerText();
+rec("proof lede names all four regions",
+  REGIONS_IN_LEDE.every((r) => lede.includes(r)),
+  REGIONS_IN_LEDE.filter((r) => !lede.includes(r)).join(", ") || "all present");
 
 // Marquee: VIP row static, strip moving and seamless.
 rec("3 VIP marks", (await p.locator(".swh-proof__vip li").count()) === 3);
@@ -111,12 +116,20 @@ rec("carousel advances while hovered", before !== after, `${before} -> ${after}`
    contact action that is a third off-screen until hovered is not one. The assertions are
    rewritten rather than deleted, because what can silently regress is the same thing it
    always was — the rail's rest position — only the correct value changed. */
-rec("rail is anchored to the right edge",
+/* The rail mirrors: it hangs off the right edge in English and the LEFT edge in Arabic
+   (app/rtl.css). So this asserts the INLINE-END edge rather than a physical side — pinning
+   it to `right: 0` would fail on a correctly mirrored Arabic page. */
+rec("rail is anchored to the page's end edge",
+  await p.locator(".swh-rail").evaluate((el, rtl) => {
+    const s = getComputedStyle(el);
+    const near = rtl ? s.left : s.right;
+    const far = rtl ? s.right : s.left;
+    return near === "0px" && (far === "auto" || parseFloat(far) > window.innerWidth / 2);
+  }, LANG === "ar"),
   await p.locator(".swh-rail").evaluate((el) => {
     const s = getComputedStyle(el);
-    return s.right === "0px" && (s.left === "auto" || parseFloat(s.left) > window.innerWidth / 2);
-  }),
-  await p.locator(".swh-rail").evaluate((el) => `right:${getComputedStyle(el).right}`));
+    return `left:${s.left} right:${s.right}`;
+  }));
 rec("rail rests fully in view — nothing clipped by the edge",
   await p.locator(".swh-rail").evaluate((el) => {
     const m41 = new DOMMatrix(getComputedStyle(el).transform).m41;
@@ -203,14 +216,19 @@ for (const route of ["/technology-partners", "/about-company"]) {
 // Dropdown opens on hover, and does not stay pinned after a click elsewhere.
 await p.goto(HOME, { waitUntil: "domcontentloaded" });
 await p.waitForTimeout(1500);
-await p.locator(".swh-nav__trigger", { hasText: "Partners" }).hover();
+/* Triggers are addressed by their stable id, not by their label. The labels are per-locale
+   now (content/nav.ts), so hasText: "Partners" finds nothing on an Arabic page — and the id
+   is what SiteNav's open-state keys off anyway, which makes it the right thing to assert. */
+await p.locator("#navtrig-partners").hover();
 await p.waitForTimeout(400);
 rec("dropdown opens on hover",
   (await p.locator('.swh-nav__item[data-open="true"]').count()) === 1);
-await p.locator(".swh-nav__trigger", { hasText: "Customers" }).hover();
+await p.locator("#navtrig-customers").hover();
 await p.waitForTimeout(400);
-const openLabel = await p.locator('.swh-nav__item[data-open="true"] .swh-nav__trigger').innerText();
-rec("hover moves to the next trigger", openLabel.includes("Customers"), openLabel);
+const openId = await p
+  .locator('.swh-nav__item[data-open="true"] .swh-nav__trigger')
+  .getAttribute("id");
+rec("hover moves to the next trigger", openId === "navtrig-customers", String(openId));
 await p.locator(".swh-nav__brand").hover();
 await p.waitForTimeout(500);
 rec("dropdown closes on hover-away", (await p.locator('.swh-nav__item[data-open="true"]').count()) === 0);

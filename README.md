@@ -23,6 +23,10 @@ pnpm typecheck
   envelope validation, retries, snake_case → camelCase), `envelope.ts` (the response
   contract and four distinguishable error classes), `content.ts` (cached server loaders),
   `types.ts` (payload types), `enquiries.ts` (the contact form's POST).
+- `components/chrome/VisitTracker.tsx` + `lib/api/analytics.ts` — anonymous page-flow
+  analytics for the CMS dashboard: reports each page view on open, every 15s while visible,
+  and on leave (sendBeacon); counts only visible time; silent under Do-Not-Track/GPC or
+  `NEXT_PUBLIC_ANALYTICS=off`.
 - `components/chrome/SiteContext.tsx` — site-wide CMS data (settings, navigation, footer,
   social, badges) fetched once in `app/[lang]/layout.tsx` and read by the client chrome.
 
@@ -46,6 +50,7 @@ pnpm typecheck
 ```bash
 pnpm build && pnpm start -p 3001
 PORT_URL=http://localhost:3001/ node tools/check-cms.mjs  # CMS content, lang/dir, enquiry form (21 checks)
+PORT_URL=http://localhost:3001/ node tools/check-analytics.mjs  # visit tracking: flow, time on page, DNT (10 checks)
 node tools/check-ds-parity.mjs                            # design-system byte parity (29 checks)
 PORT_URL=http://localhost:3001/ node tools/check-nav.mjs  # navigation + drawer (45 checks)
 PORT_URL=http://localhost:3001/ node tools/check-hero.mjs # carousel + reduced motion (17 checks)

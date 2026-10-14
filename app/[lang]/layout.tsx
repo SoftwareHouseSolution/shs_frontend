@@ -6,6 +6,7 @@ import { SiteNav } from "@/components/chrome/SiteNav";
 import { SocialRail } from "@/components/chrome/SocialRail";
 import { HtmlLangSync } from "@/components/chrome/HtmlLangSync";
 import { SiteProvider } from "@/components/chrome/SiteContext";
+import { VisitTracker } from "@/components/chrome/VisitTracker";
 import { LOCALES, DIR, HTML_LANG, isLocale, type Locale } from "@/content/i18n";
 import { getSite } from "@/lib/api/content";
 
@@ -84,6 +85,8 @@ export default async function LangLayout({
             only clipped by an ancestor's overflow when that ancestor is a containing
             block, and #app carries no transform or filter (see the comment above). */}
           <SocialRail lang={lang} />
+          {/* Anonymous page-flow analytics for the CMS dashboard; renders nothing. */}
+          <VisitTracker lang={lang} />
         </SiteProvider>
       </div>
     </>

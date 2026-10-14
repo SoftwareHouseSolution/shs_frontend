@@ -25,6 +25,7 @@ import { LanguageToggle } from "./LanguageToggle";
 import { NavDrawer } from "./NavDrawer";
 import { NavMenu } from "./NavMenu";
 import { SiteLogo } from "./SiteLogo";
+import { ThemeToggle } from "./ThemeToggle";
 import { useSite } from "./SiteContext";
 
 /* `lang` arrives as a prop from the server layout rather than being read off the pathname
@@ -142,6 +143,7 @@ export function SiteNav({ lang }: { lang: Locale }) {
               with the language toggle and the demo CTA for the same corner. See
               components/chrome/SocialRail.tsx. */}
           <BadgeSlot />
+          <ThemeToggle lang={lang} />
           <LanguageToggle lang={lang} />
           <span className="swh-cta">
             <PillButton variant="primary" arrow href={demoHrefFor(lang, pathname, settings.primaryCta.url)}>

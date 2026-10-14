@@ -51,6 +51,8 @@ pnpm typecheck
 pnpm build && pnpm start -p 3001
 PORT_URL=http://localhost:3001/ node tools/check-cms.mjs  # CMS content, lang/dir, enquiry form (21 checks)
 PORT_URL=http://localhost:3001/ node tools/check-analytics.mjs  # visit tracking: flow, time on page, DNT (10 checks)
+PORT_URL=http://localhost:3001/ node tools/check-loading.mjs    # first-load screen + navigation progress (12 checks)
+PORT_URL=http://localhost:3001/ node tools/check-theme.mjs      # light/dark: no flash, toggle, reveal, contrast, logo (29 checks)
 node tools/check-ds-parity.mjs                            # design-system byte parity (29 checks)
 PORT_URL=http://localhost:3001/ node tools/check-nav.mjs  # navigation + drawer (45 checks)
 PORT_URL=http://localhost:3001/ node tools/check-hero.mjs # carousel + reduced motion (17 checks)
@@ -153,9 +155,36 @@ not touched.
   Validation is the API's — messages arrive in the page's language and land under each
   field; the first invalid field takes focus. Network, server, rate-limit and validation
   failures each get their own wording.
-- **Deliberately absent.** No toast system and no route `loading.tsx`: every route is
-  prerendered (and revalidated in the background), so there is no navigation-time fetch to
-  wait on. A `loading.tsx` would also hand SiteNav's hero observer a skeleton to latch onto.
+- **Loading.** Pages arrive with their CMS content already in the HTML, so the waits a
+  visitor feels are the first arrival (fonts, hero media, logos) and page-to-page
+  navigation. `components/chrome/Preloader.tsx` covers the first: a branded screen that is
+  in the first byte of HTML, is dismissed by its own inline script when fonts and assets are
+  ready (never later than 3.5s after the click), only becomes visible after 200ms so fast
+  loads never see it, shows once per visit, never blocks input, and is hidden without
+  JavaScript. Its mark is embedded (`tools/make-preloader-mark.mjs`) so it never waits on a
+  request. `components/chrome/NavigationProgress.tsx` covers the second: a 2px accent line
+  that starts on the click and fills on arrival, growing from the reading start.
+- **Light and dark themes.** `app/theme.css` + `components/chrome/ThemeToggle.tsx`. The
+  theme is `<html data-theme>`, set in `<head>` before the first paint (saved choice, else
+  the system setting — `content/theme.ts`), so there is no white flash. Rules for new code:
+  - Backgrounds read `--surface` (page) or `--surface-raised` (panels, inputs) — never
+    `--paper`, which stays LIGHT on purpose: it is also the light ink on photos and on
+    blue buttons.
+  - Blue behind white text is `--accent-fill`; `--accent` is the blue for text and icons
+    (lighter in dark mode). No single blue reaches 4.5:1 for both on a dark page.
+  - Two renderings switched by theme: classes `swh-theme-light` / `swh-theme-dark`
+    (the logo has an ink-S and a light-S file; `ThemedBrandLogo`).
+  - Brand logos are never inverted in dark mode; they sit on `--logo-plate`.
+  - `components/ds/` cannot be edited: PillButton and SpecTable are corrected from
+    `theme.css` by re-scoping tokens on them (see the notes there).
+  - Switching animates as a circular reveal from the toggle (View Transitions API), with a
+    uniform cross-fade where the API is missing and an instant switch under reduced
+    motion. Page colour transitions are suspended during a switch so nothing animates at
+    its own speed inside the reveal; anything that SHOULD animate then (like the toggle's
+    icon) must be exempted explicitly, as `.swh-theme__icon` is.
+- **Deliberately absent.** No toast system and no route `loading.tsx`: a skeleton would
+  only flash in front of content that is already prerendered, and it would hand SiteNav's
+  hero observer a skeleton to latch onto.
 
 ## Known differences from the prototype
 

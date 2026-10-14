@@ -18,6 +18,7 @@ import { BadgeSlot } from "./BadgeSlot";
 import { LanguageToggle } from "./LanguageToggle";
 import { useFocusTrap } from "./useFocusTrap";
 import { useSite } from "./SiteContext";
+import { ThemeToggle } from "./ThemeToggle";
 
 type Props = {
   open: boolean;
@@ -144,6 +145,7 @@ export function NavDrawer({ open, onClose, pathname, lang }: Props) {
             {settings.primaryCta.label}
           </PillButton>
           <LanguageToggle lang={lang} onNavigate={onClose} />
+          <ThemeToggle lang={lang} />
           {/* WhatsApp was here too, and was invisible: .swh-wa took its colour from
               --nav-fg, and the drawer renders INSIDE <header class="swh-nav">, so over the
               hero that resolved to --paper — a white glyph on the white panel. It is gone

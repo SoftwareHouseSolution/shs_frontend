@@ -25,6 +25,10 @@ import type { Locale } from "./i18n";
 export type UIStrings = {
   /* ── Chrome ───────────────────────────────────────────────────────────────────── */
   skipToContent: string;
+  /** Announced while the first-load screen is up. */
+  loading: string;
+  /** The light/dark switch: a toggle button, pressed = dark mode on. */
+  darkMode: string;
   /** Suffix on the brand link's aria-label: "<company> — home". */
   homeAria: string;
   openMenu: string;
@@ -132,6 +136,8 @@ export type UIStrings = {
 
 const en: UIStrings = {
   skipToContent: "Skip to content",
+  loading: "Loading…",
+  darkMode: "Dark mode",
   homeAria: "home",
   openMenu: "Open menu",
   closeMenu: "Close menu",
@@ -213,6 +219,8 @@ const en: UIStrings = {
 
 const ar: UIStrings = {
   skipToContent: "تخطَّ إلى المحتوى",
+  loading: "جارٍ التحميل…",
+  darkMode: "الوضع الداكن",
   homeAria: "الصفحة الرئيسية",
   openMenu: "فتح القائمة",
   closeMenu: "إغلاق القائمة",

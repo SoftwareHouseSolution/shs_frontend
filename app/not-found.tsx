@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BrandLogo } from "@/components/ds/BrandLogo";
+import { ThemedBrandLogo } from "@/components/chrome/ThemedBrandLogo";
 import { PillButton } from "@/components/ds/PillButton";
 import { StatusPanel } from "@/components/feedback/StatusPanel";
 import { CompassIcon } from "@/components/feedback/icons";
@@ -47,7 +47,7 @@ export default async function NotFound() {
   return (
     <main id="main" className="swh-404">
       <Link className="swh-404__brand" href={localeHref(DEFAULT_LOCALE, "/")} aria-label={name ? `${name} — ${UI.en.homeAria}` : UI.en.homeAria}>
-        <BrandLogo variant="lockup" height={40} />
+        <ThemedBrandLogo height={40} />
       </Link>
 
       <div className="swh-404__panels">

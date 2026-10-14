@@ -54,7 +54,7 @@ export function Testimonial({ testimonial: c }) {
           <p style={{ margin: 0, fontFamily: "var(--f-serif)", fontSize: "clamp(30px,5vw,64px)", lineHeight: 1.1, letterSpacing: "-1px" }}>
             {words.map((w, i) => {
               const on = i < lit;
-              return <span key={i} style={{ color: on ? "var(--ink)" : "#DADADA", transition: "color .2s" }}>{w} </span>;
+              return <span key={i} style={{ color: on ? "var(--ink)" : "var(--quote-unlit)", transition: "color .2s" }}>{w} </span>;
             })}
           </p>
           <div style={{ marginTop: "32px", display: "flex", alignItems: "center", gap: "14px" }}>

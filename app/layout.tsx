@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 
 // Import order mirrors the prototype's <link rel="stylesheet"> followed by its inline <style>.
 // styles.css only @imports the five token files; prototype.css depends on those variables.
@@ -7,17 +7,30 @@ import "./prototype.css";
 // Site chrome (nav, drawer, carousel, page headers). Last, so it can layer on the tokens
 // and the prototype rules without either being able to override it.
 import "./chrome.css";
+// Light/dark themes: new tokens and the dark overrides. After chrome.css so it can
+// re-point chrome's surfaces; before rtl.css, which only adds direction rules.
+import "./theme.css";
 // Right-to-left corrections, last of all: every rule in it is scoped to [dir="rtl"], so it
 // is inert on an English page and can only ever add to the cascade, never reorder it.
 import "./rtl.css";
 
 import { DEFAULT_LOCALE, HTML_LANG, DIR } from "@/content/i18n";
+import { THEME_BOOTSTRAP } from "@/content/theme";
 
 /* Titles and descriptions come from the CMS per language — see app/[lang]/layout.tsx.
    The root only sets what holds for every document, including the language gate and
    the bare 404. */
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+};
+
+/* Mobile browser chrome follows the system theme (a meta tag cannot see the in-page
+   toggle); colours match --surface in each theme. */
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#FAFAF8" },
+    { media: "(prefers-color-scheme: dark)", color: "#101317" },
+  ],
 };
 
 /* THE DOCUMENT. Deliberately thin: it owns <html> and <body> and nothing else.
@@ -39,7 +52,12 @@ export const metadata: Metadata = {
    correctly marked. If Next ever lets a root layout read params, move it back up. */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang={HTML_LANG[DEFAULT_LOCALE]} dir={DIR[DEFAULT_LOCALE]}>
+    /* suppressHydrationWarning: the theme script below sets data-theme on <html> before
+       React hydrates (that is the point — no white flash for dark-mode visitors). */
+    <html lang={HTML_LANG[DEFAULT_LOCALE]} dir={DIR[DEFAULT_LOCALE]} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
+      </head>
       <body>{children}</body>
     </html>
   );

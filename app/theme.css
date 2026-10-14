@@ -1,0 +1,280 @@
+/* ── Light and dark themes ──────────────────────────────────────────────────────────
+   The resolved theme is <html data-theme="light|dark">, set before the first paint by
+   the script in app/layout.tsx (saved choice, else the system setting) and changed by
+   components/chrome/ThemeToggle.tsx.
+
+   styles/tokens/ are byte-identical design-system copies, so dark mode is built by
+   OVERRIDING tokens here rather than editing them. Two tokens do double duty and are
+   deliberately NOT flipped:
+
+   - --paper is both the light page surface AND the light ink on photographs and blue
+     buttons (hero copy, the bar over the hero, primary-button labels). Flipping it would
+     put dark text on dark photos. Surfaces now read --surface / --surface-raised instead
+     (chrome.css), and --paper stays light.
+   - --accent is both blue TEXT and blue FILL behind white text. No single blue gives
+     4.5:1 for both on a dark page, so dark mode splits them: --accent becomes a light blue
+     for text, links and icons; --accent-fill keeps the brand blue for filled controls.
+
+   Every pair below was measured: text ≥ 4.5:1, large numerals ≥ 3:1 (see the PR notes). */
+
+:root {
+  color-scheme: light;
+  /* New tokens. In light mode they resolve to exactly what the site used before. */
+  --surface: var(--paper); /* page canvas */
+  --surface-raised: var(--paper); /* drawer, rail, map pills, inputs */
+  --footer-bg: #eeeff1;
+  --accent-fill: var(--accent); /* blue behind white text */
+  --accent-fill-hover: var(--accent-hover);
+  --quote-unlit: #dadada; /* Testimonial's not-yet-filled words */
+  --logo-plate: transparent;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --surface: #101317;
+  --surface-raised: #181c21;
+  --footer-bg: #0b0d10;
+
+  --ink: #eceef1; /* 16.0:1 on --surface */
+  --body: #a7aeb8; /* 8.3:1 */
+  --muted: #7d848e; /* 4.9:1 — large numerals and secondary labels */
+  --text-subtle: #9aa2ad; /* 7.2:1 */
+  --hairline: #262b32;
+  --hairline-strong: #39404a;
+
+  --accent: #8eb1e3; /* text/icon blue: 8.5:1 on --surface */
+  --accent-hover: #a9c4ec;
+  --accent-fill: #4a6fa6; /* brand blue: white label 4.9:1 */
+  --accent-fill-hover: #3a5a8a; /* a LIGHTER hover would drop the label to 3.8:1 */
+  --accent-soft: #1f2d42; /* secondary pill: --ink on it 12:1 */
+  --accent-tint: #151e2a;
+  --sage: #1b2430;
+
+  --danger: #e8867d;
+  --danger-soft: #3a1e1c;
+
+  --nav-panel-bg: #181c21;
+  --nav-panel-shadow: 0 0 0 1px var(--hairline), 0 18px 40px rgba(0, 0, 0, 0.5);
+  --quote-unlit: #353b43;
+  /* Brand logos are drawn for white backgrounds; in dark mode they sit on a light plate
+     rather than being inverted (an inverted logo is someone else's brand). */
+  --logo-plate: #f3f4f6;
+}
+
+/* prototype.css paints these with literal values; route them through the tokens. Same
+   specificity, later file — identical in light mode. */
+body,
+.page-content {
+  background: var(--surface);
+}
+.sticky-footer {
+  background: var(--footer-bg);
+}
+
+/* Show one of two renderings by theme (the logo has an ink-S and a light-S file). Needs
+   !important: the design system's BrandLogo sets display inline. */
+:root:not([data-theme="dark"]) .swh-theme-dark,
+:root[data-theme="dark"] .swh-theme-light {
+  display: none !important;
+}
+
+/* ── The switch itself ──────────────────────────────────────────────────────────────
+   See the tiers in components/chrome/ThemeToggle.tsx. */
+
+/* No per-element colour transitions while the theme flips — every element cross-fading
+   at its own speed reads as flicker, not as a theme change. Held for the reveal (or for
+   one frame on an instant switch). */
+.swh-theme-switching *,
+.swh-theme-switching *::before,
+.swh-theme-switching *::after {
+  transition: none !important;
+}
+
+/* Tier 1 — the circular reveal. The browser's default cross-fade of the two snapshots is
+   switched off; the new theme sits on top and the toggle animates its clip-path from the
+   button outwards. Scoped to .swh-theme-vt so it can never affect another transition. */
+:root.swh-theme-vt::view-transition-old(root),
+:root.swh-theme-vt::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+:root.swh-theme-vt::view-transition-new(root) {
+  z-index: 1;
+}
+/* The overlay the browser lays over the page for a view transition swallows clicks, so a
+   second click on the toggle mid-reveal would land on nothing. Let input through to the
+   live page, so the switch can be reversed while it animates. (Not during the first
+   frame or two, while the browser snapshots the page — input then always hits the root.) */
+:root.swh-theme-vt::view-transition {
+  pointer-events: none;
+}
+
+/* Tier 2 — no View Transitions: everything fades its colours together, once. Overrides
+   each element's own transitions for the duration, so nothing lags or leads. */
+.swh-theme-fading *,
+.swh-theme-fading *::before,
+.swh-theme-fading *::after {
+  transition:
+    background-color 0.28s ease,
+    color 0.28s ease,
+    border-color 0.28s ease,
+    fill 0.28s ease,
+    stroke 0.28s ease,
+    box-shadow 0.28s ease !important;
+}
+
+/* ── Design-system components (copies; cannot be edited) ──────────────────────────── */
+
+/* PillButton paints its fill with var(--accent)/var(--accent-hover) and its label with
+   var(--paper), from inline styles. Re-scoping the two tokens on the button itself gives
+   it the brand fill back; it is matched by its pill radius, which only PillButton uses. */
+:root[data-theme="dark"] :is(a, button)[style*="--r-pill"] {
+  --accent: var(--accent-fill);
+  --accent-hover: var(--accent-fill-hover);
+}
+/* …and its secondary hover is a literal light blue (#C9D9EE), set from a mouse handler. */
+:root[data-theme="dark"] :is(a, button)[style*="--r-pill"][style*="rgb(201, 217, 238)"] {
+  background: #2a3c57 !important;
+}
+/* SpecTable fills the highlighted column with var(--paper). */
+:root[data-theme="dark"] .swh-spec {
+  --paper: var(--surface-raised);
+}
+
+/* ── Logos on plates ───────────────────────────────────────────────────────────────── */
+:root[data-theme="dark"] .swh-proof__vip img,
+:root[data-theme="dark"] .swh-proof__mark,
+:root[data-theme="dark"] .swh-featured__mark {
+  box-sizing: content-box;
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: var(--logo-plate);
+}
+:root[data-theme="dark"] .swh-client-card__logo,
+:root[data-theme="dark"] .swh-logo-wall__item {
+  box-sizing: border-box;
+  padding: 10px;
+  border-radius: var(--r-md);
+  background: var(--logo-plate);
+}
+
+/* ── The client map ────────────────────────────────────────────────────────────────── */
+/* Google's embed has no dark style without an API key; inverting the lightness and
+   rotating the hues back gives a night map whose water stays blue and land stays grey. */
+:root[data-theme="dark"] .swh-map__embed {
+  filter: invert(0.9) hue-rotate(180deg) saturate(0.6) brightness(0.95);
+}
+:root[data-theme="dark"] .swh-map__wash {
+  background: linear-gradient(180deg, rgba(16, 19, 23, 0.35), rgba(16, 19, 23, 0.12));
+}
+:root[data-theme="dark"] .swh-map__skeleton::after {
+  background: linear-gradient(100deg, transparent 20%, rgba(255, 255, 255, 0.06) 50%, transparent 80%);
+}
+
+/* ── Theme toggle ──────────────────────────────────────────────────────────────────── */
+/* Same outline-on-bar language as the language switch (.swh-lang), as a round icon
+   button. Shows the moon in light mode and the sun in dark — the icon names where the
+   button takes you. */
+.swh-theme {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--nav-fg);
+  cursor: pointer;
+  transition:
+    color var(--t-nav),
+    background-color var(--t-menu),
+    border-color var(--t-menu);
+}
+/* The two icons share one grid cell. The one leaving rotates away and shrinks as the one
+   arriving turns into place — the button answers the click before the page does. */
+.swh-theme__icons {
+  display: inline-grid;
+  place-items: center;
+}
+.swh-theme__icon {
+  grid-area: 1 / 1;
+  width: 18px;
+  height: 18px;
+  transition:
+    transform 0.5s var(--ease-emph),
+    opacity 0.25s ease;
+}
+/* Kept even while page transitions are suspended for the switch. */
+.swh-theme-switching .swh-theme__icon,
+.swh-theme-fading .swh-theme__icon {
+  transition:
+    transform 0.5s var(--ease-emph),
+    opacity 0.25s ease !important;
+}
+.swh-theme__sun,
+:root[data-theme="dark"] .swh-theme__moon {
+  opacity: 0;
+  transform: rotate(-90deg) scale(0.4);
+}
+:root[data-theme="dark"] .swh-theme__moon {
+  transform: rotate(90deg) scale(0.4);
+}
+:root[data-theme="dark"] .swh-theme__sun {
+  opacity: 1;
+  transform: none;
+}
+.swh-theme:hover {
+  background: var(--accent-fill);
+  border-color: var(--accent-fill);
+  color: var(--cta-fg);
+}
+.swh-theme:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.swh-nav[data-nav-state="over"] .swh-theme:focus-visible {
+  box-shadow: var(--focus-ring-over);
+}
+/* In the drawer: a full-width row with a label, like the language switch there. */
+.swh-drawer__foot .swh-theme {
+  display: inline-flex;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: auto;
+  padding: 14px 12px;
+  border-radius: var(--r-pill);
+  border-color: var(--hairline);
+  color: var(--ink);
+  font: var(--nav-link);
+  letter-spacing: -0.35px;
+}
+.swh-drawer__foot .swh-theme:hover {
+  border-color: var(--accent-fill);
+  color: var(--cta-fg);
+}
+.swh-theme__label {
+  display: none;
+}
+.swh-drawer__foot .swh-theme__label {
+  display: inline;
+}
+/* Below the drawer breakpoint the bar keeps only brand, language and burger; the theme
+   switch moves into the drawer with the rest of the controls. */
+@media (max-width: 1023px) {
+  .swh-nav__cluster > .swh-theme {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swh-theme,
+  .swh-theme__icon,
+  .swh-theme-switching .swh-theme__icon,
+  .swh-theme-fading .swh-theme__icon {
+    transition-duration: 0.01ms !important;
+  }
+}

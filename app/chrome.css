@@ -98,7 +98,7 @@
   --ph-overlay: rgba(0, 0, 0, 0.14);
 
   /* focus + drawer */
-  --focus-ring: 0 0 0 2px var(--paper), 0 0 0 4px var(--accent);
+  --focus-ring: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent);
   --focus-ring-over: 0 0 0 2px rgba(0, 0, 0, 0.55), 0 0 0 4px var(--paper);
   --drawer-w: min(360px, 86%); /* % not vw — see rule 2 */
   --drawer-scrim: rgba(0, 0, 0, 0.42);
@@ -251,7 +251,7 @@ p {
   z-index: calc(var(--nav-z) + 1);
   padding: 12px 20px;
   border-radius: var(--r-pill);
-  background: var(--accent);
+  background: var(--accent-fill);
   color: #fff;
   font: var(--nav-link);
   letter-spacing: -0.35px;
@@ -282,7 +282,7 @@ p {
 }
 .swh-nav[data-nav-state="solid"] {
   --nav-fg: var(--ink);
-  --nav-bg: var(--paper);
+  --nav-bg: var(--surface);
 }
 
 .swh-nav__surface {
@@ -475,8 +475,8 @@ p {
     border-color var(--t-menu);
 }
 .swh-lang:hover {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--accent-fill);
+  border-color: var(--accent-fill);
   color: var(--cta-fg);
 }
 .swh-lang:focus-visible {
@@ -495,7 +495,7 @@ p {
   border-color: var(--hairline);
 }
 .swh-drawer__foot .swh-lang:hover {
-  border-color: var(--accent);
+  border-color: var(--accent-fill);
   color: var(--cta-fg);
 }
 
@@ -605,7 +605,7 @@ p {
   bottom: 0;
   width: var(--drawer-w);
   padding: calc(var(--nav-h) + 12px) 20px 32px;
-  background: var(--paper);
+  background: var(--surface-raised);
   box-shadow: -12px 0 40px rgba(0, 0, 0, 0.16);
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -1524,8 +1524,8 @@ p {
 /* The style hangs off aria-pressed, so a chip cannot look selected while reporting
    otherwise to assistive tech. */
 .swh-filters__chip[aria-pressed="true"] {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--accent-fill);
+  border-color: var(--accent-fill);
   color: var(--cta-fg);
 }
 .swh-filters__bar {
@@ -1636,7 +1636,7 @@ p {
   padding: 8px 8px 8px 14px;
   border: 1px solid var(--hairline);
   border-radius: var(--r-pill);
-  background: var(--paper);
+  background: var(--surface-raised);
   color: var(--ink);
   font-family: var(--f-sans);
   font-weight: 700;
@@ -1652,8 +1652,8 @@ p {
   box-shadow: 0 2px 4px rgba(22, 25, 29, 0.1), 0 10px 26px rgba(22, 25, 29, 0.2);
 }
 .swh-map__tag[aria-pressed="true"] {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--accent-fill);
+  border-color: var(--accent-fill);
   color: var(--cta-fg);
 }
 .swh-map__tag:focus-visible {
@@ -2196,7 +2196,7 @@ p {
   /* Rounded on the left only — the right side is meant to read as continuing past the
      viewport edge, and a fully rounded pill reads as a finished object sitting near it. */
   border-radius: var(--rail-r) 0 0 var(--rail-r);
-  background: var(--paper);
+  background: var(--surface-raised);
   border: 1px solid var(--hairline);
   border-right: 0;
   /* Three layers, cast LEFTWARD (negative x) since the light now falls across the right
@@ -2908,7 +2908,7 @@ p {
   transition: background 0.22s ease;
 }
 .swh-vmodal__sound-nudge:hover {
-  background: var(--accent);
+  background: var(--accent-fill);
 }
 .swh-vmodal__sound-nudge svg {
   width: 17px;
@@ -3525,7 +3525,7 @@ p {
 .swh-enquiry__input {
   font: var(--body-copy);
   color: var(--ink);
-  background: var(--paper);
+  background: var(--surface-raised);
   border: 1px solid var(--hairline);
   border-radius: var(--r-md);
   padding: 12px 16px;
@@ -3662,4 +3662,156 @@ textarea.swh-enquiry__input {
   width: 40px;
   height: 40px;
   object-fit: contain;
+}
+
+/* ── First-load screen ──────────────────────────────────────────────────────────────
+   components/chrome/Preloader.tsx. Over everything, including the video modal, but
+   pointer-events: none — it is a curtain, not a wall. It fades in only after
+   --pre-delay, so a load that finishes sooner never shows it. data-state is driven by the
+   component's inline script: loading → leaving → gone. */
+.swh-preloader {
+  --pre-delay: 0.2s;
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--nav-z) + 100);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  background: var(--surface);
+  pointer-events: none;
+  opacity: 0;
+  animation: swh-pre-in 0.35s var(--ease-out) var(--pre-delay) forwards;
+}
+.swh-preloader[data-state="leaving"] {
+  animation: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.45s var(--ease-out), visibility 0s linear 0.45s;
+}
+/* Leaving before it ever appeared: no fade at all. */
+.swh-preloader[data-state="gone"] {
+  display: none;
+}
+.swh-preloader__mark {
+  animation: swh-pre-breathe 2.4s ease-in-out var(--pre-delay) infinite;
+}
+/* A logo uploaded in the CMS; the built-in lockup sizes itself. */
+.swh-preloader__logo {
+  display: block;
+  height: 44px;
+  width: auto;
+}
+.swh-preloader[data-state="leaving"] .swh-preloader__mark {
+  animation: none;
+  transform: scale(0.96);
+  transition: transform 0.45s var(--ease-out);
+}
+.swh-preloader__track {
+  position: relative;
+  width: 132px;
+  height: 2px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--hairline);
+}
+.swh-preloader__track span {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 40%;
+  border-radius: inherit;
+  background: var(--accent);
+  animation: swh-pre-slide 1.25s var(--ease-emph) infinite;
+}
+[dir="rtl"] .swh-preloader__track span,
+.swh-preloader:lang(ar) .swh-preloader__track span {
+  animation-name: swh-pre-slide-rtl;
+}
+@keyframes swh-pre-in {
+  to {
+    opacity: 1;
+  }
+}
+@keyframes swh-pre-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+@keyframes swh-pre-slide {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
+  }
+}
+@keyframes swh-pre-slide-rtl {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(-250%);
+  }
+}
+
+/* ── Navigation progress ────────────────────────────────────────────────────────────
+   components/chrome/NavigationProgress.tsx. A 2px accent line at the very top, above the
+   navbar. Trickles to 85% while loading, fills on arrival, then fades. Grows from the
+   reading start: left in English, right in Arabic. */
+.swh-progress {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  height: 2px;
+  z-index: calc(var(--nav-z) + 30);
+  pointer-events: none;
+}
+.swh-progress span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 55%, transparent);
+  transform: scaleX(0);
+  transform-origin: left center;
+  opacity: 0;
+}
+[dir="rtl"] .swh-progress span {
+  transform-origin: right center;
+}
+.swh-progress[data-state="loading"] span {
+  opacity: 1;
+  transform: scaleX(0.85);
+  transition: transform 7s cubic-bezier(0.08, 0.75, 0.2, 1), opacity 0.15s linear;
+}
+.swh-progress[data-state="done"] span {
+  transform: scaleX(1);
+  opacity: 0;
+  transition: transform 0.2s var(--ease-out), opacity 0.3s linear 0.25s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swh-preloader {
+    animation-duration: 0.01ms;
+  }
+  .swh-preloader__mark,
+  .swh-preloader__track span {
+    animation: none;
+  }
+  .swh-preloader__track span {
+    width: 100%;
+    opacity: 0.6;
+  }
+  .swh-preloader[data-state="leaving"] {
+    transition-duration: 0.01ms, 0s;
+    transition-delay: 0s, 0.01ms;
+  }
+  .swh-progress[data-state="loading"] span {
+    transition: opacity 0.15s linear;
+  }
 }

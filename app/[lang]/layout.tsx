@@ -6,6 +6,8 @@ import { SiteNav } from "@/components/chrome/SiteNav";
 import { SocialRail } from "@/components/chrome/SocialRail";
 import { HtmlLangSync } from "@/components/chrome/HtmlLangSync";
 import { SiteProvider } from "@/components/chrome/SiteContext";
+import { Preloader } from "@/components/chrome/Preloader";
+import { NavigationProgress } from "@/components/chrome/NavigationProgress";
 import { VisitTracker } from "@/components/chrome/VisitTracker";
 import { LOCALES, DIR, HTML_LANG, isLocale, type Locale } from "@/content/i18n";
 import { getSite } from "@/lib/api/content";
@@ -64,6 +66,9 @@ export default async function LangLayout({
     <>
       {/* Copies lang/dir onto <html> after mount — see the note in app/layout.tsx. */}
       <HtmlLangSync lang={HTML_LANG[lang]} dir={DIR[lang]} />
+      {/* First in the body so it paints before any page content; dismissed by its own
+          inline script, not by hydration. See components/chrome/Preloader.tsx. */}
+      <Preloader lang={lang} logoOnLight={site.settings.logoOnLight} logoOnDark={site.settings.logoOnDark} />
       {/* <div id="app"> is load-bearing, not a wrapper habit. #app{overflow-x:hidden} is what
           contains the hero's .ds-back cards (translateX ±60%) and the sage block that spans
           left:-110%/right:-110%. Moving the rule to html or body changes scroll-container
@@ -77,6 +82,7 @@ export default async function LangLayout({
           marking the document for everything a reader or a layout engine touches. */}
       <div id="app" lang={HTML_LANG[lang]} dir={DIR[lang]}>
         <SiteProvider site={site}>
+          <NavigationProgress />
           <SkipLink lang={lang} />
           <SiteNav lang={lang} />
           {children}

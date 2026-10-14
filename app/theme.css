@@ -159,6 +159,13 @@ body,
   background: var(--logo-plate);
 }
 
+/* The moving roster's cards: a deeper shadow, or the lift disappears on a dark page. */
+:root[data-theme="dark"] .swh-roster__set .swh-client-card {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 14px 28px -18px rgba(0, 0, 0, 0.7);
+}
+
 /* ── The client map ────────────────────────────────────────────────────────────────── */
 /* Google's embed has no dark style without an API key; inverting the lightness and
    rotating the hues back gives a night map whose water stays blue and land stays grey. */

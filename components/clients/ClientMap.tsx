@@ -35,7 +35,7 @@ import type { Locale } from "@/content/i18n";
 import { PillButton } from "@/components/ds/PillButton";
 import { EmptyState } from "@/components/feedback/EmptyState";
 import { SearchIcon } from "@/components/feedback/icons";
-import { ClientCard } from "./ClientCard";
+import { ClientRoster } from "./ClientRoster";
 import { FeaturedClients } from "./FeaturedClients";
 import { embedUrl, fitZoom, offsetFromCentre, type LatLng } from "./regionGeo";
 
@@ -168,7 +168,7 @@ export function ClientMap({
      their decoded logos are reused exactly as before. Not on search: re-fading the grid
      on every keystroke would flicker while someone is typing. Skipped on mount and under
      reduced motion. */
-  const gridRef = useRef<HTMLUListElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
   /* Compared against the last value rather than a "first run" flag, which StrictMode's
      double-invoked effect would flip on mount and then animate anyway. */
   const lastRegion = useRef(active);
@@ -359,11 +359,7 @@ export function ClientMap({
             {ui.noClientMatch(q, active ? ui.inRegion(regionName(active)) : "")}
           </EmptyState>
         ) : (
-          <ul className="swh-client-grid" ref={gridRef}>
-            {shown.map((c) => (
-              <ClientCard key={c.slug} client={c} lang={lang} typeName={typeName} />
-            ))}
-          </ul>
+          <ClientRoster ref={gridRef} clients={shown} lang={lang} typeName={typeName} />
         )}
       </div>
     </section>

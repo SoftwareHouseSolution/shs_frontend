@@ -30,6 +30,11 @@ const rec = (n, ok, extra = "") => {
 
 const b = await chromium.launch();
 
+/* Cards a reader meets. The moving roster draws each column twice to loop it, and the
+   second copy is aria-hidden — counting raw .swh-client-card would double the roster. */
+const countCards = (p) =>
+  p.evaluate(() => [...document.querySelectorAll(".swh-client-card")].filter((c) => !c.closest("[aria-hidden]")).length);
+
 for (const vp of [
   { width: 1440, height: 1000, tag: "desktop" },
   { width: 1280, height: 720, tag: "laptop-short" },
@@ -103,7 +108,7 @@ for (const vp of [
       `scrollY ${yBefore} -> ${scroll.y}, heading at ${scroll.headingTop}px (nav ${scroll.nav}px)`);
 
     const heading = (await p.locator(".swh-map__result-title").innerText()).replace(/\n/g, " ");
-    const cards = await p.locator(".swh-client-grid > li").count();
+    const cards = await countCards(p);
     /* Assert on data-active, the untranslated region key, rather than on the heading text:
        the heading reads "Greater Cairo" in English and "القاهرة الكبرى" in Arabic, and this
        script runs against both. The heading still goes into the message so a failure shows
@@ -115,7 +120,7 @@ for (const vp of [
 
     await p.locator(".swh-filters__reset").click();
     await p.waitForTimeout(600);
-    rec("show-all restores the full roster", (await p.locator(".swh-client-grid > li").count()) === 367);
+    rec("show-all restores the full roster", (await countCards(p)) === 367);
 
     // The embed is scenery: it must never be reachable or announced.
     rec("embed is inert and hidden from assistive tech",
@@ -127,6 +132,117 @@ for (const vp of [
     await p.screenshot({ path: `${OUT}/c-selected.png` });
   }
   await p.close();
+}
+
+/* ── The moving roster (components/clients/ClientRoster.tsx) ────────────────────────
+   What can silently break: the loop's seam (a track that is not exactly two equal halves
+   jumps once per cycle), logos that never load inside the moving window, the pause
+   controls, and the fallbacks to the plain grid. */
+const ty = (p) =>
+  p.evaluate(() => new DOMMatrix(getComputedStyle(document.querySelector(".swh-roster__track")).transform).m42);
+async function openRoster(p, { wall = true } = {}) {
+  // Not "load": that waits on the Google Maps embed, which is a third party's network.
+  await p.goto(`${BASE}/${LANG}/customers`, { waitUntil: "domcontentloaded" });
+  await p.waitForTimeout(1500);
+  await p.keyboard.press("Escape");
+  await p.waitForTimeout(500);
+  // Arrive at its TOP, as a visitor scrolling down does: until the wall is built the
+  // roster is the full static grid, thousands of pixels tall, and its centre is far below
+  // where the 760px wall will end up.
+  await p.evaluate(() => {
+    const top = document.querySelector(".swh-roster").getBoundingClientRect().top + scrollY;
+    scrollTo(0, top - 200);
+  });
+  if (wall) await p.waitForSelector('.swh-roster[data-mode="wall"] .swh-roster__track', { timeout: 10000 });
+  await p.evaluate(() => document.querySelector(".swh-roster").scrollIntoView({ block: "center" }));
+  await p.waitForTimeout(800);
+}
+for (const vp of [{ width: 1440, height: 1000, tag: "desktop" }, { width: 390, height: 844, tag: "mobile", cols: 2 }]) {
+  const p = await b.newPage({ viewport: vp });
+  const errors = [];
+  p.on("pageerror", (e) => errors.push(String(e)));
+  await openRoster(p);
+  const w = await p.evaluate(() => {
+    const r = document.querySelector(".swh-roster");
+    const view = r.querySelector(".swh-roster__view");
+    const tracks = [...r.querySelectorAll(".swh-roster__track")];
+    return {
+      mode: r.dataset.mode,
+      cols: tracks.length,
+      seams: tracks.map((t) => Math.abs(t.getBoundingClientRect().height - 2 * t.firstElementChild.getBoundingClientRect().height)),
+      fills: tracks.every((t) => t.firstElementChild.getBoundingClientRect().height >= view.clientHeight),
+    };
+  });
+  rec(`roster ${vp.tag}: runs as a moving wall`, w.mode === "wall" && (vp.cols ? w.cols === vp.cols : w.cols >= 3), `${w.mode}, ${w.cols} columns`);
+  rec(`roster ${vp.tag}: every loop is seamless (two equal halves)`, w.seams.every((d) => d < 0.5), w.seams.map((d) => d.toFixed(1)).join(","));
+  rec(`roster ${vp.tag}: each column is taller than its window`, w.fills);
+  rec(`roster ${vp.tag}: every client announced exactly once`, (await countCards(p)) === 367);
+  rec(`roster ${vp.tag}: no page errors`, errors.length === 0, errors.slice(0, 2).join(" | "));
+  await p.close();
+}
+{
+  const p = await b.newPage({ viewport: { width: 1440, height: 1000 } });
+  await openRoster(p);
+  const a = await ty(p);
+  await p.waitForTimeout(800);
+  const moved = Math.abs((await ty(p)) - a);
+  rec("roster: drifts", moved > 5, `${moved.toFixed(1)}px in 800ms`);
+
+  // Cards that drift INTO the window must load their logos — lazy images inside a clipped,
+  // moving track are the classic way to scroll blank cards into view.
+  await p.waitForTimeout(12000);
+  const logos = await p.evaluate(() => {
+    const vb = document.querySelector(".swh-roster__view").getBoundingClientRect();
+    const mid = [...document.querySelectorAll(".swh-roster__view img")].filter((i) => {
+      const r = i.getBoundingClientRect();
+      return r.top > vb.top + vb.height * 0.2 && r.bottom < vb.bottom - vb.height * 0.2; // past the fades
+    });
+    return { shown: mid.length, loaded: mid.filter((i) => i.complete && i.naturalWidth > 0).length };
+  });
+  rec("roster: logos that drift into view have loaded", logos.shown > 0 && logos.loaded === logos.shown, `${logos.loaded}/${logos.shown}`);
+
+  const toggle = p.locator(".swh-roster__toggle");
+  await toggle.focus();
+  await p.keyboard.press("Enter");
+  await p.waitForSelector(".swh-roster[data-paused]");
+  await p.waitForTimeout(100);
+  const x = await ty(p);
+  await p.waitForTimeout(800);
+  rec("roster: the button pauses it", Math.abs((await ty(p)) - x) < 0.5 && (await toggle.getAttribute("aria-pressed")) === "true");
+  await p.keyboard.press("Enter");
+  await p.waitForSelector(".swh-roster:not([data-paused])");
+  const y = await ty(p);
+  await p.waitForTimeout(800);
+  rec("roster: …and resumes it", Math.abs((await ty(p)) - y) > 5);
+
+  await p.locator(".swh-roster__view").hover();
+  await p.waitForTimeout(100);
+  const h = await ty(p);
+  await p.waitForTimeout(800);
+  rec("roster: hovering holds it still", Math.abs((await ty(p)) - h) < 0.5);
+  await p.mouse.move(5, 5);
+
+  // A search with a handful of matches cannot fill a looping column: plain grid.
+  await p.fill(".swh-search__input", "abaza");
+  await p.waitForTimeout(400);
+  const few = await p.evaluate(() => ({ mode: document.querySelector(".swh-roster")?.dataset.mode, n: document.querySelectorAll(".swh-client-card").length }));
+  rec("roster: a short result is a still grid", few.mode === "grid" && few.n > 0 && few.n < 10, JSON.stringify(few));
+  await p.fill(".swh-search__input", "");
+  await p.waitForTimeout(400);
+  rec("roster: clearing the search brings the wall back", (await p.getAttribute(".swh-roster", "data-mode")) === "wall");
+
+  await p.evaluate(() => scrollTo(0, 0));
+  await p.waitForTimeout(400);
+  rec("roster: stops while scrolled out of view", (await p.getAttribute(".swh-roster", "data-paused")) !== null);
+  await p.close();
+}
+{
+  const ctx = await b.newContext({ viewport: { width: 1440, height: 1000 }, reducedMotion: "reduce" });
+  const p = await ctx.newPage();
+  await openRoster(p, { wall: false });
+  const mode = await p.getAttribute(".swh-roster", "data-mode");
+  rec("reduced motion: the plain grid, every client", mode === "grid" && (await countCards(p)) === 367, mode);
+  await ctx.close();
 }
 
 await b.close();

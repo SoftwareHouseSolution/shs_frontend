@@ -1921,6 +1921,122 @@ p {
   border-radius: var(--r-pill);
   padding: 3px 9px;
 }
+/* ── The roster as a moving wall ─────────────────────────────────────────────────────
+   components/clients/ClientRoster.tsx. The same cards as the grid above, dealt into
+   columns that drift through a fixed window; the grid is what renders until it mounts,
+   under reduced motion, and when a filter leaves too few cards to loop. */
+.swh-roster {
+  position: relative;
+}
+.swh-roster__view {
+  --roster-gap: 24px;
+  display: flex;
+  gap: var(--roster-gap);
+  height: 760px;
+  overflow: hidden;
+  /* No top and no bottom: cards fade in and out of a soft edge rather than being cut. */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 12%, #000 88%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 12%, #000 88%, transparent 100%);
+}
+.swh-roster__col {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.swh-roster__track {
+  animation: swh-roster-up var(--roster-duration, 120s) linear infinite;
+  will-change: transform;
+}
+.swh-roster__track[data-dir="down"] {
+  animation-name: swh-roster-down;
+}
+.swh-roster__view:hover .swh-roster__track,
+.swh-roster[data-paused] .swh-roster__track {
+  animation-play-state: paused;
+}
+@keyframes swh-roster-up {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, -50%, 0);
+  }
+}
+@keyframes swh-roster-down {
+  from {
+    transform: translate3d(0, -50%, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+/* One copy of a column. The gap AFTER the last card is padding, so two copies stacked
+   are exactly two equal halves and the -50% loop has no seam. */
+.swh-roster__set {
+  display: flex;
+  flex-direction: column;
+  gap: var(--roster-gap);
+  margin: 0;
+  padding: 0 0 var(--roster-gap);
+  list-style: none;
+}
+/* Lifted off the page, so a moving card reads as an object rather than an outline. */
+.swh-roster__set .swh-client-card {
+  background: var(--surface-raised);
+  box-shadow:
+    0 1px 2px rgba(16, 19, 23, 0.04),
+    0 12px 26px -18px rgba(16, 19, 23, 0.22);
+  transition:
+    transform 0.35s var(--ease-out),
+    box-shadow 0.35s var(--ease-out),
+    border-color 0.35s var(--ease-out);
+}
+.swh-roster__set .swh-client-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--hairline-strong);
+  box-shadow:
+    0 1px 2px rgba(16, 19, 23, 0.05),
+    0 20px 34px -20px rgba(16, 19, 23, 0.3);
+}
+.swh-roster__toggle {
+  position: absolute;
+  inset-inline-end: 10px;
+  bottom: 10px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--hairline);
+  border-radius: 50%;
+  background: var(--surface-raised);
+  color: var(--ink);
+  cursor: pointer;
+  opacity: 0.75;
+  transition:
+    opacity 0.2s ease,
+    border-color 0.2s ease;
+}
+.swh-roster__toggle svg {
+  width: 14px;
+  height: 14px;
+}
+.swh-roster__toggle:hover,
+.swh-roster__toggle:focus-visible,
+.swh-roster__toggle[aria-pressed="true"] {
+  opacity: 1;
+  border-color: var(--hairline-strong);
+}
+.swh-roster__toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+@media (max-width: 599px) {
+  .swh-roster__view {
+    --roster-gap: 12px;
+    height: 600px;
+  }
+}
 @media (max-width: 599px) {
   .swh-client-grid {
     grid-template-columns: repeat(2, 1fr);

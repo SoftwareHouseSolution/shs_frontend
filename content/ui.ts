@@ -76,6 +76,9 @@ export type UIStrings = {
   noClientMatch: (query: string, where: string) => string;
   inRegion: (region: string) => string;
   clientLogoAlt: (name: string) => string;
+  /** The moving roster's pause/resume button (moving content must be pausable). */
+  pauseMotion: string;
+  playMotion: string;
 
   /* ── Video modal ──────────────────────────────────────────────────────────────── */
   videoDialogAria: string;
@@ -170,6 +173,8 @@ const en: UIStrings = {
   noClientMatch: (query, where) => `No client matches “${query}”${where}. Try a shorter search.`,
   inRegion: (region) => ` in ${region}`,
   clientLogoAlt: (name) => `${name} logo`,
+  pauseMotion: "Pause the moving list",
+  playMotion: "Play the moving list",
 
   videoDialogAria: "A look inside Software House Solutions",
   playVideo: "Play video",
@@ -253,6 +258,8 @@ const ar: UIStrings = {
   noClientMatch: (query, where) => `لا يوجد عميل يطابق «${query}»${where}. جرّب بحثًا أقصر.`,
   inRegion: (region) => ` في ${region}`,
   clientLogoAlt: (name) => `شعار ${name}`,
+  pauseMotion: "إيقاف حركة القائمة",
+  playMotion: "تشغيل حركة القائمة",
 
   videoDialogAria: "جولة داخل Software House Solutions",
   playVideo: "تشغيل الفيديو",

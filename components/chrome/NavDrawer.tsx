@@ -13,7 +13,7 @@ import { PillButton } from "@/components/ds/PillButton";
 import { NAV, isGroup } from "@/content/nav";
 import { demoHrefFor } from "@/content/site";
 import { UI } from "@/content/ui";
-import { href as localeHref, type Locale } from "@/content/i18n";
+import { href as localeHref, samePath, type Locale } from "@/content/i18n";
 import { BadgeSlot } from "./BadgeSlot";
 import { LanguageToggle } from "./LanguageToggle";
 import { useFocusTrap } from "./useFocusTrap";
@@ -30,6 +30,17 @@ export function NavDrawer({ open, onClose, pathname, lang }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
   useFocusTrap(panelRef, open);
+
+  const isHere = (to: string) => samePath(pathname, localeHref(lang, to));
+  /* The group holding the current page. The drawer opens with it already expanded, so the
+     reader sees where they are without having to guess which of five accordions hides it —
+     on a phone the drawer IS the only map of the site. */
+  const hereGroup = NAV.find((e) => isGroup(e) && e.children.some((c) => isHere(c.href)));
+  const hereGroupId = hereGroup && isGroup(hereGroup) ? hereGroup.id : null;
+
+  useEffect(() => {
+    if (open) setExpanded(hereGroupId);
+  }, [open, hereGroupId]);
 
   useEffect(() => {
     if (!open) return;
@@ -67,8 +78,13 @@ export function NavDrawer({ open, onClose, pathname, lang }: Props) {
         aria-modal="true"
         aria-label={ui.siteMenu}
       >
+        {/* An SVG cross rather than the "×" character: the glyph sat on the font's baseline,
+            so it rendered a pixel or two low in its circle and changed weight with the
+            font — Cairo's × is visibly heavier than DM Sans's. */}
         <button type="button" className="swh-drawer__close" onClick={onClose} aria-label={ui.closeMenu}>
-          ×
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
         </button>
 
         <ul>
@@ -83,6 +99,7 @@ export function NavDrawer({ open, onClose, pathname, lang }: Props) {
                   type="button"
                   className="swh-drawer__trigger"
                   aria-expanded={expanded === entry.id}
+                  data-active={entry.id === hereGroupId || undefined}
                   onClick={() => setExpanded((cur) => (cur === entry.id ? null : entry.id))}
                 >
                   {entry.label[lang]}
@@ -96,7 +113,7 @@ export function NavDrawer({ open, onClose, pathname, lang }: Props) {
                       <li key={c.href}>
                         <Link
                           href={localeHref(lang, c.href)}
-                          aria-current={pathname === localeHref(lang, c.href) ? "page" : undefined}
+                          aria-current={isHere(c.href) ? "page" : undefined}
                           onClick={onClose}
                         >
                           {c.label[lang]}
@@ -110,7 +127,7 @@ export function NavDrawer({ open, onClose, pathname, lang }: Props) {
               <li key={entry.href} className="swh-drawer__solo">
                 <Link
                   href={localeHref(lang, entry.href)}
-                  aria-current={pathname === localeHref(lang, entry.href) ? "page" : undefined}
+                  aria-current={isHere(entry.href) ? "page" : undefined}
                   onClick={onClose}
                 >
                   {entry.label[lang]}

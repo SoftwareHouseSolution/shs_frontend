@@ -16,12 +16,16 @@ export function Specs({ lang }) {
         <SectionHeading level="head" align="center" style={{ marginTop: "12px" }}>{c.specsHeading}</SectionHeading>
       </Reveal>
       <Reveal style={{ width: "100%" }}>
-        <SpecTable
-          /* The first column is the highlighted one in both languages: it is SWH's own
-             column, not a position in a left-to-right reading order. */
-          columns={c.specColumns.map((label, i) => (i === 0 ? { label, highlight: true } : { label }))}
-          rows={c.specRows.map((cells) => ({ cells }))}
-        />
+        {/* .swh-spec repairs the table below 700px — see the note in app/chrome.css.
+            --spec-cols carries the column count because the fix rebuilds the grid. */}
+        <div className="swh-spec" style={{ "--spec-cols": c.specColumns.length }}>
+          <SpecTable
+            /* The first column is the highlighted one in both languages: it is SWH's own
+               column, not a position in a left-to-right reading order. */
+            columns={c.specColumns.map((label, i) => (i === 0 ? { label, highlight: true } : { label }))}
+            rows={c.specRows.map((cells) => ({ cells }))}
+          />
+        </div>
       </Reveal>
     </Section>
   );

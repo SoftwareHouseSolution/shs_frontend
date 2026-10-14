@@ -26,8 +26,12 @@ export function Contact({ lang }) {
               a bidi isolate. Dropped raw into an Arabic paragraph the bidi algorithm
               reorders the separating dots around the neutral runs, and the line comes out
               as "Sales@... · 99 شارع ... · +20 15" with the dots in the wrong places. */}
+          {/* The number and the address are links: on a phone, a number you cannot tap
+              is one you have to copy by hand. Still one isolate, so the bidi fix holds. */}
           <span dir="ltr" style={{ unicodeBidi: "isolate" }}>
-            {SITE_L[lang].address} · {SITE.phone} · {SITE.salesEmail}
+            {SITE_L[lang].address} ·{" "}
+            <a className="swh-inline-link" href={SITE.phoneHref}>{SITE.phone}</a> ·{" "}
+            <a className="swh-inline-link" href={`mailto:${SITE.salesEmail}`}>{SITE.salesEmail}</a>
           </span>
         </p>
         <div style={{ width: "100%", maxWidth: "860px", marginTop: "12px" }}>

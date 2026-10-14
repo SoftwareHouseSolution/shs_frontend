@@ -20,7 +20,7 @@ import { PillButton } from "@/components/ds/PillButton";
 import { NAV, isGroup, entryId, NAV_H_PX } from "@/content/nav";
 import { SITE, demoHrefFor } from "@/content/site";
 import { UI } from "@/content/ui";
-import { href as localeHref, type Locale } from "@/content/i18n";
+import { href as localeHref, samePath, type Locale } from "@/content/i18n";
 import { BadgeSlot } from "./BadgeSlot";
 import { LanguageToggle } from "./LanguageToggle";
 import { NavDrawer } from "./NavDrawer";
@@ -122,7 +122,7 @@ export function SiteNav({ lang }: { lang: Locale }) {
                   className="swh-nav__link"
                   id={`navtrig-${entryId(entry)}`}
                   href={localeHref(lang, entry.href)}
-                  aria-current={pathname === localeHref(lang, entry.href) ? "page" : undefined}
+                  aria-current={samePath(pathname, localeHref(lang, entry.href)) ? "page" : undefined}
                   /* Arrow, not a bare `close`: the handler would pass the PointerEvent as
                      the id, and the guard would then never match. */
                   onPointerEnter={() => close()}

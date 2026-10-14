@@ -13,7 +13,7 @@
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import type { NavGroup } from "@/content/nav";
-import { href as localeHref, type Locale } from "@/content/i18n";
+import { href as localeHref, samePath, type Locale } from "@/content/i18n";
 
 const CLOSE_GRACE_MS = 120;
 
@@ -46,6 +46,13 @@ export function NavMenu({ group, lang, id, open, pathname, onOpen, onClose, onSt
     if (l.length === 0) return;
     l[((i % l.length) + l.length) % l.length].focus();
   };
+
+  /* "Where am I" for the bar itself. The current page's own link carries aria-current, but
+     it sits inside a closed panel, so on a child page nothing visible in the bar said which
+     section the reader is in. The trigger takes the marker instead — visual only: the
+     trigger is a disclosure button, not a link, so aria-current would misreport it, and the
+     link inside already tells assistive tech the same thing. */
+  const inSection = group.children.some((c) => samePath(pathname, localeHref(lang, c.href)));
 
   const closeAndRefocus = () => {
     onClose();
@@ -142,6 +149,7 @@ export function NavMenu({ group, lang, id, open, pathname, onOpen, onClose, onSt
         aria-controls={`navmenu-${id}`}
         aria-expanded={open}
         aria-haspopup="true"
+        data-active={inSection || undefined}
         /* A plain toggle with no memory — see the note in SiteNav. It exists for keyboard
            and touch; a mouse never needs it, because hover already did the work. */
         onClick={() => (open ? onClose() : onOpen(id))}
@@ -165,7 +173,7 @@ export function NavMenu({ group, lang, id, open, pathname, onOpen, onClose, onSt
             <li key={c.href}>
               <Link
                 href={localeHref(lang, c.href)}
-                aria-current={pathname === localeHref(lang, c.href) ? "page" : undefined}
+                aria-current={samePath(pathname, localeHref(lang, c.href)) ? "page" : undefined}
                 /* Arrow, not a bare `onClose`: the handler would pass the MouseEvent as
                    the id, and the guard in SiteNav would then never match. */
                 onClick={() => onClose()}

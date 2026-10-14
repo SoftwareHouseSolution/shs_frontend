@@ -108,8 +108,16 @@
    display scale was set against the serif. A small bump keeps the Arabic headings weighing
    the same on the page as the English ones. */
 [dir="rtl"] .swh-page-header__title,
-[dir="rtl"] .hero-carousel__title {
+[dir="rtl"] .hero-carousel__title,
+[dir="rtl"] .swh-status__title,
+[dir="rtl"] .swh-empty__title {
   line-height: 1.15;
+}
+/* The status title is set at the full --head-size, where Cairo's tall body overshoots the
+   other way: on the bilingual 404 the Arabic heading took two lines beside a one-line
+   English one. 0.8 brings the two panels to the same visual weight. */
+[dir="rtl"] .swh-status__title {
+  font-size: calc(var(--head-size) * 0.8);
 }
 
 /* ── Navigation bar ─────────────────────────────────────────────────────────────── */

@@ -33,6 +33,9 @@ import type { Client, Region } from "@/content/clients";
 import { REGIONS, REGION_LABEL } from "@/content/clients";
 import { UI } from "@/content/ui";
 import type { Locale } from "@/content/i18n";
+import { PillButton } from "@/components/ds/PillButton";
+import { EmptyState } from "@/components/feedback/EmptyState";
+import { SearchIcon } from "@/components/feedback/icons";
 import { ClientCard } from "./ClientCard";
 import { FeaturedClients } from "./FeaturedClients";
 import { REGION_ANCHORS, embedUrl, fitZoom, offsetFromCentre } from "./regionGeo";
@@ -49,6 +52,12 @@ export function ClientMap({ clients, lang }: { clients: readonly Client[]; lang:
   const [q, setQ] = useState("");
   const frameRef = useRef<HTMLDivElement>(null);
   const [box, setBox] = useState({ w: 0, h: 0 });
+  /* Whether the Google embed has painted. Until it has, a skeleton sits over the frame —
+     the embed is lazy and third-party, and on a slow line the panel used to sit as a flat
+     blue rectangle with pills floating over nothing, which reads as broken rather than as
+     loading. Never reset: a later src change (the zoom refitting on resize) swaps tiles
+     under an already-drawn map, which is not a loading state. */
+  const [mapReady, setMapReady] = useState(false);
 
   /* Counts per region, computed once. A region with no clients is not rendered — an empty
      pin is an invitation to click something that does nothing. */
@@ -129,6 +138,29 @@ export function ClientMap({ clients, lang }: { clients: readonly Client[]; lang:
     [],
   );
 
+  /* A short fade on the results when the REGION changes, so swapping 225 cards for 42
+     reads as the list being filtered rather than as the page jumping. One element, opacity
+     and transform only, via the Web Animations API — nothing to remount, so the cards and
+     their decoded logos are reused exactly as before. Not on search: re-fading the grid
+     on every keystroke would flicker while someone is typing. Skipped on mount and under
+     reduced motion. */
+  const gridRef = useRef<HTMLUListElement>(null);
+  /* Compared against the last value rather than a "first run" flag, which StrictMode's
+     double-invoked effect would flip on mount and then animate anyway. */
+  const lastRegion = useRef(active);
+  useEffect(() => {
+    if (lastRegion.current === active) return;
+    lastRegion.current = active;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    gridRef.current?.animate(
+      [
+        { opacity: 0, transform: "translateY(8px)" },
+        { opacity: 1, transform: "none" },
+      ],
+      { duration: 280, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+    );
+  }, [active]);
+
   // Escape clears the selection, matching every other dismissible thing on the site.
   useEffect(() => {
     if (!active) return;
@@ -141,7 +173,7 @@ export function ClientMap({ clients, lang }: { clients: readonly Client[]; lang:
     <section className="swh-directory">
       <div className="swh-directory__inner">
         <div className="swh-map">
-          <div className="swh-map__frame" ref={frameRef}>
+          <div className="swh-map__frame" ref={frameRef} data-ready={mapReady}>
             {/* aria-hidden and inert: it is scenery. Everything the map communicates is
                 also in the pill buttons above it, which are real, focusable controls. */}
             <iframe
@@ -154,6 +186,9 @@ export function ClientMap({ clients, lang }: { clients: readonly Client[]; lang:
               tabIndex={-1}
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
+              /* onLoad also fires for an iframe with no src (about:blank), which is what
+                 this is until the frame is measured — so only a real embed counts. */
+              onLoad={() => zoom && setMapReady(true)}
               /* Explicit size, not `inset` — an absolutely positioned iframe is a replaced
                  element, so `width: auto` gives its 300x150 intrinsic size instead of
                  stretching to the offsets. See the note in chrome.css. */
@@ -164,6 +199,9 @@ export function ClientMap({ clients, lang }: { clients: readonly Client[]; lang:
                 height: `calc(100% + ${BLEED * 2}px)`,
               }}
             />
+            {/* Above the embed, under the wash and the pins: the pills are real controls
+                and stay usable while the scenery behind them loads. */}
+            <div className="swh-map__skeleton" aria-hidden="true" />
             <div className="swh-map__wash" aria-hidden="true" />
 
             {/* The pills. A real <button> each, in a real list, so the map is operable by
@@ -204,13 +242,23 @@ export function ClientMap({ clients, lang }: { clients: readonly Client[]; lang:
           <div className="swh-map__bar">
             <label className="swh-map__search">
               <span className="swh-filters__label">{ui.findAClient}</span>
-              <input
-                className="swh-filters__search"
-                type="search"
-                value={q}
-                placeholder={ui.nameOrLocation}
-                onChange={(e) => setQ(e.target.value)}
-              />
+              {/* The icon is a sibling of the input, not a background image, so it takes
+                  currentColor and mirrors with the logical inset in RTL. */}
+              <span className="swh-search">
+                <span className="swh-search__icon" aria-hidden="true">
+                  <SearchIcon />
+                </span>
+                <input
+                  className="swh-filters__search swh-search__input"
+                  type="search"
+                  value={q}
+                  placeholder={ui.nameOrLocation}
+                  autoComplete="off"
+                  spellCheck={false}
+                  enterKeyHint="search"
+                  onChange={(e) => setQ(e.target.value)}
+                />
+              </span>
             </label>
 
             {offMap.length > 0 && (
@@ -270,11 +318,24 @@ export function ClientMap({ clients, lang }: { clients: readonly Client[]; lang:
         </div>
 
         {shown.length === 0 ? (
-          <p className="swh-filters__empty">
+          <EmptyState
+            title={ui.noClientTitle}
+            action={
+              <PillButton
+                variant="secondary"
+                onClick={() => {
+                  setActive(null);
+                  setQ("");
+                }}
+              >
+                {ui.showAll}
+              </PillButton>
+            }
+          >
             {ui.noClientMatch(q, active ? ui.inRegion(regionName(active)) : "")}
-          </p>
+          </EmptyState>
         ) : (
-          <ul className="swh-client-grid">
+          <ul className="swh-client-grid" ref={gridRef}>
             {shown.map((c) => (
               <ClientCard key={c.slug} client={c} lang={lang} />
             ))}

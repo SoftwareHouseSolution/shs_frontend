@@ -105,7 +105,10 @@ function Block({ block, lang }: { block: StubBlock; lang: Locale }) {
               {block.heading}
             </SectionHeading>
           ) : null}
-          <SpecTable columns={block.columns} rows={block.rows} />
+          {/* Same mobile repair as the home page's table — see .swh-spec in app/chrome.css. */}
+          <div className="swh-spec" style={{ "--spec-cols": block.columns.length } as React.CSSProperties}>
+            <SpecTable columns={block.columns} rows={block.rows} />
+          </div>
         </div>
       );
 

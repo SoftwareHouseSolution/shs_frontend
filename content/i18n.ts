@@ -62,6 +62,19 @@ export function href(lang: Locale, to: string): string {
 }
 
 /**
+ * True when two internal paths name the same page, ignoring a trailing slash.
+ *
+ * The static export sets `trailingSlash: true` (see next.config.ts), so the browser can be
+ * sitting on "/en/customers/" while every href this app builds is "/en/customers". A bare
+ * `===` between the two silently drops aria-current — and with it the menu's "you are
+ * here" marker — on exactly the build that ships. Compare through this instead.
+ */
+export function samePath(a: string, b: string): boolean {
+  const norm = (p: string) => (p.length > 1 && p.endsWith("/") ? p.slice(0, -1) : p);
+  return norm(a) === norm(b);
+}
+
+/**
  * Read the locale back out of a pathname. Used by the client chrome, which knows its URL
  * but not its route params. Falls back to the default rather than throwing — a pathname
  * with no locale segment only happens on the / redirect stub and on 404s.

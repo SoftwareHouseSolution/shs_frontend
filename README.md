@@ -35,7 +35,11 @@ pnpm build && pnpm start -p 3001
 node tools/check-ds-parity.mjs                            # design-system byte parity (29 checks)
 PORT_URL=http://localhost:3001/ node tools/check-nav.mjs  # navigation + drawer (45 checks)
 PORT_URL=http://localhost:3001/ node tools/check-hero.mjs # carousel + reduced motion (17 checks)
+PORT_URL=http://localhost:3001/ node tools/check-ux.mjs   # 2026-10 UI/UX pass (31 checks)
 ```
+
+Every check also takes `SITE_LANG=ar`. `tools/check-clients.mjs` predates the map and still
+targets the retired ClientDirectory; it times out on `networkidle` and is not a gate.
 
 Use `next start`, not `next dev`: dev mode injects a fixed dev-indicator badge in the bottom-left of
 the viewport.
@@ -100,6 +104,35 @@ never paints, even though the state attribute flips correctly.
 declared on `.hero-slide[data-state="enter"] .hero-slide__img` (0,2,1). A media query adds no
 specificity, so an override written as `.hero-slide__img` (0,1,0) loses and the animation keeps
 running.
+
+## UI/UX conventions (2026-10 pass)
+
+Layered on top of the design system, never inside it — `components/ds/` and `styles/` were
+not touched.
+
+- **Tokens.** `app/chrome.css` → "Design-system extensions" adds `--text-subtle` (the AA
+  colour for small text; `--muted` is 2.98:1 and is for the muted-xl numerals only),
+  `--hairline-strong`, `--danger`/`--danger-soft`, `--r-md`/`--r-lg`, `--ease-out`,
+  `--ease-emph`, `--t-enter` and `--focus-outline`/`--focus-offset`. Reach for these before
+  writing a literal.
+- **Focus.** A zero-specificity `:where(...):focus-visible` floor gives every focusable
+  element a ring; component rules that draw their own still win. On photography use
+  `--focus-ring-over`.
+- **Feedback components.** `components/feedback/` — `StatusPanel` (the 404 and the error
+  boundary), `EmptyState` (no results) and their stroke icons. The 404 is bilingual because
+  it cannot see the route's language; the error boundary lives in `(site)` so the nav and
+  footer survive a failing page, and it never prints `error.message`.
+- **Where am I.** A dropdown trigger carries `data-active` when the current page is one of
+  its children; the drawer opens with that group expanded. Compare paths with `samePath()`
+  from `content/i18n.ts`, never `===` — the static export adds trailing slashes.
+- **SpecTable on phones.** Wrap it in `<div className="swh-spec" style={{ "--spec-cols": n }}>`;
+  the wrapper rebuilds its per-row grids below 700px (see the note in `chrome.css`).
+- **Motion.** New entrances reuse the hero copy's `swh-hero-copy` keyframes. Every one has a
+  reduced-motion override, and nothing loops forever — the map skeleton's shine is capped
+  at six passes.
+- **Deliberately absent.** No toast system, no route `loading.tsx`, no form validation states:
+  the site has no forms and no actions that report back, and every route is prerendered. A
+  `loading.tsx` would also hand SiteNav's hero observer a skeleton to latch onto.
 
 ## Known differences from the prototype
 

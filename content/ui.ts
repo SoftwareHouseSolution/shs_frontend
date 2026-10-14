@@ -71,6 +71,8 @@ export type UIStrings = {
       See the note at the result heading in components/clients/ClientMap.tsx. */
   countOf: (shown: number, total: number) => string;
   showAll: string;
+  /** Empty-state heading; the sentence under it is noClientMatch. */
+  noClientTitle: string;
   /** Empty state; `where` is already localised and may be empty. */
   noClientMatch: (query: string, where: string) => string;
   inRegion: (region: string) => string;
@@ -109,6 +111,24 @@ export type UIStrings = {
   eventDetailsAria: string;
   /** Marker for the one event whose date is not established — see content/events.ts. */
   recent: string;
+
+  /* ── Error and not-found pages ────────────────────────────────────────────────── */
+  /* Written to say what happened, whether it is the reader's fault (it is not), and what
+     to do next — never a status code on its own, and never the raw error message, which
+     stays in the console. See app/[lang]/(site)/error.tsx and app/not-found.tsx. */
+  errorEyebrow: string;
+  errorHeading: string;
+  errorBody: string;
+  tryAgain: string;
+  backHome: string;
+  /** Lead-in for the support link under the error actions: "<this> <messageUs>". */
+  stillStuck: string;
+  messageUs: string;
+  /** <title> fragment for the 404 page. */
+  notFoundTitle: string;
+  notFoundHeading: string;
+  notFoundBody: string;
+  contactUs: string;
 };
 
 const en: UIStrings = {
@@ -148,6 +168,7 @@ const en: UIStrings = {
   featuredClientsAria: "Featured clients",
   countOf: (shown, total) => `${shown} of ${total}`,
   showAll: "Show all clients",
+  noClientTitle: "No clients found",
   noClientMatch: (query, where) => `No client matches “${query}”${where}. Try a shorter search.`,
   inRegion: (region) => ` in ${region}`,
   clientLogoAlt: (name) => `${name} logo`,
@@ -178,6 +199,20 @@ const en: UIStrings = {
   eventsRailAria: "Events",
   eventDetailsAria: "Event details",
   recent: "Recent",
+
+  errorEyebrow: "Something went wrong",
+  errorHeading: "This page didn’t load.",
+  errorBody:
+    "A temporary problem stopped this page from loading. It wasn’t anything you did — trying again usually fixes it.",
+  tryAgain: "Try again",
+  backHome: "Back to home",
+  stillStuck: "Still not working?",
+  messageUs: "Message us on WhatsApp",
+  notFoundTitle: "Page not found",
+  notFoundHeading: "This page doesn’t exist.",
+  notFoundBody:
+    "The link may be out of date, or the page may have moved. Head back to the home page, or get in touch and we’ll point you to it.",
+  contactUs: "Contact us",
 };
 
 const ar: UIStrings = {
@@ -217,6 +252,7 @@ const ar: UIStrings = {
   featuredClientsAria: "عملاء مميزون",
   countOf: (shown, total) => `${shown} من ${total}`,
   showAll: "عرض كل العملاء",
+  noClientTitle: "لا توجد نتائج",
   noClientMatch: (query, where) => `لا يوجد عميل يطابق «${query}»${where}. جرّب بحثًا أقصر.`,
   inRegion: (region) => ` في ${region}`,
   clientLogoAlt: (name) => `شعار ${name}`,
@@ -247,6 +283,18 @@ const ar: UIStrings = {
   eventsRailAria: "الفعاليات",
   eventDetailsAria: "تفاصيل الفعالية",
   recent: "حديثًا",
+
+  errorEyebrow: "حدث خطأ",
+  errorHeading: "تعذّر تحميل هذه الصفحة.",
+  errorBody: "منعت مشكلة مؤقتة هذه الصفحة من التحميل. لم يكن ذلك بسببك — غالبًا ما تحل إعادة المحاولة المشكلة.",
+  tryAgain: "حاول مرة أخرى",
+  backHome: "العودة إلى الرئيسية",
+  stillStuck: "ما زالت المشكلة قائمة؟",
+  messageUs: "راسلنا على واتساب",
+  notFoundTitle: "الصفحة غير موجودة",
+  notFoundHeading: "هذه الصفحة غير موجودة.",
+  notFoundBody: "ربما يكون الرابط قديمًا أو تم نقل الصفحة. عُد إلى الصفحة الرئيسية، أو تواصل معنا وسنرشدك إليها.",
+  contactUs: "تواصل معنا",
 };
 
 export const UI: Record<Locale, UIStrings> = { en, ar };

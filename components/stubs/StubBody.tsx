@@ -14,7 +14,7 @@ import { NumberedList } from "@/components/ds/NumberedList";
 import { StepCard } from "@/components/ds/StepCard";
 import { SpecTable } from "@/components/ds/SpecTable";
 import { PillButton } from "@/components/ds/PillButton";
-import type { Photo, StubBlock } from "@/content/pages";
+import type { Block, Photo } from "@/lib/api/types";
 import { UI } from "@/content/ui";
 import { href as localeHref, type Locale } from "@/content/i18n";
 
@@ -36,7 +36,7 @@ function PhotoGrid({ photos }: { photos: Photo[] }) {
   );
 }
 
-function Block({ block, lang }: { block: StubBlock; lang: Locale }) {
+function BlockView({ block, lang }: { block: Block; lang: Locale }) {
   switch (block.kind) {
     case "intro":
       return (
@@ -122,7 +122,13 @@ function Block({ block, lang }: { block: StubBlock; lang: Locale }) {
           <ul className="swh-logo-wall">
             {block.logos.map((l) => (
               <li key={l.src} className="swh-logo-wall__item">
-                <img src={l.src} alt={l.alt} loading="lazy" decoding="async" />
+                {l.href ? (
+                  <a href={l.href} target="_blank" rel="noopener noreferrer" aria-label={`${l.alt} ${UI[lang].opensInNewTab}`}>
+                    <img src={l.src} alt={l.alt} loading="lazy" decoding="async" />
+                  </a>
+                ) : (
+                  <img src={l.src} alt={l.alt} loading="lazy" decoding="async" />
+                )}
               </li>
             ))}
           </ul>
@@ -140,7 +146,7 @@ function Block({ block, lang }: { block: StubBlock; lang: Locale }) {
           <ul className="swh-hardware">
             {block.items.map((it) => (
               <li key={it.n} className="swh-hardware__item">
-                <img src={it.image} alt={it.title} loading="lazy" decoding="async" />
+                {it.image ? <img src={it.image} alt={it.title} loading="lazy" decoding="async" /> : null}
                 <p className="swh-hardware__n">{it.n}</p>
                 <p className="swh-hardware__title">{it.title}</p>
               </li>
@@ -153,7 +159,7 @@ function Block({ block, lang }: { block: StubBlock; lang: Locale }) {
       return (
         <ol className="swh-timeline">
           {block.items.map((e) => (
-            <li key={e.title} className="swh-timeline__item">
+            <li key={e.slug} className="swh-timeline__item">
               <div className="swh-timeline__marker" aria-hidden="true" />
               <div className="swh-timeline__body">
                 {e.year ? <Eyebrow>{e.year}</Eyebrow> : null}
@@ -179,6 +185,28 @@ function Block({ block, lang }: { block: StubBlock; lang: Locale }) {
             </SectionHeading>
           ) : null}
           <PhotoGrid photos={block.items} />
+        </div>
+      );
+
+    case "testimonials":
+      return (
+        <div style={{ width: "100%" }}>
+          {block.heading ? (
+            <SectionHeading level="sub" style={{ marginBottom: "32px" }}>
+              {block.heading}
+            </SectionHeading>
+          ) : null}
+          <ul className="swh-quotes">
+            {block.items.map((t) => (
+              <li key={t.id} className="swh-quotes__item">
+                <blockquote className="swh-quotes__text">{t.quote}</blockquote>
+                <p className="swh-quotes__by">
+                  {t.avatar ? <img src={t.avatar} alt="" loading="lazy" decoding="async" /> : null}
+                  <span>{t.attribution}</span>
+                </p>
+              </li>
+            ))}
+          </ul>
         </div>
       );
 
@@ -212,7 +240,7 @@ function Block({ block, lang }: { block: StubBlock; lang: Locale }) {
    every prop as required and `<Section>` alone fails to typecheck. Inlining the same
    values keeps this new code independent of the prototype sections instead of bending
    either one to fit. Values match Section.jsx and Container.jsx exactly. */
-export function StubBody({ blocks, lang }: { blocks: StubBlock[]; lang: Locale }) {
+export function StubBody({ blocks, lang }: { blocks: Block[]; lang: Locale }) {
   return (
     <section
       style={{
@@ -237,7 +265,7 @@ export function StubBody({ blocks, lang }: { blocks: StubBlock[]; lang: Locale }
             /* delay={i * 0.08} is the design system's stagger literal, the same one
                Services.jsx calls "the motion fingerprint". */
             <Reveal key={`${b.kind}-${i}`} delay={i * 0.08}>
-              <Block block={b} lang={lang} />
+              <BlockView block={b} lang={lang} />
             </Reveal>
           ))}
         </div>

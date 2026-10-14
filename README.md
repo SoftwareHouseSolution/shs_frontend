@@ -4,27 +4,40 @@ The Software House Solutions website. It began as a Next.js 16 port of the desig
 at `apps/softwarehouse-frontend/Software House Solutions Design System/ui_kits/swh-marketing/`, and
 now carries a site-wide navbar, an immersive hero, and 17 interior routes.
 
+**All content comes from the Django CMS in `../backend`** — pages, navigation, hero slides,
+figures, clients, events, contact details, images and video. Nothing editable is hardcoded
+here; `content/` keeps only locale helpers (`i18n.ts`), interface strings (`ui.ts`) and
+route-structure facts. Start the backend first (see `../backend/README.md`).
+
 ```bash
+cp .env.example .env.local   # NEXT_PUBLIC_API_URL → the Django API
 pnpm dev          # http://localhost:3000
-pnpm build        # Turbopack production build; every route is statically prerendered
+pnpm build        # production build; every route is prerendered from the API and revalidated
 pnpm start        # production server
 pnpm typecheck
 ```
 
 ## Structure
 
-- `app/layout.tsx` — server component. Holds `metadata`, the stylesheet order, `<SkipLink/>`,
-  `<SiteNav/>`, and the load-bearing `<div id="app">`.
-- `app/(site)/layout.tsx` → `PageShell` — `.page-content`, the measured footer spacer, and the
-  fixed `.sticky-footer` the page scrolls over.
-- `app/(site)/page.tsx` — home: the hero carousel, then the original device-mockup hero, then the
-  eight remaining prototype sections.
-- `app/(site)/[slug]/page.tsx` — all 17 interior routes from one file. `generateStaticParams` reads
-  the same array that renders the menu, so a nav link without a page is impossible by construction.
-  `dynamicParams = false` makes anything else a 404.
-- `content/nav.ts` — the navigation tree, and the single source of truth for the route list.
-  `content/pages.ts` is keyed `Record<PageSlug, PageContent>`, so a missing or misspelt page is a
-  build-time type error.
+- `lib/api/` — the only code that talks to the backend. `client.ts` (base URL, `?lang=`,
+  envelope validation, retries, snake_case → camelCase), `envelope.ts` (the response
+  contract and four distinguishable error classes), `content.ts` (cached server loaders),
+  `types.ts` (payload types), `enquiries.ts` (the contact form's POST).
+- `components/chrome/SiteContext.tsx` — site-wide CMS data (settings, navigation, footer,
+  social, badges) fetched once in `app/[lang]/layout.tsx` and read by the client chrome.
+
+- `app/layout.tsx` — the document: `<html>`, `<body>`, the stylesheet order.
+- `app/[lang]/layout.tsx` — fetches the site data for the language, provides `SiteContext`,
+  renders `<SkipLink/>`, `<SiteNav/>` and the load-bearing `<div id="app">`; per-language
+  title, description and favicon come from Site settings.
+- `app/[lang]/(site)/layout.tsx` → `PageShell` — `.page-content`, the measured footer spacer,
+  and the fixed `.sticky-footer` the page scrolls over.
+- `app/[lang]/(site)/page.tsx` — home: a server component that fetches `/home/` and renders
+  `components/sections/HomeSections.tsx`.
+- `app/[lang]/(site)/[slug]/page.tsx` — every standard CMS page. `generateStaticParams` reads
+  the published page list from the API; `dynamicParams = false` keeps the static export
+  possible, so a page CREATED in the CMS needs a rebuild (edits to existing pages do not).
+- `app/[lang]/(site)/customers/page.tsx` — the client directory (CMS page header + clients API).
 - `components/chrome/` — persistent site furniture. `components/hero/` — carousel and page headers.
   `components/ds/` — untouched design-system copies. `components/sections/` — prototype sections.
 
@@ -32,6 +45,7 @@ pnpm typecheck
 
 ```bash
 pnpm build && pnpm start -p 3001
+PORT_URL=http://localhost:3001/ node tools/check-cms.mjs  # CMS content, lang/dir, enquiry form (21 checks)
 node tools/check-ds-parity.mjs                            # design-system byte parity (29 checks)
 PORT_URL=http://localhost:3001/ node tools/check-nav.mjs  # navigation + drawer (45 checks)
 PORT_URL=http://localhost:3001/ node tools/check-hero.mjs # carousel + reduced motion (17 checks)
@@ -130,9 +144,13 @@ not touched.
 - **Motion.** New entrances reuse the hero copy's `swh-hero-copy` keyframes. Every one has a
   reduced-motion override, and nothing loops forever — the map skeleton's shine is capped
   at six passes.
-- **Deliberately absent.** No toast system, no route `loading.tsx`, no form validation states:
-  the site has no forms and no actions that report back, and every route is prerendered. A
-  `loading.tsx` would also hand SiteNav's hero observer a skeleton to latch onto.
+- **Forms.** One: the enquiry form in `#contact` (`components/sections/EnquiryForm.tsx`).
+  Validation is the API's — messages arrive in the page's language and land under each
+  field; the first invalid field takes focus. Network, server, rate-limit and validation
+  failures each get their own wording.
+- **Deliberately absent.** No toast system and no route `loading.tsx`: every route is
+  prerendered (and revalidated in the background), so there is no navigation-time fetch to
+  wait on. A `loading.tsx` would also hand SiteNav's hero observer a skeleton to latch onto.
 
 ## Known differences from the prototype
 

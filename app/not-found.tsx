@@ -5,7 +5,7 @@ import { PillButton } from "@/components/ds/PillButton";
 import { StatusPanel } from "@/components/feedback/StatusPanel";
 import { CompassIcon } from "@/components/feedback/icons";
 import { DEFAULT_LOCALE, DIR, HTML_LANG, LOCALES, href as localeHref } from "@/content/i18n";
-import { SITE } from "@/content/site";
+import { getSite } from "@/lib/api/content";
 import { UI } from "@/content/ui";
 
 /* Root-level 404 — the page Apache serves as 404.html for any unknown URL.
@@ -29,10 +29,24 @@ export const metadata: Metadata = {
   robots: { index: false, follow: true },
 };
 
-export default function NotFound() {
+/* The site name and the contact target come from the CMS when it answers. A 404 must never
+   itself fail, so if the API is unreachable the page falls back to the plain mark and the
+   home-page contact anchor. */
+async function siteOrNull() {
+  try {
+    return await getSite(DEFAULT_LOCALE);
+  } catch {
+    return null;
+  }
+}
+
+export default async function NotFound() {
+  const site = await siteOrNull();
+  const name = site?.settings.siteName ?? "";
+  const contactHref = site?.settings.primaryCta.url ?? "/#contact";
   return (
     <main id="main" className="swh-404">
-      <Link className="swh-404__brand" href={localeHref(DEFAULT_LOCALE, "/")} aria-label={`${SITE.name} — ${UI.en.homeAria}`}>
+      <Link className="swh-404__brand" href={localeHref(DEFAULT_LOCALE, "/")} aria-label={name ? `${name} — ${UI.en.homeAria}` : UI.en.homeAria}>
         <BrandLogo variant="lockup" height={40} />
       </Link>
 
@@ -54,7 +68,7 @@ export default function NotFound() {
                   <PillButton variant="primary" arrow href={localeHref(l, "/")}>
                     {ui.backHome}
                   </PillButton>
-                  <PillButton variant="secondary" href={localeHref(l, SITE.demoHref)}>
+                  <PillButton variant="secondary" href={localeHref(l, contactHref)}>
                     {ui.contactUs}
                   </PillButton>
                 </>

@@ -16,12 +16,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Container } from "./Container";
 import { ScrollReveal } from "./ScrollReveal";
-import { HOME } from "@/content/home";
-import { A } from "./assetPath";
-
-export function Testimonial({ lang }) {
-  const c = HOME[lang];
-  /* Split per render rather than stored pre-split in content/home.ts: the word-by-word
+/* The featured testimonial from the CMS (Testimonials → "featured on the home page"). */
+export function Testimonial({ testimonial: c }) {
+  /* Split per render rather than stored pre-split in the CMS: the word-by-word
      fill is this component's business, and a translator should never be handed an array
      of loose words to translate one at a time. */
   const words = c.quote.split(" ");
@@ -61,10 +58,12 @@ export function Testimonial({ lang }) {
             })}
           </p>
           <div style={{ marginTop: "32px", display: "flex", alignItems: "center", gap: "14px" }}>
-            <ScrollReveal style={{ display: "inline-flex" }}>
-              <img src={A("testimonials/uncle.png")} alt="" style={{ height: "44px", width: "44px", objectFit: "contain" }} />
-            </ScrollReveal>
-            <span style={{ font: "var(--body-copy)", color: "var(--body)" }}>{c.quoteAttribution}</span>
+            {c.avatar ? (
+              <ScrollReveal style={{ display: "inline-flex" }}>
+                <img src={c.avatar} alt="" style={{ height: "44px", width: "44px", objectFit: "contain" }} />
+              </ScrollReveal>
+            ) : null}
+            <span style={{ font: "var(--body-copy)", color: "var(--body)" }}>{c.attribution}</span>
           </div>
         </div>
       </Container>

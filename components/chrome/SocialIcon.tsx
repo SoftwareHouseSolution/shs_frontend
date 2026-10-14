@@ -35,7 +35,9 @@ export type SocialName = keyof typeof PATHS | (string & {});
 /** Renders one glyph. Sizing and colour come from CSS — the paths use currentColor. */
 export function SocialIcon({ name }: { name: SocialName }) {
   const paths = PATHS[name];
-  if (!paths) throw new Error(`SocialIcon: no glyph named "${name}"`);
+  // An unknown platform renders nothing rather than crashing the footer of every page;
+  // the CMS only offers platforms that have a glyph here.
+  if (!paths) return null;
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
       {paths}

@@ -1,6 +1,6 @@
 /* The featured-client strip, directly above the "Every client" heading.
 
-   Sixteen named accounts, in the order the client gave them, running as an endless
+   The featured accounts, in the order set in the CMS, running as an endless
    marquee. It is deliberately NOT a static row: sixteen marks laid out flat would read as
    "these are our clients", which is the opposite of the message on a page whose whole
    point is a 1,750-name roster. A strip with no first and no last item reads as a sample.
@@ -22,13 +22,12 @@
    sized at — 72px between 190px marks reads as a row; 72px between 140px marks on a 358px
    phone reads as two logos and a lot of paper.
 
-   FEATURED is resolved against CLIENTS at module scope, so a slug that stops existing when
-   the roster is regenerated from the PDF is a build-time crash, not a silently missing
-   logo. Same guard as LogoWall's VIP list. */
+   Which clients appear, and in what order, is set per client in the CMS (Clients →
+   "Customers page strip position"). */
 
 import { useEffect, useState } from "react";
 import { InfiniteSlider } from "@/components/core/infinite-slider";
-import { CLIENTS } from "@/content/clients";
+import type { Client } from "@/lib/api/types";
 import { UI } from "@/content/ui";
 import type { Locale } from "@/content/i18n";
 
@@ -39,32 +38,7 @@ const NARROW_MQ = "(max-width: 799px)";
 const GAP = 72;
 const GAP_NARROW = 36;
 
-const FEATURED = [
-  "kirmena-jewellery",
-  "gold-era-jewelry",
-  "oro-bianco-jewelry",
-  "king-gold-jewellery",
-  "royal-select",
-  "jolie-gold",
-  "uno-jewelry",
-  "mb-gold-malak-bushra",
-  "ayman-riad-jewellery",
-  "gemma-azzurr",
-  "makkar-jewelery",
-  "gfg-jellewery",
-  "swiss-gold",
-  "ezzat-el-wakil-jewelry",
-  "halim-gold",
-  "emil-zaki",
-];
-
-const FEATURED_LOGOS = FEATURED.map((slug) => {
-  const c = CLIENTS.find((x) => x.slug === slug);
-  if (!c) throw new Error(`FeaturedClients: no client with slug "${slug}"`);
-  return c;
-});
-
-export function FeaturedClients({ lang }: { lang: Locale }) {
+export function FeaturedClients({ lang, clients }: { lang: Locale; clients: readonly Client[] }) {
   const ui = UI[lang];
 
   /* Starts wide on both server and client so hydration matches, then corrects after mount.
@@ -93,7 +67,7 @@ export function FeaturedClients({ lang }: { lang: Locale }) {
             any moment, so they never intersect the viewport and a lazy loader would defer
             them forever — the strip would scroll visible holes into view. ~5KB each.
             fetchPriority keeps them behind the map and the page header in the queue. */}
-        {FEATURED_LOGOS.map((c) => (
+        {clients.map((c) => (
           <img
             key={c.slug}
             className="swh-featured__mark"

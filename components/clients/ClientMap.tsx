@@ -29,8 +29,7 @@
    client among 367; no map answers "where is Zeina Jewelry". */
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { Client, Region } from "@/content/clients";
-import { REGIONS, REGION_LABEL } from "@/content/clients";
+import type { Client, ClientTaxonomy } from "@/lib/api/types";
 import { UI } from "@/content/ui";
 import type { Locale } from "@/content/i18n";
 import { PillButton } from "@/components/ds/PillButton";
@@ -38,17 +37,42 @@ import { EmptyState } from "@/components/feedback/EmptyState";
 import { SearchIcon } from "@/components/feedback/icons";
 import { ClientCard } from "./ClientCard";
 import { FeaturedClients } from "./FeaturedClients";
-import { REGION_ANCHORS, embedUrl, fitZoom, offsetFromCentre } from "./regionGeo";
+import { embedUrl, fitZoom, offsetFromCentre, type LatLng } from "./regionGeo";
 
 /* Over-scan in px per side. Google's controls sit within ~64px of the corners. */
 const BLEED = 68;
 
-export function ClientMap({ clients, lang }: { clients: readonly Client[]; lang: Locale }) {
+export function ClientMap({
+  clients,
+  taxonomy,
+  lang,
+}: {
+  clients: readonly Client[];
+  taxonomy: ClientTaxonomy;
+  lang: Locale;
+}) {
   const ui = UI[lang];
-  /* Region KEYS drive the filter and the map anchors; REGION_LABEL is only ever used to
-     print one. Filtering on a translated string would break the moment a label changed. */
-  const regionName = (r: Region) => REGION_LABEL[lang][r];
-  const [active, setActive] = useState<Region | null>(null);
+  /* Region KEYS drive the filter and the map anchors; names are only ever used to print
+     one. Filtering on a translated string would break the moment a label changed. */
+  /* Names, pins and order come from the CMS taxonomy (Regions in the admin). */
+  const { regionKeys, names, pins, anchors, typeName, featured } = useMemo(() => {
+    const names = new Map(taxonomy.regions.map((r) => [r.key, r.name]));
+    const pins = new Map<string, LatLng>();
+    for (const r of taxonomy.regions) if (r.mapPin) pins.set(r.key, r.mapPin);
+    const types = new Map(taxonomy.businessTypes.map((t) => [t.key, t.name]));
+    return {
+      regionKeys: taxonomy.regions.map((r) => r.key),
+      names,
+      pins,
+      anchors: [...pins.values()],
+      typeName: (key: string) => types.get(key) ?? key,
+      featured: clients
+        .filter((c) => c.featuredOrder !== null)
+        .sort((a, b) => (a.featuredOrder ?? 0) - (b.featuredOrder ?? 0)),
+    };
+  }, [taxonomy, clients]);
+  const regionName = (r: string) => names.get(r) ?? r;
+  const [active, setActive] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const frameRef = useRef<HTMLDivElement>(null);
   const [box, setBox] = useState({ w: 0, h: 0 });
@@ -62,13 +86,13 @@ export function ClientMap({ clients, lang }: { clients: readonly Client[]; lang:
   /* Counts per region, computed once. A region with no clients is not rendered — an empty
      pin is an invitation to click something that does nothing. */
   const counts = useMemo(() => {
-    const m = new Map<Region, number>();
+    const m = new Map<string, number>();
     for (const c of clients) m.set(c.region, (m.get(c.region) ?? 0) + 1);
     return m;
   }, [clients]);
 
-  const onMap = REGIONS.filter((r) => REGION_ANCHORS[r] && (counts.get(r) ?? 0) > 0);
-  const offMap = REGIONS.filter((r) => !REGION_ANCHORS[r] && (counts.get(r) ?? 0) > 0);
+  const onMap = regionKeys.filter((r) => pins.has(r) && (counts.get(r) ?? 0) > 0);
+  const offMap = regionKeys.filter((r) => !pins.has(r) && (counts.get(r) ?? 0) > 0);
 
   /* Measure the frame so markers can be placed from its centre. useLayoutEffect: the pills
      must be positioned before paint, otherwise they all flash at the top-left corner for a
@@ -87,7 +111,7 @@ export function ClientMap({ clients, lang }: { clients: readonly Client[]; lang:
      both the pin maths and the embed URL, so the backdrop and the pins can never disagree.
      Rounding to an integer means the src only changes when the fit genuinely changes, not
      on every pixel of a resize drag. */
-  const zoom = box.w && box.h ? fitZoom(box.w, box.h) : null;
+  const zoom = box.w && box.h ? fitZoom(box.w, box.h, anchors) : null;
 
   const shown = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -118,7 +142,7 @@ export function ClientMap({ clients, lang }: { clients: readonly Client[]; lang:
      global `[id] { scroll-margin-top }` rule. */
   const resultRef = useRef<HTMLDivElement>(null);
   const select = useCallback(
-    (r: Region) => {
+    (r: string) => {
       setActive((cur) => {
         const next = cur === r ? null : r;
         if (next) {
@@ -208,7 +232,7 @@ export function ClientMap({ clients, lang }: { clients: readonly Client[]; lang:
                 keyboard and legible to a screen reader without the map existing at all. */}
             <ul className="swh-map__pins">
               {onMap.map((r) => {
-                const { dx, dy } = offsetFromCentre(REGION_ANCHORS[r], zoom ?? 7);
+                const { dx, dy } = offsetFromCentre(pins.get(r)!, zoom ?? 7);
                 const n = counts.get(r) ?? 0;
                 return (
                   <li
@@ -288,7 +312,7 @@ export function ClientMap({ clients, lang }: { clients: readonly Client[]; lang:
             billboard, and a "featured" row that emptied itself when you pressed Alexandria
             would read as a bug rather than as a filter. The roster below is the thing the
             map filters. */}
-        <FeaturedClients lang={lang} />
+        {featured.length > 0 ? <FeaturedClients lang={lang} clients={featured} /> : null}
 
         {/* data-active carries the key of the selected region, or nothing when the roster
             is unfiltered — the heading text beside it is localised and cannot be asserted on. */}
@@ -337,7 +361,7 @@ export function ClientMap({ clients, lang }: { clients: readonly Client[]; lang:
         ) : (
           <ul className="swh-client-grid" ref={gridRef}>
             {shown.map((c) => (
-              <ClientCard key={c.slug} client={c} lang={lang} />
+              <ClientCard key={c.slug} client={c} lang={lang} typeName={typeName} />
             ))}
           </ul>
         )}

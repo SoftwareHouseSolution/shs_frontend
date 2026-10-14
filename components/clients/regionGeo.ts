@@ -68,14 +68,9 @@ export function offsetFromCentre(point: LatLng, zoom: number) {
    deliberately absent — the second one is the bucket for clients whose governorate the
    source does not record, so there is no honest point to put it. ClientMap renders both as
    chips beneath the map instead of inventing coordinates. */
-export const REGION_ANCHORS: Record<string, LatLng> = {
-  "Greater Cairo": { lat: 30.05, lng: 31.25 },
-  Giza: { lat: 29.15, lng: 30.35 },
-  Alexandria: { lat: 31.25, lng: 29.85 },
-  "Delta & Canal": { lat: 30.95, lng: 32.05 },
-  "Upper Egypt": { lat: 26.1, lng: 32.6 },
-  "Sinai & Red Sea": { lat: 28.55, lng: 33.95 },
-};
+/* The anchors themselves are CMS data now — Regions → "map pin latitude/longitude" in
+   the admin, seeded with the values tuned above. A region with no pin is listed as a chip
+   beneath the map instead (the rule for International and Nationwide still holds). */
 
 /* Room a pill needs around its own anchor, so the outermost ones are not half-clipped by
    the frame. Proportional, not fixed: a flat 220px is right for a desktop pill and far too
@@ -91,13 +86,14 @@ const pads = (w: number, h: number) => ({
   y: Math.min(52, h * 0.14),
 });
 
-/* How far the anchors spread, in normalised world units. Computed once at module scope. */
-const SPREAD = (() => {
-  const pts = Object.values(REGION_ANCHORS).map(project);
+/* How far the anchors spread, in normalised world units. */
+function spreadOf(anchors: readonly LatLng[]) {
+  if (anchors.length === 0) return { x: 0, y: 0 };
+  const pts = anchors.map(project);
   const xs = pts.map((p) => p.x);
   const ys = pts.map((p) => p.y);
   return { x: Math.max(...xs) - Math.min(...xs), y: Math.max(...ys) - Math.min(...ys) };
-})();
+}
 
 /** Zoom bounds. Below 5 the country is a smudge; above 8 the pills stop overlapping but
     half the regions fall outside any sane frame. */
@@ -114,8 +110,9 @@ const MAX_ZOOM = 8;
  *
  * The result also goes into the embed URL, so the backdrop and the pins always agree.
  */
-export function fitZoom(w: number, h: number): number {
+export function fitZoom(w: number, h: number, anchors: readonly LatLng[]): number {
   const pad = pads(w, h);
+  const SPREAD = spreadOf(anchors);
   for (let z = MAX_ZOOM; z > MIN_ZOOM; z--) {
     const world = TILE * Math.pow(2, z);
     if (SPREAD.x * world <= w - pad.x && SPREAD.y * world <= h - pad.y) return z;

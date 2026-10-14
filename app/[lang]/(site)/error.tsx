@@ -23,8 +23,8 @@ import { PillButton } from "@/components/ds/PillButton";
 import { StatusPanel } from "@/components/feedback/StatusPanel";
 import { AlertIcon } from "@/components/feedback/icons";
 import { DEFAULT_LOCALE, href as localeHref, isLocale } from "@/content/i18n";
-import { SITE } from "@/content/site";
 import { UI } from "@/content/ui";
+import { useOptionalSite } from "@/components/chrome/SiteContext";
 
 export default function SiteError({
   error,
@@ -36,6 +36,9 @@ export default function SiteError({
   const params = useParams<{ lang: string }>();
   const lang = isLocale(params?.lang) ? params.lang : DEFAULT_LOCALE;
   const ui = UI[lang];
+  /* Optional: if the failure was the CMS itself, the layout may have rendered without
+     site data — the page must still explain itself, just without the WhatsApp link. */
+  const whatsapp = useOptionalSite()?.settings.whatsappUrl;
 
   useEffect(() => {
     console.error(error);
@@ -60,10 +63,11 @@ export default function SiteError({
           </>
         }
         aside={
+          whatsapp ? (
           <>
             {ui.stillStuck}{" "}
             <a
-              href={SITE.whatsapp}
+              href={whatsapp}
               target="_blank"
               rel="noopener noreferrer"
               aria-label={`${ui.messageUs} ${ui.opensInNewTab}`}
@@ -71,6 +75,7 @@ export default function SiteError({
               {ui.messageUs}
             </a>
           </>
+          ) : undefined
         }
       >
         {ui.errorBody}

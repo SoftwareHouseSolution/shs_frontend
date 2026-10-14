@@ -5,7 +5,7 @@
    with the count-up gone there is no state, no observer and no rAF loop here, so the
    "use client" directive went with them.
 
-   Copy is from the client's ui_ux/…/"website start and end and numbers.docx".
+   Copy is edited in the CMS (Home page → Closing band).
 
    The section/container wrapper is inlined rather than imported from Section.jsx and
    Container.jsx, for the same reason StubBody.tsx inlines it: those files are untyped
@@ -15,12 +15,10 @@
 import { Reveal } from "@/components/ds/Reveal";
 import { SectionHeading } from "@/components/ds/SectionHeading";
 import { PillButton } from "@/components/ds/PillButton";
-import { SITE } from "@/content/site";
-import { HOME } from "@/content/home";
 import { href as localeHref, type Locale } from "@/content/i18n";
+import type { HomeData } from "@/lib/api/types";
 
-export function StatsBand({ lang }: { lang: Locale }) {
-  const c = HOME[lang];
+export function StatsBand({ lang, band: c }: { lang: Locale; band: HomeData["band"] }) {
   return (
     <section
       style={{
@@ -42,13 +40,13 @@ export function StatsBand({ lang }: { lang: Locale }) {
       >
         <Reveal style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "20px", textAlign: "center", width: "100%" }}>
           <SectionHeading level="head" align="center">
-            {c.bandHeading}
+            {c.heading}
           </SectionHeading>
           <p style={{ margin: 0, font: "var(--body-copy)", color: "var(--body)", maxWidth: "58ch" }}>
-            {c.bandBody}
+            {c.body}
           </p>
-          <PillButton variant="primary" arrow href={localeHref(lang, SITE.demoHref)}>
-            {c.bandCta}
+          <PillButton variant="primary" arrow href={localeHref(lang, c.cta.url)}>
+            {c.cta.label}
           </PillButton>
         </Reveal>
       </div>

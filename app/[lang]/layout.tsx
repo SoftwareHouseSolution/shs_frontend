@@ -5,8 +5,9 @@ import { SkipLink } from "@/components/chrome/SkipLink";
 import { SiteNav } from "@/components/chrome/SiteNav";
 import { SocialRail } from "@/components/chrome/SocialRail";
 import { HtmlLangSync } from "@/components/chrome/HtmlLangSync";
+import { SiteProvider } from "@/components/chrome/SiteContext";
 import { LOCALES, DIR, HTML_LANG, isLocale, type Locale } from "@/content/i18n";
-import { SITE } from "@/content/site";
+import { getSite } from "@/lib/api/content";
 
 /* Both languages are prerendered. `dynamicParams = false` makes /fr a 404 at build time
    rather than an attempted on-demand render — which `output: "export"` could not serve
@@ -22,15 +23,16 @@ type Params = { params: Promise<{ lang: string }> };
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { lang } = await params;
   if (!isLocale(lang)) return {};
+  const { settings } = await getSite(lang);
   return {
-    /* Per-language description; the title template is inherited from the root layout.
+    /* Per-language title and description from the CMS (Site settings → SEO).
        `alternates` emits the hreflang pair, which is the signal that actually tells a
        search engine these two URLs are the same document in two languages — the <html
        lang> attribute does not do that job. */
-    description:
-      lang === "ar"
-        ? `${SITE.name} — نظام ERP متكامل مع نقاط البيع لتجارة الذهب والألماس، إلى جانب برمجيات المؤسسات والأجهزة والشبكات. نقود السوق منذ عام ${SITE.since}.`
-        : `${SITE.name} — POS-integrated ERP for the gold and diamond trade, plus enterprise software, hardware and networking. Leading the market since ${SITE.since}.`,
+    title: { default: settings.defaultMetaTitle, template: `%s — ${settings.siteName}` },
+    description: settings.defaultMetaDescription,
+    ...(settings.favicon ? { icons: { icon: settings.favicon } } : {}),
+    ...(settings.ogImage ? { openGraph: { images: [settings.ogImage] } } : {}),
     alternates: {
       canonical: `/${lang}`,
       languages: { en: "/en", ar: "/ar", "x-default": "/en" },
@@ -55,6 +57,7 @@ export default async function LangLayout({
   const { lang: raw } = await params;
   if (!isLocale(raw)) notFound();
   const lang: Locale = raw;
+  const site = await getSite(lang);
 
   return (
     <>
@@ -72,14 +75,16 @@ export default async function LangLayout({
           visible node on the page is inside this div, marking it here is equivalent to
           marking the document for everything a reader or a layout engine touches. */}
       <div id="app" lang={HTML_LANG[lang]} dir={DIR[lang]}>
-        <SkipLink lang={lang} />
-        <SiteNav lang={lang} />
-        {children}
+        <SiteProvider site={site}>
+          <SkipLink lang={lang} />
+          <SiteNav lang={lang} />
+          {children}
         {/* Fixed to the left edge, so it is deliberately a sibling of {children} rather
             than something a page has to opt into. Safe inside #app: a fixed element is
             only clipped by an ancestor's overflow when that ancestor is a containing
             block, and #app carries no transform or filter (see the comment above). */}
-        <SocialRail lang={lang} />
+          <SocialRail lang={lang} />
+        </SiteProvider>
       </div>
     </>
   );

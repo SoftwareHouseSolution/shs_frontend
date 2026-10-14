@@ -1,16 +1,24 @@
 /* One client in the directory grid. Presentational — all the state lives in
-   ClientDirectory. Not a link: the roster carries no per-client content beyond these four
+   ClientMap. Not a link: the roster carries no per-client content beyond these four
    fields, so a detail page would be an empty shell. */
 
-import type { Client } from "@/content/clients";
-import { BUSINESS_TYPE_LABEL } from "@/content/clients";
+import type { Client } from "@/lib/api/types";
 import { UI } from "@/content/ui";
 import type { Locale } from "@/content/i18n";
 
 /* Name and location stay as the company profile records them, in both languages — see the
-   note above REGION_LABEL in content/clients.ts. The business-type chips are a closed set
+   note on Client in backend/apps/clients/models.py. The business-type chips are a closed set
    of three, so those do translate. */
-export function ClientCard({ client, lang }: { client: Client; lang: Locale }) {
+export function ClientCard({
+  client,
+  lang,
+  typeName,
+}: {
+  client: Client;
+  lang: Locale;
+  /** Localised business-type name for a key (from the CMS taxonomy). */
+  typeName: (key: string) => string;
+}) {
   return (
     <li className="swh-client-card">
       <div className="swh-client-card__logo">
@@ -18,10 +26,10 @@ export function ClientCard({ client, lang }: { client: Client; lang: Locale }) {
       </div>
       <p className="swh-client-card__name">{client.name}</p>
       {client.location ? <p className="swh-client-card__loc">{client.location}</p> : null}
-      {client.types.length ? (
+      {client.businessTypes.length ? (
         <ul className="swh-client-card__types">
-          {client.types.map((t) => (
-            <li key={t}>{BUSINESS_TYPE_LABEL[lang][t]}</li>
+          {client.businessTypes.map((t) => (
+            <li key={t}>{typeName(t)}</li>
           ))}
         </ul>
       ) : null}

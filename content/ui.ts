@@ -1,8 +1,9 @@
 /* Interface copy — every user-visible string that is NOT page content.
 
-   Page bodies live in content/pages.*.ts, home-page section copy in content/home.ts, and
-   the roster in content/clients.ts. What is left here is chrome: button labels, aria
-   text, placeholders, empty states. They are gathered in one file rather than spread
+   Page content — every heading, card, slide, figure, client and event — is edited in the
+   CMS (Django admin) and arrives through lib/api. What is left here is the interface
+   itself: button labels, aria text, placeholders, form messages, empty states. It is the
+   frontend's equivalent of a gettext catalogue, and ships with the code that uses it. They are gathered in one file rather than spread
    through the components because a translator needs to read them together to keep the
    register consistent, and because a missing key must be a TYPE ERROR rather than an
    English word surfacing inside an Arabic page.
@@ -26,7 +27,6 @@ export type UIStrings = {
   skipToContent: string;
   /** Suffix on the brand link's aria-label: "<company> — home". */
   homeAria: string;
-  bookDemo: string;
   openMenu: string;
   closeMenu: string;
   siteMenu: string;
@@ -47,11 +47,6 @@ export type UIStrings = {
 
   /* ── Footer ───────────────────────────────────────────────────────────────────── */
   footerNavAria: string;
-  footerCompany: string;
-  footerExplore: string;
-  footerWorkWithUs: string;
-  footerBlurb: string;
-  allRightsReserved: string;
 
   /* ── Hero carousel ────────────────────────────────────────────────────────────── */
   carouselAria: string;
@@ -77,21 +72,6 @@ export type UIStrings = {
   noClientMatch: (query: string, where: string) => string;
   inRegion: (region: string) => string;
   clientLogoAlt: (name: string) => string;
-  /* The superseded faceted directory (components/clients/ClientDirectory.tsx). It is not
-     rendered anywhere — ClientMap replaced it — but it is kept on disk as reference and
-     is therefore kept translated, so it can be dropped back in without a half-English UI. */
-  search: string;
-  clientOrLocation: string;
-  facetSector: string;
-  facetBusiness: string;
-  facetRegion: string;
-  sort: string;
-  sortAZ: string;
-  sortZA: string;
-  sortRegion: string;
-  countClients: (shown: number, total: number) => string;
-  clearFilters: string;
-  noFilterMatch: string;
 
   /* ── Video modal ──────────────────────────────────────────────────────────────── */
   videoDialogAria: string;
@@ -129,12 +109,30 @@ export type UIStrings = {
   notFoundHeading: string;
   notFoundBody: string;
   contactUs: string;
+
+  /* ── Enquiry form ─────────────────────────────────────────────────────────────── */
+  formIntro: string;
+  formName: string;
+  formEmail: string;
+  formPhone: string;
+  formCompany: string;
+  formMessage: string;
+  formOptional: string;
+  formSubmit: string;
+  formSending: string;
+  formSuccessTitle: string;
+  formSendAnother: string;
+  /** Shown when the request never reached the server. */
+  formNetworkError: string;
+  /** Shown for unexpected server failures; the reference is appended when available. */
+  formServerError: string;
+  formReference: (id: string) => string;
+  formFixErrors: string;
 };
 
 const en: UIStrings = {
   skipToContent: "Skip to content",
   homeAria: "home",
-  bookDemo: "Book a demo",
   openMenu: "Open menu",
   closeMenu: "Close menu",
   siteMenu: "Site menu",
@@ -149,12 +147,6 @@ const en: UIStrings = {
   crumbHome: "Home",
 
   footerNavAria: "Footer",
-  footerCompany: "Company",
-  footerExplore: "Explore",
-  footerWorkWithUs: "Work with us",
-  footerBlurb:
-    "POS-integrated ERP for the gold and diamond trade, plus enterprise software, hardware and networking. Leading the market since",
-  allRightsReserved: "All Rights Reserved",
 
   carouselAria: "Featured",
   playSlideshow: "Play slideshow",
@@ -172,18 +164,6 @@ const en: UIStrings = {
   noClientMatch: (query, where) => `No client matches “${query}”${where}. Try a shorter search.`,
   inRegion: (region) => ` in ${region}`,
   clientLogoAlt: (name) => `${name} logo`,
-  search: "Search",
-  clientOrLocation: "Client or location",
-  facetSector: "Sector",
-  facetBusiness: "Business",
-  facetRegion: "Region",
-  sort: "Sort",
-  sortAZ: "Name A–Z",
-  sortZA: "Name Z–A",
-  sortRegion: "Region",
-  countClients: (shown, total) => `${shown} of ${total} clients`,
-  clearFilters: "Clear filters",
-  noFilterMatch: "No clients match those filters. Try clearing one.",
 
   videoDialogAria: "A look inside Software House Solutions",
   playVideo: "Play video",
@@ -213,12 +193,27 @@ const en: UIStrings = {
   notFoundBody:
     "The link may be out of date, or the page may have moved. Head back to the home page, or get in touch and we’ll point you to it.",
   contactUs: "Contact us",
+
+  formIntro: "Prefer e-mail? Send us a message and the sales team will reply.",
+  formName: "Your name",
+  formEmail: "E-mail",
+  formPhone: "Phone",
+  formCompany: "Company",
+  formMessage: "How can we help?",
+  formOptional: "optional",
+  formSubmit: "Send message",
+  formSending: "Sending…",
+  formSuccessTitle: "Message sent",
+  formSendAnother: "Send another message",
+  formNetworkError: "We couldn’t reach our server. Check your connection and try again.",
+  formServerError: "Something went wrong on our side and your message was not sent. Please try again, or message us on WhatsApp.",
+  formReference: (id) => `Reference: ${id}`,
+  formFixErrors: "Please correct the highlighted fields.",
 };
 
 const ar: UIStrings = {
   skipToContent: "تخطَّ إلى المحتوى",
   homeAria: "الصفحة الرئيسية",
-  bookDemo: "احجز عرضًا توضيحيًا",
   openMenu: "فتح القائمة",
   closeMenu: "إغلاق القائمة",
   siteMenu: "قائمة الموقع",
@@ -233,12 +228,6 @@ const ar: UIStrings = {
   crumbHome: "الرئيسية",
 
   footerNavAria: "تذييل الموقع",
-  footerCompany: "الشركة",
-  footerExplore: "استكشف",
-  footerWorkWithUs: "اعمل معنا",
-  footerBlurb:
-    "نظام ERP متكامل مع نقاط البيع لتجارة الذهب والألماس، إلى جانب برمجيات المؤسسات والأجهزة والشبكات. نقود السوق منذ",
-  allRightsReserved: "جميع الحقوق محفوظة",
 
   carouselAria: "عرض مميز",
   playSlideshow: "تشغيل العرض",
@@ -256,18 +245,6 @@ const ar: UIStrings = {
   noClientMatch: (query, where) => `لا يوجد عميل يطابق «${query}»${where}. جرّب بحثًا أقصر.`,
   inRegion: (region) => ` في ${region}`,
   clientLogoAlt: (name) => `شعار ${name}`,
-  search: "بحث",
-  clientOrLocation: "اسم العميل أو الموقع",
-  facetSector: "القطاع",
-  facetBusiness: "نوع النشاط",
-  facetRegion: "المنطقة",
-  sort: "الترتيب",
-  sortAZ: "الاسم: أ إلى ي",
-  sortZA: "الاسم: ي إلى أ",
-  sortRegion: "المنطقة",
-  countClients: (shown, total) => `${shown} من ${total} عميل`,
-  clearFilters: "مسح عوامل التصفية",
-  noFilterMatch: "لا يوجد عملاء يطابقون هذه المعايير. جرّب إزالة أحدها.",
 
   videoDialogAria: "جولة داخل Software House Solutions",
   playVideo: "تشغيل الفيديو",
@@ -295,6 +272,22 @@ const ar: UIStrings = {
   notFoundHeading: "هذه الصفحة غير موجودة.",
   notFoundBody: "ربما يكون الرابط قديمًا أو تم نقل الصفحة. عُد إلى الصفحة الرئيسية، أو تواصل معنا وسنرشدك إليها.",
   contactUs: "تواصل معنا",
+
+  formIntro: "تفضّل البريد الإلكتروني؟ أرسل لنا رسالة وسيرد عليك فريق المبيعات.",
+  formName: "الاسم",
+  formEmail: "البريد الإلكتروني",
+  formPhone: "الهاتف",
+  formCompany: "الشركة",
+  formMessage: "كيف يمكننا مساعدتك؟",
+  formOptional: "اختياري",
+  formSubmit: "أرسل الرسالة",
+  formSending: "جارٍ الإرسال…",
+  formSuccessTitle: "تم إرسال رسالتك",
+  formSendAnother: "أرسل رسالة أخرى",
+  formNetworkError: "تعذّر الاتصال بالخادم. تحقق من اتصالك ثم حاول مرة أخرى.",
+  formServerError: "حدث خطأ من جانبنا ولم تُرسل رسالتك. حاول مرة أخرى، أو راسلنا على واتساب.",
+  formReference: (id) => `الرقم المرجعي: ${id}`,
+  formFixErrors: "يرجى تصحيح الحقول المحددة.",
 };
 
 export const UI: Record<Locale, UIStrings> = { en, ar };

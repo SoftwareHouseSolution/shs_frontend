@@ -5,26 +5,21 @@ import { Eyebrow } from "@/components/ds/Eyebrow";
 import { SectionHeading } from "@/components/ds/SectionHeading";
 import { SpecTable } from "@/components/ds/SpecTable";
 import { Section } from "./Section";
-import { HOME } from "@/content/home";
-
-export function Specs({ lang }) {
-  const c = HOME[lang];
+/* The comparison table chosen on the Home page in the CMS. */
+export function Specs({ specs: c }) {
   return (
     <Section id="specs">
       <Reveal style={{ marginBottom: "40px", textAlign: "center" }}>
-        <Eyebrow>{c.specsEyebrow}</Eyebrow>
-        <SectionHeading level="head" align="center" style={{ marginTop: "12px" }}>{c.specsHeading}</SectionHeading>
+        <Eyebrow>{c.eyebrow}</Eyebrow>
+        <SectionHeading level="head" align="center" style={{ marginTop: "12px" }}>{c.heading}</SectionHeading>
       </Reveal>
       <Reveal style={{ width: "100%" }}>
         {/* .swh-spec repairs the table below 700px — see the note in app/chrome.css.
             --spec-cols carries the column count because the fix rebuilds the grid. */}
-        <div className="swh-spec" style={{ "--spec-cols": c.specColumns.length }}>
-          <SpecTable
-            /* The first column is the highlighted one in both languages: it is SWH's own
-               column, not a position in a left-to-right reading order. */
-            columns={c.specColumns.map((label, i) => (i === 0 ? { label, highlight: true } : { label }))}
-            rows={c.specRows.map((cells) => ({ cells }))}
-          />
+        <div className="swh-spec" style={{ "--spec-cols": c.columns.length }}>
+          {/* `highlight` marks SWH's own column — set per column in the CMS, so it is
+              not a position in a left-to-right reading order. */}
+          <SpecTable columns={c.columns} rows={c.rows} />
         </div>
       </Reveal>
     </Section>

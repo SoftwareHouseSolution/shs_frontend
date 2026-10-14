@@ -1,17 +1,28 @@
 # Deploying to Bluehost
 
-The site is fully static — no Node.js, no database, no server process. Bluehost only has to
-serve files.
+The exported site is static — no Node.js on Bluehost. Its CONTENT, however, comes from the
+Django CMS (`../backend`): the build fetches every page from the API and bakes it into HTML,
+and images and video are loaded from the CMS's media URL. Two consequences:
+
+- **The API must be reachable when you build** (`NEXT_PUBLIC_API_URL`), and from visitors'
+  browsers at runtime — the contact form posts to it, and media is served from it. Add the
+  site's origin to the backend's `CORS_ALLOWED_ORIGINS`.
+- **Content edits need a rebuild and re-upload** to appear on a static host. If editors
+  should see changes without that, host the frontend on Node instead (`pnpm build && pnpm
+  start`, e.g. on a VPS or Vercel): pages then refresh from the CMS every
+  `CMS_REVALIDATE_SECONDS` (default 60). See `../README.md` → Deployment.
 
 ## Build
 
 ```
 pnpm install
+# .env.production.local (or the shell): NEXT_PUBLIC_API_URL=https://cms.example.com/api/v1
 pnpm build:static
 ```
 
-That writes **`out/`** — about 550 files, ~23 MB, everything included: HTML for all 17
-routes, the JS/CSS bundles, fonts, all imagery and video, and the client logos.
+That writes **`out/`**: HTML for all CMS pages in both languages, the JS/CSS bundles, fonts
+and brand marks. Content images and video are no longer in it — they live in the CMS media
+store.
 
 ## Upload
 
@@ -63,7 +74,9 @@ harmless dead weight; nothing else in the build depends on it.
 
 ## Updating the site later
 
-Re-run `pnpm build:static` and re-upload. Delete the old `_next/` folder first — its
+After content changes in the CMS, or code changes here: re-run `pnpm build:static` and
+re-upload. A page newly CREATED in the CMS also needs this — routes are generated at build
+time. Delete the old `_next/` folder first — its
 filenames contain content hashes, so old builds leave orphaned files behind that accumulate
 but are never served.
 
@@ -75,6 +88,6 @@ but are never served.
   "export"` disables `next start`, which `tools/check-home.mjs` and `tools/check-nav.mjs`
   need. Those scripts check English by default; set `SITE_LANG=ar` to run them against the
   Arabic build.
-- The contact form is markup only. Nothing on the site posts to a backend, so there is
-  nothing to configure server-side. If a working form is wanted later, that is the one part
-  of this deploy that needs more than static files.
+- The contact form posts to `NEXT_PUBLIC_API_URL/enquiries/` from the browser. If it
+  reports "We couldn't reach our server", check the API is up and that this site's origin
+  is in the backend's `CORS_ALLOWED_ORIGINS`.

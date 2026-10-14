@@ -16,14 +16,12 @@ import { Eyebrow } from "@/components/ds/Eyebrow";
 import { SectionHeading } from "@/components/ds/SectionHeading";
 import { PillButton } from "@/components/ds/PillButton";
 import { useReducedMotion } from "@/components/chrome/useReducedMotion";
-import { EVENTS } from "@/content/events";
-import { HOME } from "@/content/home";
 import { UI } from "@/content/ui";
 import { href as localeHref, type Locale } from "@/content/i18n";
+import type { HomeData } from "@/lib/api/types";
 
-export function EventsRail({ lang }: { lang: Locale }) {
-  const events = EVENTS[lang];
-  const copy = HOME[lang];
+export function EventsRail({ lang, events: copy }: { lang: Locale; events: HomeData["events"] }) {
+  const events = copy.items;
   const ui = UI[lang];
   const [active, setActive] = useState(0);
   const reduce = useReducedMotion();
@@ -62,9 +60,9 @@ export function EventsRail({ lang }: { lang: Locale }) {
     >
       <div style={{ width: "100%", maxWidth: 1600, margin: "0 auto", padding: "0 var(--gutter)", boxSizing: "border-box" }}>
         <Reveal style={{ display: "flex", flexDirection: "column", gap: "16px", marginBottom: "48px", maxWidth: "620px" }}>
-          <Eyebrow>{copy.eventsEyebrow}</Eyebrow>
-          <SectionHeading level="head">{copy.eventsHeading}</SectionHeading>
-          <p style={{ margin: 0, font: "var(--body-copy)", color: "var(--body)" }}>{copy.eventsBody}</p>
+          <Eyebrow>{copy.eyebrow}</Eyebrow>
+          <SectionHeading level="head">{copy.heading}</SectionHeading>
+          <p style={{ margin: 0, font: "var(--body-copy)", color: "var(--body)" }}>{copy.body}</p>
         </Reveal>
 
         <Reveal delay={0.08}>
@@ -74,7 +72,7 @@ export function EventsRail({ lang }: { lang: Locale }) {
             <nav className="swh-events__rail" aria-label={ui.eventsRailAria}>
               <ol>
                 {events.map((e, i) => (
-                  <li key={e.title}>
+                  <li key={e.slug}>
                     <button
                       type="button"
                       className="swh-events__tab"
@@ -100,24 +98,26 @@ export function EventsRail({ lang }: { lang: Locale }) {
             >
               {events.map((e, i) => (
                 <article
-                  key={e.title}
+                  key={e.slug}
                   className="swh-events__panel"
                   data-index={i}
                   ref={(el) => {
                     panelRefs.current[i] = el;
                   }}
                 >
-                  <img
-                    className="swh-events__img"
-                    src={e.photos[0].src}
-                    alt={e.photos[0].alt}
-                    loading="lazy"
-                    decoding="async"
-                  />
+                  {e.photo ? (
+                    <img
+                      className="swh-events__img"
+                      src={e.photo.src}
+                      alt={e.photo.alt}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  ) : null}
                   <div className="swh-events__body">
                     <p className="swh-events__year">{e.year ?? ui.recent}</p>
                     <h3 className="swh-events__title">{e.title}</h3>
-                    <p className="swh-events__text">{e.paras[0]}</p>
+                    <p className="swh-events__text">{e.summary}</p>
                   </div>
                 </article>
               ))}
@@ -125,8 +125,8 @@ export function EventsRail({ lang }: { lang: Locale }) {
           </div>
 
           <div style={{ display: "flex", justifyContent: "center", marginTop: "40px" }}>
-            <PillButton variant="secondary" arrow href={localeHref(lang, "/news-events")}>
-              {copy.eventsCta}
+            <PillButton variant="secondary" arrow href={localeHref(lang, copy.cta.url)}>
+              {copy.cta.label}
             </PillButton>
           </div>
         </Reveal>

@@ -15,16 +15,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BrandLogo } from "@/components/ds/BrandLogo";
 import { PillButton } from "@/components/ds/PillButton";
-import { NAV, isGroup, entryId, NAV_H_PX } from "@/content/nav";
-import { SITE, demoHrefFor } from "@/content/site";
+import { isGroup, entryId, NAV_H_PX } from "@/content/nav";
+import { demoHrefFor } from "@/content/site";
 import { UI } from "@/content/ui";
 import { href as localeHref, samePath, type Locale } from "@/content/i18n";
 import { BadgeSlot } from "./BadgeSlot";
 import { LanguageToggle } from "./LanguageToggle";
 import { NavDrawer } from "./NavDrawer";
 import { NavMenu } from "./NavMenu";
+import { SiteLogo } from "./SiteLogo";
+import { useSite } from "./SiteContext";
 
 /* `lang` arrives as a prop from the server layout rather than being read off the pathname
    here. Both would work, but the prop is what the layout already knows for certain, and it
@@ -32,6 +33,7 @@ import { NavMenu } from "./NavMenu";
 export function SiteNav({ lang }: { lang: Locale }) {
   const pathname = usePathname();
   const ui = UI[lang];
+  const { navigation, settings } = useSite();
   const [solid, setSolid] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -94,40 +96,40 @@ export function SiteNav({ lang }: { lang: Locale }) {
       <div className="swh-nav__surface" />
 
       <nav className="swh-nav__inner" aria-label={ui.primaryNavAria}>
-        <Link className="swh-nav__brand" href={localeHref(lang, "/")} aria-label={`${SITE.name} — ${ui.homeAria}`}>
+        <Link className="swh-nav__brand" href={localeHref(lang, "/")} aria-label={`${settings.siteName} — ${ui.homeAria}`}>
           {/* onAccent is a real BrandLogo prop: over the hero it whitens the mark and sets
               the wordmark to --paper; on the solid bar it swaps to the ink-S variant, which
               is the only version of the mark that survives a light background. No src prop
               here — BrandLogo owns both files. */}
-          <BrandLogo variant="lockup" height={36} onAccent={!solid} />
+          <SiteLogo height={36} onAccent={!solid} />
         </Link>
 
         <ul className="swh-nav__list" ref={listRef}>
-          {NAV.map((entry) =>
+          {navigation.map((entry) =>
             isGroup(entry) ? (
               <NavMenu
-                key={entry.id}
-                id={entry.id}
+                key={entry.key}
+                id={entry.key}
                 group={entry}
                 lang={lang}
-                open={openId === entry.id}
+                open={openId === entry.key}
                 pathname={pathname}
                 onOpen={open}
                 onClose={close}
                 onStep={step}
               />
             ) : (
-              <li className="swh-nav__item" key={entry.href}>
+              <li className="swh-nav__item" key={entry.key}>
                 <Link
                   className="swh-nav__link"
                   id={`navtrig-${entryId(entry)}`}
-                  href={localeHref(lang, entry.href)}
-                  aria-current={samePath(pathname, localeHref(lang, entry.href)) ? "page" : undefined}
+                  href={localeHref(lang, entry.url)}
+                  aria-current={samePath(pathname, localeHref(lang, entry.url)) ? "page" : undefined}
                   /* Arrow, not a bare `close`: the handler would pass the PointerEvent as
                      the id, and the guard would then never match. */
                   onPointerEnter={() => close()}
                 >
-                  {entry.label[lang]}
+                  {entry.label}
                 </Link>
               </li>
             ),
@@ -142,8 +144,8 @@ export function SiteNav({ lang }: { lang: Locale }) {
           <BadgeSlot />
           <LanguageToggle lang={lang} />
           <span className="swh-cta">
-            <PillButton variant="primary" arrow href={demoHrefFor(lang, pathname)}>
-              {ui.bookDemo}
+            <PillButton variant="primary" arrow href={demoHrefFor(lang, pathname, settings.primaryCta.url)}>
+              {settings.primaryCta.label}
             </PillButton>
           </span>
           <button

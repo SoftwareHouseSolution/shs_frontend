@@ -23,24 +23,16 @@ import { createPortal } from "react-dom";
 import { useFocusTrap } from "@/components/chrome/useFocusTrap";
 import { UI } from "@/content/ui";
 import type { Locale } from "@/content/i18n";
+import type { PageVideo } from "@/lib/api/types";
 
 /* false — the popup opens on every visit to /customers.
    true  — it opens only the first time per browser tab (sessionStorage). */
 const OPEN_ONCE_PER_SESSION = false;
 const SESSION_KEY = "swh:customers-video-seen";
 
-/* Web encodes, not the camera masters. The ~125MB originals are parked in video-masters/
-   (gitignored) — GitHub rejects any blob over 100MB, and shipping a quarter-gigabyte to a
-   phone to open a popup was never viable regardless.
-
-   The encode settings live in tools/encode-video.mjs and are NOT repeated here: they were
-   duplicated in this comment once and went stale the first time the files were re-encoded.
-   `pnpm encode:video` regenerates both from the masters. Posters are frame 0 of each, so
-   the panel opens on the image rather than on black. */
-const DESKTOP_SRC = "/assets/video/IMG_7784.mp4";
-const MOBILE_SRC = "/assets/video/IMG_7785_Mobile.mp4";
-const DESKTOP_POSTER = "/assets/video/IMG_7784-poster.jpg";
-const MOBILE_POSTER = "/assets/video/IMG_7785_Mobile-poster.jpg";
+/* Upload web encodes, not camera masters — tools/encode-video.mjs produces them
+   (`pnpm encode:video`). Posters are frame 0 of each, so the panel opens on the image
+   rather than on black. */
 
 /* The phone edge. Mirrored nowhere else, so it lives here rather than in chrome.css. */
 const MOBILE_MQ = "(max-width: 767px)";
@@ -54,7 +46,13 @@ const fmt = (s: number) => {
   return `${Math.floor(n / 60)}:${String(Math.floor(n % 60)).padStart(2, "0")}`;
 };
 
-export function CustomerVideoModal({ lang }: { lang: Locale }) {
+/* The files are the Customers page's intro video in the CMS (Pages → Customers → Intro
+   video). The portrait cut and both posters are optional; the landscape file is not. */
+export function CustomerVideoModal({ lang, video }: { lang: Locale; video: PageVideo }) {
+  const DESKTOP_SRC = video.desktop;
+  const MOBILE_SRC = video.mobile ?? video.desktop;
+  const DESKTOP_POSTER = video.posterDesktop ?? undefined;
+  const MOBILE_POSTER = video.posterMobile ?? video.posterDesktop ?? undefined;
   const ui = UI[lang];
   const [mounted, setMounted] = useState(false); // in the DOM at all
   const [open, setOpen] = useState(false); // drives the enter/exit transition

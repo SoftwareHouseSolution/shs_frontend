@@ -9,49 +9,26 @@
    logo by logo — it is to make the size of the roster physically obvious in a way a grid
    of sixteen cannot. It has no first item and no last item for the same reason.
 
-   Server component. MARQUEE is derived from CLIENTS rather than hand-listed so it cannot
-   drift when the roster is regenerated from the PDF, and so a slug can never be a typo. */
+   Server component. */
 
 import { Reveal } from "@/components/ds/Reveal";
 import { PillButton } from "@/components/ds/PillButton";
 import { InfiniteSlider } from "@/components/core/infinite-slider";
-import { CLIENTS } from "@/content/clients";
-import { HOME } from "@/content/home";
-import { UI } from "@/content/ui";
 import { href as localeHref, type Locale } from "@/content/i18n";
+import type { HomeData } from "@/lib/api/types";
 
-const VIP = ["kirmena-jewellery", "gold-era-jewelry", "king-gold-jewellery"];
-
-/* Resolved eagerly at module scope so a bad slug is a build-time crash rather than a row
-   that quietly renders two logos instead of three. */
-const VIP_LOGOS = VIP.map((slug) => {
-  const c = CLIENTS.find((x) => x.slug === slug);
-  if (!c) throw new Error(`LogoWall: no client with slug "${slug}"`);
-  return c;
-});
-
-/* ~48 marks, spread evenly across the alphabetised roster rather than taken from the top
-   of it — a marquee of forty-eight names all starting with "A" looks like a bug. Even
-   spacing also keeps the strip stable when the roster grows: adding clients changes which
-   logos appear, never how many. */
-const MARQUEE_COUNT = 48;
-const MARQUEE = (() => {
-  const pool = CLIENTS.filter((c) => c.sector === "jewellery" && !VIP.includes(c.slug));
-  const stride = Math.max(1, Math.floor(pool.length / MARQUEE_COUNT));
-  return pool.filter((_, i) => i % stride === 0).slice(0, MARQUEE_COUNT);
-})();
-
-export function LogoWall({ lang }: { lang: Locale }) {
-  const c = HOME[lang];
+/* Which clients are highlighted and which run in the strip is set per client in the CMS
+   (Clients → "Placement on the site"). */
+export function LogoWall({ lang, proof: c }: { lang: Locale; proof: HomeData["proof"] }) {
   return (
     <section className="swh-proof">
       <div className="swh-proof__inner">
         <Reveal style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "36px", width: "100%" }}>
-          <p className="swh-proof__lede">{c.proofLede}</p>
+          <p className="swh-proof__lede">{c.lede}</p>
 
           <ul className="swh-proof__vip">
             {/* `v`, not `c`: `c` is the page copy in this scope now. */}
-            {VIP_LOGOS.map((v) => (
+            {c.highlighted.map((v) => (
               <li key={v.slug}>
                 {/* eager, not lazy: these three are above the fold on most desktops, and a
                     logo that fades in late is the one thing worse than a logo that moves. */}
@@ -70,7 +47,7 @@ export function LogoWall({ lang }: { lang: Locale }) {
           gap={72}
           speed={44}
           speedOnHover={14}
-          aria-label={c.proofStripAria}
+          aria-label={c.stripAriaLabel}
         >
           {/* NOT lazy, deliberately. The strip is an overflow:hidden box whose content is
               moved by a transform, so all but the first few marks sit outside the clip at
@@ -78,7 +55,7 @@ export function LogoWall({ lang }: { lang: Locale }) {
               indefinitely and the strip would scroll visible holes into view. They are
               ~5KB each, so the whole set is smaller than one hero still; fetchPriority
               keeps them behind the hero in the queue. */}
-          {MARQUEE.map((m) => (
+          {c.strip.map((m) => (
             <img
               key={m.slug}
               className="swh-proof__mark"
@@ -93,11 +70,11 @@ export function LogoWall({ lang }: { lang: Locale }) {
 
       <div className="swh-proof__inner">
         <Reveal delay={0.12} style={{ display: "flex", justifyContent: "center", width: "100%" }}>
-          {/* 1,750+ is the roster; CLIENTS.length is only how many logos we have clearance
+          {/* 1,750+ is the roster; the strip is only the logos we have clearance
               to publish. The button now names the roster so it matches the band above it,
               the /customers lede and StatsBand rather than contradicting all three. */}
-          <PillButton variant="secondary" arrow href={localeHref(lang, "/customers")}>
-            {c.proofCta}
+          <PillButton variant="secondary" arrow href={localeHref(lang, c.cta.url)}>
+            {c.cta.label}
           </PillButton>
         </Reveal>
       </div>

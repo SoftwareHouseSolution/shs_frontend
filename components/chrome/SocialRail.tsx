@@ -33,14 +33,15 @@
    corners and the direction the shadow is cast. */
 
 import { useEffect, useRef, useState } from "react";
-import { SOCIAL } from "@/content/site";
 import { UI } from "@/content/ui";
 import type { Locale } from "@/content/i18n";
 import { SocialIcon } from "./SocialIcon";
 import { WhatsAppLink } from "./WhatsAppLink";
+import { useSite } from "./SiteContext";
 
 export function SocialRail({ lang }: { lang: Locale }) {
   const ui = UI[lang];
+  const { socialLinks } = useSite();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -95,11 +96,11 @@ export function SocialRail({ lang }: { lang: Locale }) {
         {/* React 19 passes a boolean `inert` straight through to the attribute. */}
         <div className="swh-rail__reveal" id="swh-rail-links" inert={!open}>
           <ul className="swh-rail__list">
-            {SOCIAL.map((s, i) => (
-              <li key={s.label} style={{ "--i": i } as React.CSSProperties}>
+            {socialLinks.map((s, i) => (
+              <li key={s.platform} style={{ "--i": i } as React.CSSProperties}>
                 <a
                   className="swh-rail__link"
-                  href={s.href}
+                  href={s.url}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={`${s.label} ${ui.opensInNewTab}`}

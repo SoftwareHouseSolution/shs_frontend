@@ -1,82 +1,62 @@
 /* Site footer.
 
-   Replaces the prototype's version, which shipped four links — Services, Clients, How-to,
-   Contact — that were all `href="#"`. Four dead ends is worse than no footer nav: the
-   visitor who reaches the bottom of the page is the one still looking for something.
-
-   Everything here now resolves. The link columns are derived from content/nav.ts, so they
-   cannot drift from the navbar or point at a route that does not exist; the contact block
-   and the social icons come from content/site.ts. Nothing in this file is hardcoded except
-   the column headings.
+   Every link resolves and nothing here is hardcoded except the layout: the columns are
+   the CMS's footer columns (each lists the links of the navigation groups chosen for it,
+   so they cannot drift from the navbar), and the blurb, contact block, social icons and
+   legal line all come from Site settings. Rendered client-side inside PageShell, so it
+   reads the site data from SiteContext.
 
    It sits inside .sticky-footer, which is `position: fixed` and revealed as the page
    scrolls off it. PageShell measures this element's height at runtime and pads the page by
-   it, so the footer can grow to whatever height it needs without a magic number anywhere.
-
-   The mark uses BrandLogo's light-surface variant by default. The old one rendered the
-   off-white "S" on #EEEFF1, so the footer logo was a roof with a hole in it. */
+   it, so the footer can grow to whatever height it needs without a magic number anywhere. */
 
 import React from "react";
 import Link from "next/link";
-import { BrandLogo } from "@/components/ds/BrandLogo";
 import { SocialIcon } from "@/components/chrome/SocialIcon";
-import { groupById } from "@/content/nav";
-import { SITE, SITE_L, SOCIAL } from "@/content/site";
+import { SiteLogo } from "@/components/chrome/SiteLogo";
+import { useSite } from "@/components/chrome/SiteContext";
 import { UI } from "@/content/ui";
 import { href as localeHref } from "@/content/i18n";
 import { Container } from "./Container";
 
-/* Three columns of real destinations, taken from the navbar's own tree. "Company" is the
-   About group; "Explore" is everything a visitor at the bottom of the page is most likely
-   still hunting for. Groups are resolved by ID, never by label — labels are per-language
-   now, and groupById throws on an unknown id so a nav restructure surfaces here as a build
-   error rather than as an empty column. */
-const COLUMNS = (ui) => [
-  { key: "company", heading: ui.footerCompany, links: groupById("about") },
-  { key: "explore", heading: ui.footerExplore, links: [...groupById("solutions"), ...groupById("customers")] },
-  { key: "work", heading: ui.footerWorkWithUs, links: [...groupById("partners"), ...groupById("careers")] },
-];
-
 export function Footer({ lang }) {
   const ui = UI[lang];
+  const { settings, footerColumns, socialLinks } = useSite();
   return (
     <footer className="swh-footer">
       <Container>
         <div className="swh-footer__top">
-          {/* No ScrollReveal here, unlike the prototype's version. That effect maps the
-              element's viewport position onto a 0.88→1 scale, and this footer lives inside
-              .sticky-footer, which is position:fixed — its rect never changes, so the
-              mapping would freeze the brand column at a permanent ~0.9 scale. */}
+          {/* No ScrollReveal here: this footer lives inside .sticky-footer, which is
+              position:fixed — its rect never changes, so the scale mapping would freeze
+              the brand column at a permanent ~0.9. */}
           <div className="swh-footer__brand">
-            <Link href={localeHref(lang, "/")} className="swh-footer__mark" aria-label={`${SITE.name} — ${ui.homeAria}`}>
-              <BrandLogo variant="lockup" height={44} />
+            <Link href={localeHref(lang, "/")} className="swh-footer__mark" aria-label={`${settings.siteName} — ${ui.homeAria}`}>
+              <SiteLogo height={44} />
             </Link>
             <p className="swh-footer__blurb">
-              {ui.footerBlurb} {SITE.since}.
+              {settings.footerBlurb} {settings.sinceYear}.
             </p>
-            {/* The number and the address are LTR runs. Left unmarked inside an RTL
-                column the bidi algorithm pushes the "+" of the phone number to the wrong
-                end; `dir="ltr"` on the two that are not prose fixes it without affecting
-                the English footer, where it is already the ambient direction. */}
+            {/* The number and the e-mail are LTR runs. Left unmarked inside an RTL column
+                the bidi algorithm pushes the "+" of the phone number to the wrong end. */}
             <ul className="swh-footer__contact">
-              <li>{SITE_L[lang].address}</li>
+              <li>{settings.address}</li>
               <li dir="ltr" style={{ unicodeBidi: "isolate" }}>
-                <a href={SITE.phoneHref}>{SITE.phone}</a>
+                <a href={`tel:${settings.phoneLink}`}>{settings.phoneDisplay}</a>
               </li>
               <li dir="ltr" style={{ unicodeBidi: "isolate" }}>
-                <a href={`mailto:${SITE.salesEmail}`}>{SITE.salesEmail}</a>
+                <a href={`mailto:${settings.salesEmail}`}>{settings.salesEmail}</a>
               </li>
             </ul>
           </div>
 
           <nav className="swh-footer__nav" aria-label={ui.footerNavAria}>
-            {COLUMNS(ui).map((col) => (
+            {footerColumns.map((col) => (
               <div className="swh-footer__col" key={col.key}>
-                <h2 className="swh-footer__heading">{col.heading}</h2>
+                <h2 className="swh-footer__heading">{col.title}</h2>
                 <ul>
                   {col.links.map((l) => (
-                    <li key={l.href}>
-                      <Link href={localeHref(lang, l.href)}>{l.label[lang]}</Link>
+                    <li key={l.url}>
+                      <Link href={localeHref(lang, l.url)}>{l.label}</Link>
                     </li>
                   ))}
                 </ul>
@@ -87,35 +67,29 @@ export function Footer({ lang }) {
 
         <div className="swh-footer__bottom">
           <ul className="swh-footer__social">
-            {SOCIAL.map((s) => (
-              <li key={s.label}>
-                <a
-                  href={s.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={`${s.label} ${ui.opensInNewTab}`}
-                >
+            {socialLinks.map((s) => (
+              <li key={s.platform}>
+                <a href={s.url} target="_blank" rel="noopener noreferrer" aria-label={`${s.label} ${ui.opensInNewTab}`}>
                   <SocialIcon name={s.label} />
                 </a>
               </li>
             ))}
             <li>
               <a
-                href={SITE.whatsapp}
+                href={settings.whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label={`WhatsApp ${SITE.phone} ${ui.opensInNewTab}`}
+                aria-label={`WhatsApp ${settings.phoneDisplay} ${ui.opensInNewTab}`}
               >
                 <SocialIcon name="WhatsApp" />
               </a>
             </li>
           </ul>
 
-          {/* The year is a literal, exactly as in the prototype. Deriving it from
-              new Date().getFullYear() renders identically today and quietly introduces a
-              server/client mismatch class. Leave it literal. */}
+          {/* The year is a CMS value, not new Date(): deriving it at render time would
+              introduce a server/client mismatch class around New Year. */}
           <p className="swh-footer__legal">
-            © {SITE.name} · 2026 <span>{ui.allRightsReserved}</span>
+            © {settings.siteName} · {settings.copyrightYear} <span>{settings.rightsText}</span>
           </p>
         </div>
       </Container>

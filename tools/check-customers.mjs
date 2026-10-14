@@ -86,9 +86,9 @@ for (const vp of [
     await p.evaluate(() => window.scrollTo(0, 0));
     await p.waitForTimeout(400);
     const yBefore = await p.evaluate(() => window.scrollY);
-    /* Selected by data-region, not by its label: the label is translated and this script
+    /* Selected by data-region — the CMS region key (Regions → key), not the label: the label is translated and this script
        runs against both languages. */
-    await p.locator('.swh-map__tag[data-region="Greater Cairo"]').click();
+    await p.locator('.swh-map__tag[data-region="greater-cairo"]').click();
     await p.waitForTimeout(1400); // smooth scroll has to land
 
     /* Selecting must bring the results into view. Without it the grid updates below the
@@ -110,7 +110,7 @@ for (const vp of [
        what was actually on screen. */
     const activeRegion = await p.getAttribute(".swh-map__result", "data-active");
     rec("selecting a region filters the grid",
-      activeRegion === "Greater Cairo" && cards > 0 && cards < 367,
+      activeRegion === "greater-cairo" && cards > 0 && cards < 367,
       `${activeRegion} — ${heading} / ${cards} cards`);
 
     await p.locator(".swh-filters__reset").click();

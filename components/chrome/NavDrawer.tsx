@@ -10,13 +10,14 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { PillButton } from "@/components/ds/PillButton";
-import { NAV, isGroup } from "@/content/nav";
+import { isGroup } from "@/content/nav";
 import { demoHrefFor } from "@/content/site";
 import { UI } from "@/content/ui";
 import { href as localeHref, samePath, type Locale } from "@/content/i18n";
 import { BadgeSlot } from "./BadgeSlot";
 import { LanguageToggle } from "./LanguageToggle";
 import { useFocusTrap } from "./useFocusTrap";
+import { useSite } from "./SiteContext";
 
 type Props = {
   open: boolean;
@@ -27,6 +28,7 @@ type Props = {
 
 export function NavDrawer({ open, onClose, pathname, lang }: Props) {
   const ui = UI[lang];
+  const { navigation, settings } = useSite();
   const panelRef = useRef<HTMLDivElement>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
   useFocusTrap(panelRef, open);
@@ -35,8 +37,8 @@ export function NavDrawer({ open, onClose, pathname, lang }: Props) {
   /* The group holding the current page. The drawer opens with it already expanded, so the
      reader sees where they are without having to guess which of five accordions hides it —
      on a phone the drawer IS the only map of the site. */
-  const hereGroup = NAV.find((e) => isGroup(e) && e.children.some((c) => isHere(c.href)));
-  const hereGroupId = hereGroup && isGroup(hereGroup) ? hereGroup.id : null;
+  const hereGroup = navigation.find((e) => isGroup(e) && e.children.some((c) => isHere(c.url)));
+  const hereGroupId = hereGroup ? hereGroup.key : null;
 
   useEffect(() => {
     if (open) setExpanded(hereGroupId);
@@ -88,21 +90,21 @@ export function NavDrawer({ open, onClose, pathname, lang }: Props) {
         </button>
 
         <ul>
-          {NAV.map((entry) =>
+          {navigation.map((entry) =>
             isGroup(entry) ? (
               <li
-                key={entry.id}
+                key={entry.key}
                 className="swh-drawer__group"
-                data-open={expanded === entry.id}
+                data-open={expanded === entry.key}
               >
                 <button
                   type="button"
                   className="swh-drawer__trigger"
-                  aria-expanded={expanded === entry.id}
-                  data-active={entry.id === hereGroupId || undefined}
-                  onClick={() => setExpanded((cur) => (cur === entry.id ? null : entry.id))}
+                  aria-expanded={expanded === entry.key}
+                  data-active={entry.key === hereGroupId || undefined}
+                  onClick={() => setExpanded((cur) => (cur === entry.key ? null : entry.key))}
                 >
-                  {entry.label[lang]}
+                  {entry.label}
                   <svg className="swh-nav__chev" viewBox="0 0 10 10" aria-hidden="true" focusable="false">
                     <path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.6" />
                   </svg>
@@ -110,13 +112,13 @@ export function NavDrawer({ open, onClose, pathname, lang }: Props) {
                 <div className="swh-drawer__sub">
                   <ul>
                     {entry.children.map((c) => (
-                      <li key={c.href}>
+                      <li key={c.key}>
                         <Link
-                          href={localeHref(lang, c.href)}
-                          aria-current={isHere(c.href) ? "page" : undefined}
+                          href={localeHref(lang, c.url)}
+                          aria-current={isHere(c.url) ? "page" : undefined}
                           onClick={onClose}
                         >
-                          {c.label[lang]}
+                          {c.label}
                         </Link>
                       </li>
                     ))}
@@ -124,13 +126,13 @@ export function NavDrawer({ open, onClose, pathname, lang }: Props) {
                 </div>
               </li>
             ) : (
-              <li key={entry.href} className="swh-drawer__solo">
+              <li key={entry.key} className="swh-drawer__solo">
                 <Link
-                  href={localeHref(lang, entry.href)}
-                  aria-current={isHere(entry.href) ? "page" : undefined}
+                  href={localeHref(lang, entry.url)}
+                  aria-current={isHere(entry.url) ? "page" : undefined}
                   onClick={onClose}
                 >
-                  {entry.label[lang]}
+                  {entry.label}
                 </Link>
               </li>
             ),
@@ -138,8 +140,8 @@ export function NavDrawer({ open, onClose, pathname, lang }: Props) {
         </ul>
 
         <div className="swh-drawer__foot">
-          <PillButton variant="primary" arrow href={demoHrefFor(lang, pathname)} fullWidth onClick={onClose}>
-            {ui.bookDemo}
+          <PillButton variant="primary" arrow href={demoHrefFor(lang, pathname, settings.primaryCta.url)} fullWidth onClick={onClose}>
+            {settings.primaryCta.label}
           </PillButton>
           <LanguageToggle lang={lang} onNavigate={onClose} />
           {/* WhatsApp was here too, and was invisible: .swh-wa took its colour from

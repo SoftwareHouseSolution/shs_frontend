@@ -52,7 +52,7 @@ export function NavMenu({ group, lang, id, open, pathname, onOpen, onClose, onSt
      section the reader is in. The trigger takes the marker instead — visual only: the
      trigger is a disclosure button, not a link, so aria-current would misreport it, and the
      link inside already tells assistive tech the same thing. */
-  const inSection = group.children.some((c) => samePath(pathname, localeHref(lang, c.href)));
+  const inSection = group.children.some((c) => samePath(pathname, localeHref(lang, c.url)));
 
   const closeAndRefocus = () => {
     onClose();
@@ -155,7 +155,7 @@ export function NavMenu({ group, lang, id, open, pathname, onOpen, onClose, onSt
         onClick={() => (open ? onClose() : onOpen(id))}
         onKeyDown={onTriggerKeyDown}
       >
-        {group.label[lang]}
+        {group.label}
         <svg className="swh-nav__chev" viewBox="0 0 10 10" aria-hidden="true" focusable="false">
           <path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.6" />
         </svg>
@@ -170,15 +170,15 @@ export function NavMenu({ group, lang, id, open, pathname, onOpen, onClose, onSt
       >
         <ul>
           {group.children.map((c) => (
-            <li key={c.href}>
+            <li key={c.key}>
               <Link
-                href={localeHref(lang, c.href)}
-                aria-current={samePath(pathname, localeHref(lang, c.href)) ? "page" : undefined}
+                href={localeHref(lang, c.url)}
+                aria-current={samePath(pathname, localeHref(lang, c.url)) ? "page" : undefined}
                 /* Arrow, not a bare `onClose`: the handler would pass the MouseEvent as
                    the id, and the guard in SiteNav would then never match. */
                 onClick={() => onClose()}
               >
-                {c.label[lang]}
+                {c.label}
               </Link>
             </li>
           ))}

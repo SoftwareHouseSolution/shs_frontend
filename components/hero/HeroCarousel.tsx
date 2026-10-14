@@ -12,25 +12,24 @@
    Slide 1 is video, slides 2-4 are stills. The video carries no ken-burns of its own —
    see the .hero-slide__video note at the render site.
 
-   Slide copy lives in content/home.ts, one array per language — its provenance is
-   documented there. This file owns the motion and the controls, not the words. */
+   Slide copy and media come from the CMS. This file owns the motion and the controls,
+   not the words. */
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PillButton } from "@/components/ds/PillButton";
 import { Eyebrow } from "@/components/ds/Eyebrow";
 import { useReducedMotion } from "@/components/chrome/useReducedMotion";
-import { HOME } from "@/content/home";
 import { UI } from "@/content/ui";
 import { href as localeHref, type Locale } from "@/content/i18n";
+import type { HeroSlide } from "@/lib/api/types";
 
 /** Must match --hero-hold in app/chrome.css. */
 const HOLD_MS = 7000;
 
-export function HeroCarousel({ lang }: { lang: Locale }) {
-  /* Slide copy, media and CTA targets all live in content/home.ts now — one array per
-     language, same length and same media in both, so the dot count and the crossfade
-     bookkeeping below are unaffected by which language is showing. */
-  const SLIDES = HOME[lang].hero;
+export function HeroCarousel({ lang, slides }: { lang: Locale; slides: HeroSlide[] }) {
+  /* Slides — copy, media and CTA targets — are edited in the CMS (Home page → Hero
+     slides) and arrive already in the reader's language. */
+  const SLIDES = slides;
   const ui = UI[lang];
 
   /* index and prev live in one state object so the updater stays pure — calling a second
@@ -43,11 +42,8 @@ export function HeroCarousel({ lang }: { lang: Locale }) {
   const rootRef = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  /* `count`, not SLIDES itself: HOME[lang].hero is a fresh array reference on nothing —
-     it is module-scope data — but depending on the array would still be depending on an
-     object, and the only thing this needs is how many slides there are. Both languages
-     have four, so in practice this never changes; it is in the dep list so that adding a
-     slide to one language and not the other cannot produce a stale modulus. */
+  /* `count`, not SLIDES itself: the only thing the modulus needs is how many slides there
+     are, and depending on the array would re-create goTo on every new reference. */
   const count = SLIDES.length;
   const goTo = useCallback(
     (next: number) => {
@@ -74,7 +70,7 @@ export function HeroCarousel({ lang }: { lang: Locale }) {
 
      The pause button owns the video too. It is the WCAG 2.2.2 control for this region, so
      stopping "the slideshow" while footage keeps playing behind the copy would be a lie. */
-  const hasVideo = SLIDES[index]?.video !== undefined;
+  const hasVideo = Boolean(SLIDES[index]?.video);
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
@@ -146,7 +142,7 @@ export function HeroCarousel({ lang }: { lang: Locale }) {
       <div className="hero-carousel__stage" aria-hidden="true">
         {SLIDES.map((s, i) => (
           <div
-            key={s.image}
+            key={s.id}
             className="hero-slide"
             data-state={i === index ? "enter" : i === prev ? "exit" : "idle"}
           >
@@ -163,7 +159,7 @@ export function HeroCarousel({ lang }: { lang: Locale }) {
                 playsInline
                 preload="auto"
               >
-                <source src={s.video.webm} type="video/webm" />
+                {s.video.webm ? <source src={s.video.webm} type="video/webm" /> : null}
                 <source src={s.video.mp4} type="video/mp4" />
               </video>
             ) : (
@@ -192,7 +188,7 @@ export function HeroCarousel({ lang }: { lang: Locale }) {
             <h1 className="hero-carousel__title">{active.title}</h1>
             <p className="hero-carousel__body">{active.body}</p>
             <div className="hero-carousel__actions">
-              <PillButton variant="primary" arrow href={localeHref(lang, active.ctaHref)}>
+              <PillButton variant="primary" arrow href={localeHref(lang, active.ctaUrl)}>
                 {active.ctaLabel}
               </PillButton>
             </div>
@@ -228,7 +224,7 @@ export function HeroCarousel({ lang }: { lang: Locale }) {
         <div className="hero-carousel__dots" data-running={!reduce && !paused && !held}>
           {SLIDES.map((s, i) => (
             <button
-              key={s.image}
+              key={s.id}
               type="button"
               className="hero-carousel__dot"
               aria-current={i === index}

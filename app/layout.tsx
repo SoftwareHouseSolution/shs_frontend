@@ -12,14 +12,12 @@ import "./chrome.css";
 import "./rtl.css";
 
 import { DEFAULT_LOCALE, HTML_LANG, DIR } from "@/content/i18n";
-import { SITE } from "@/content/site";
 
+/* Titles and descriptions come from the CMS per language — see app/[lang]/layout.tsx.
+   The root only sets what holds for every document, including the language gate and
+   the bare 404. */
 export const metadata: Metadata = {
-  title: {
-    default: SITE.name,
-    template: `%s — ${SITE.name}`,
-  },
-  description: `${SITE.name} — POS-integrated ERP for the gold and diamond trade, plus enterprise software, hardware and networking. Leading the market since ${SITE.since}.`,
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
 };
 
 /* THE DOCUMENT. Deliberately thin: it owns <html> and <body> and nothing else.

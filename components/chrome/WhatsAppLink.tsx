@@ -1,5 +1,7 @@
-import { SITE } from "@/content/site";
+"use client";
+
 import { UI } from "@/content/ui";
+import { useSite } from "./SiteContext";
 import type { Locale } from "@/content/i18n";
 
 /* Inline SVG using currentColor, so the caller's class decides the colour.
@@ -26,13 +28,14 @@ export function WhatsAppLink({
       a label at all, and omitting it simply produces no pseudo-element content. */
   hoverLabel?: string;
 }) {
+  const { settings } = useSite();
   return (
     <a
       className={className}
-      href={SITE.whatsapp}
+      href={settings.whatsappUrl}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label={`${UI[lang].whatsappAria} ${SITE.phone}`}
+      aria-label={`${UI[lang].whatsappAria} ${settings.phoneDisplay}`}
       data-label={hoverLabel}
     >
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">

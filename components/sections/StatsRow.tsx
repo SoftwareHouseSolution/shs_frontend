@@ -8,8 +8,7 @@
    whether this vendor is credible had already decided. The numbers now land in the first
    screen after the hero and the closing CTA keeps the bottom of the page to itself.
 
-   Every figure comes from content/site.ts, which is the source of truth; this file only
-   renders it.
+   Every figure is edited in the CMS (Home page → Figures); this file only renders it.
 
    ── THE COUNT-UP ────────────────────────────────────────────────────────────────────
    One rAF loop drives the whole row, and each figure reads its own window out of that
@@ -24,15 +23,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Eyebrow } from "@/components/ds/Eyebrow";
 import { useReducedMotion } from "@/components/chrome/useReducedMotion";
-import { STATS } from "@/content/site";
-import { HOME } from "@/content/home";
-import type { Locale } from "@/content/i18n";
+import type { HomeData } from "@/lib/api/types";
 
 const RAMP_MS = 1400; // how long one figure takes to arrive
 const STAGGER_MS = 110; // offset between neighbouring figures
-/* Both languages carry the same five figures — only the labels differ — so the timeline
-   is a constant rather than something that has to be recomputed per locale. */
-const TOTAL_MS = RAMP_MS + STAGGER_MS * (STATS.en.length - 1);
+/* The cascade's total length depends on how many figures the CMS holds. */
+const totalMs = (count: number) => RAMP_MS + STAGGER_MS * Math.max(0, count - 1);
 
 const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
@@ -41,9 +37,9 @@ const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayout
    slot machine spin. */
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 4);
 
-export function StatsRow({ lang }: { lang: Locale }) {
-  const stats = STATS[lang];
-  const copy = HOME[lang];
+export function StatsRow({ figures }: { figures: HomeData["figures"] }) {
+  const { stats } = figures;
+  const TOTAL_MS = totalMs(stats.length);
   const reduce = useReducedMotion();
   const rowRef = useRef<HTMLUListElement>(null);
   const [elapsed, setElapsed] = useState(TOTAL_MS);
@@ -84,13 +80,13 @@ export function StatsRow({ lang }: { lang: Locale }) {
       io.disconnect();
       cancelAnimationFrame(raf);
     };
-  }, [reduce]);
+  }, [reduce, TOTAL_MS]);
 
   return (
-    <section className="swh-figures" aria-label={copy.figuresAria}>
+    <section className="swh-figures" aria-label={figures.ariaLabel}>
       <div className="swh-figures__inner">
         <div className="swh-figures__eyebrow">
-          <Eyebrow>{copy.figuresEyebrow}</Eyebrow>
+          <Eyebrow>{figures.eyebrow}</Eyebrow>
         </div>
 
         <ul className="swh-figures__row" ref={rowRef} data-in={shown ? "true" : "false"}>
@@ -105,13 +101,12 @@ export function StatsRow({ lang }: { lang: Locale }) {
                 {/* A <p>, not a heading: five sibling <h2>s under one section would make
                     the document outline unreadable for a screen reader. */}
                 <p className="swh-figures__value">
-                  {"to" in s
+                  {s.value !== null
                     ? /* "en-GB" in BOTH languages, deliberately: the grouped form is
                          1,750 in Arabic here too. Egyptian business writing uses Western
-                         digits, and content/site.ts and the Arabic body copy both write the
-                         figure that way — "ar-EG" would render ١٬٧٥٠ and contradict the
+                         digits, and the Arabic body copy writes the figure that way — "ar-EG" would render ١٬٧٥٠ and contradict the
                          sentence beside it. */
-                      s.prefix + Math.round(s.to * easeOut(local)).toLocaleString("en-GB") + s.suffix
+                      s.prefix + Math.round(s.value * easeOut(local)).toLocaleString("en-GB") + s.suffix
                     : s.text}
                 </p>
                 <span className="swh-figures__label">{s.label}</span>

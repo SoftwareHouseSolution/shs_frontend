@@ -1,0 +1,15 @@
+# Production: Next.js (`next start`). Settings come from .env next to this file. Only
+# publishes on 127.0.0.1 for the host nginx.
+name: shs-frontend
+
+services:
+  web:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?set NEXT_PUBLIC_API_URL in .env}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:?set NEXT_PUBLIC_SITE_URL in .env}
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "127.0.0.1:${WEB_PORT:-8330}:3000"

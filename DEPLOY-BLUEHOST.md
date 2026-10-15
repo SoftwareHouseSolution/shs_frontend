@@ -10,7 +10,7 @@ and images and video are loaded from the CMS's media URL. Two consequences:
 - **Content edits need a rebuild and re-upload** to appear on a static host. If editors
   should see changes without that, host the frontend on Node instead (`pnpm build && pnpm
   start`, e.g. on a VPS or Vercel): pages then refresh from the CMS every
-  `CMS_REVALIDATE_SECONDS` (default 60). See `../README.md` → Deployment.
+  `CMS_REVALIDATE_SECONDS` (default 10). See `../README.md` → Deployment.
 
 ## Build
 

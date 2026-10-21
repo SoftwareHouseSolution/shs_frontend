@@ -274,6 +274,23 @@ export const REVIEW_COPY: Record<Locale, ReviewCopy> = {
   },
 };
 
+/* ── "What our clients say" on the customers page (components/clients/ClientVoices.tsx) ── */
+
+export const VOICES_COPY: Record<Locale, { eyebrow: string; title: string; lede: string; cta: string }> = {
+  ar: {
+    eyebrow: "آراء عملائنا",
+    title: "بكلام أصحاب المحلات",
+    lede: "تجارب حقيقية من عملاء سوفت وير هاوس في الصاغة ومحلات المجوهرات في كل مصر.",
+    cta: "اكتب رأيك",
+  },
+  en: {
+    eyebrow: "Client voices",
+    title: "In our clients' own words",
+    lede: "Real experiences from Software House clients — jewellers and gold traders across Egypt.",
+    cta: "Write your review",
+  },
+};
+
 /* ── Drafting the review ─────────────────────────────────────────────────────────── */
 
 export type Answers = {

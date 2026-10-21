@@ -12,7 +12,7 @@
 import { cache } from "react";
 import type { Locale } from "@/content/i18n";
 import { apiRequest } from "./client";
-import type { Client, ClientTaxonomy, HomeData, PageData, PageSummary, SiteData } from "./types";
+import type { Client, ClientTaxonomy, HomeData, PageData, PageSummary, SiteData, Testimonial } from "./types";
 
 const REVALIDATE = Number(process.env.CMS_REVALIDATE_SECONDS ?? 10);
 const NEXT = { revalidate: Number.isFinite(REVALIDATE) ? REVALIDATE : 10, tags: ["cms"] };
@@ -25,6 +25,11 @@ async function get<T>(path: string, lang?: Locale, query?: Record<string, string
 export const getSite = cache(async (lang: Locale): Promise<SiteData> => (await get<SiteData>("site/", lang)).data!);
 
 export const getHome = cache(async (lang: Locale): Promise<HomeData> => (await get<HomeData>("home/", lang)).data!);
+
+/** Published testimonials in the CMS order — published client reviews join at the top. */
+export const getTestimonials = cache(
+  async (lang: Locale): Promise<Testimonial[]> => (await get<Testimonial[]>("testimonials/", lang, { page_size: 100 })).data ?? [],
+);
 
 export const getPage = cache(
   async (lang: Locale, slug: string): Promise<PageData> => (await get<PageData>(`pages/${slug}/`, lang)).data!,

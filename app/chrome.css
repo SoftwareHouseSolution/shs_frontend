@@ -4269,3 +4269,97 @@ textarea.swh-review__input {
   background: var(--ink);
   border-radius: var(--r-md);
 }
+
+/* ── Client voices (components/clients/ClientVoices.tsx), on the customers page ────────
+   CSS columns, not a grid: reviews run from one line to six, and columns pack them without
+   the holes a grid leaves under short cards. */
+.swh-voices__head {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 760px;
+  margin-bottom: 40px;
+}
+.swh-voices__lede {
+  margin: 0;
+  font: var(--body-copy);
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--body);
+}
+.swh-voices__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  columns: 3 320px;
+  column-gap: 24px;
+}
+.swh-voices__item {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 24px;
+  padding: 26px;
+  break-inside: avoid;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-lg);
+  background: var(--surface-raised);
+}
+.swh-voices__quote {
+  margin: 0;
+  font: 400 16.5px/1.85 var(--f-sans);
+  color: var(--ink);
+  white-space: pre-line;
+}
+.swh-voices__quote::before {
+  content: "“";
+  display: block;
+  height: 26px;
+  font: 700 46px/1 var(--f-serif);
+  color: var(--accent);
+}
+.swh-voices__by {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--hairline);
+}
+.swh-voices__by img,
+.swh-voices__initial {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+}
+.swh-voices__by img {
+  object-fit: cover;
+  border: 1px solid var(--hairline);
+  background: var(--logo-plate);
+}
+.swh-voices__initial {
+  display: grid;
+  place-items: center;
+  font: 700 19px/1 var(--f-sans);
+  color: var(--accent);
+  background: var(--accent-tint);
+}
+.swh-voices__by > span {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.swh-voices__by strong {
+  font: 700 15px/1.4 var(--f-sans);
+  color: var(--ink);
+}
+.swh-voices__by small {
+  font: 13.5px/1.5 var(--f-sans);
+  color: var(--text-subtle);
+}
+.swh-voices__cta {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}

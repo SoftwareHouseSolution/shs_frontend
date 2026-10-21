@@ -12,12 +12,11 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/hero/PageHeader";
 import { ClientMap } from "@/components/clients/ClientMap";
-import { ClientVoices } from "@/components/clients/ClientVoices";
 import { CustomerVideoModal } from "@/components/clients/CustomerVideoModal";
 import { Contact } from "@/components/sections/Contact";
 import { UI } from "@/content/ui";
 import { href as localeHref, isLocale } from "@/content/i18n";
-import { getClientTaxonomy, getClients, getPage, getTestimonials } from "@/lib/api/content";
+import { getClientTaxonomy, getClients, getPage } from "@/lib/api/content";
 
 type Params = { params: Promise<{ lang: string }> };
 
@@ -38,11 +37,10 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 export default async function CustomersPage({ params }: Params) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
-  const [page, clients, taxonomy, testimonials] = await Promise.all([
+  const [page, clients, taxonomy] = await Promise.all([
     getPage(lang, "customers"),
     getClients(lang),
     getClientTaxonomy(lang),
-    getTestimonials(lang),
   ]);
 
   return (
@@ -60,8 +58,6 @@ export default async function CustomersPage({ params }: Params) {
         lang={lang}
       />
       <ClientMap clients={clients} taxonomy={taxonomy} lang={lang} />
-      {/* Published testimonials, including client reviews from /review once published. */}
-      <ClientVoices lang={lang} testimonials={testimonials} />
       {/* The same #contact section the home page closes with, so the nav's "Book a demo"
           scrolls in-page here — see CONTACT_ROUTES in content/site.ts. */}
       <Contact lang={lang} />

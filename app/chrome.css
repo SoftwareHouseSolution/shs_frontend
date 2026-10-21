@@ -4270,21 +4270,14 @@ textarea.swh-review__input {
   border-radius: var(--r-md);
 }
 
-/* ── Client voices (components/clients/ClientVoices.tsx), on the customers page ────────
+/* ── Client voices (components/clients/ClientVoices.tsx), on the testimonials page ─────
    CSS columns, not a grid: reviews run from one line to six, and columns pack them without
    the holes a grid leaves under short cards. */
-.swh-voices__head {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  max-width: 760px;
-  margin-bottom: 40px;
-}
-.swh-voices__lede {
+.swh-voices__empty {
   margin: 0;
   font: var(--body-copy);
   font-size: 17px;
-  line-height: 1.6;
+  text-align: center;
   color: var(--body);
 }
 .swh-voices__list {
@@ -4362,4 +4355,7 @@ textarea.swh-review__input {
   display: flex;
   justify-content: center;
   margin-top: 16px;
+}
+.swh-voices {
+  padding-bottom: 0;
 }

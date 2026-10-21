@@ -22,9 +22,12 @@ import { ApiResponseError } from "@/lib/api/envelope";
 
 export const dynamicParams = false;
 
+/* Standard-template pages that have their own folder: rendered there, not here. */
+const BESPOKE = new Set(["testimonials"]);
+
 export async function generateStaticParams() {
   const pages = await getPageList();
-  return pages.filter((p) => p.template === "standard").map((p) => ({ slug: p.slug }));
+  return pages.filter((p) => p.template === "standard" && !BESPOKE.has(p.slug)).map((p) => ({ slug: p.slug }));
 }
 
 type Params = { params: Promise<{ slug: string; lang: string }> };

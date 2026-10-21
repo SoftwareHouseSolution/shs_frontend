@@ -67,6 +67,7 @@ export type RequestOptions = {
   lang?: Locale;
   query?: Record<string, string | number | boolean | undefined>;
   method?: "GET" | "POST";
+  /** JSON-encoded, except FormData, which is sent as multipart (files, e.g. a photo). */
   body?: unknown;
   /** Next.js fetch extensions (server only): cache lifetime and tags. */
   next?: { revalidate?: number | false; tags?: string[] };
@@ -82,13 +83,16 @@ export async function apiRequest<T>(path: string, opts: RequestOptions = {}): Pr
   }
 
   const method = opts.method ?? "GET";
+  /* The browser writes a multipart body's Content-Type itself, boundary included, so it is
+     left unset for FormData. */
+  const multipart = typeof FormData !== "undefined" && opts.body instanceof FormData;
   const init = {
     method,
     headers: {
       Accept: "application/json",
-      ...(opts.body !== undefined ? { "Content-Type": "application/json" } : {}),
+      ...(opts.body !== undefined && !multipart ? { "Content-Type": "application/json" } : {}),
     },
-    body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
+    body: multipart ? (opts.body as FormData) : opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
     cache: opts.cache,
     signal: opts.signal,
     ...(opts.next ? { next: opts.next } : {}),

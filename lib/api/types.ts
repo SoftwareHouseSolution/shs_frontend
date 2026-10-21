@@ -22,6 +22,8 @@ export type SiteSettings = {
   phoneDisplay: string;
   phoneLink: string;
   whatsappUrl: string;
+  /** Facebook post a client is offered to comment on after sending a review; "" hides it. */
+  reviewShareUrl: string;
   salesEmail: string;
   careersEmail: string;
   address: string;
@@ -166,3 +168,5 @@ export type EnquiryPayload = {
   website?: string;
 };
 export type EnquiryReceipt = { reference: string; createdAt: string };
+
+export type ReviewReceipt = { reference: string; createdAt: string };

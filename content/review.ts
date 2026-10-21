@@ -271,11 +271,61 @@ export const REVIEW_COPY: Record<Locale, ReviewCopy> = {
   },
 };
 
-/* ── The testimonials page's wall (components/clients/ClientVoices.tsx) ─────────────── */
+/* ── The testimonials page (components/testimonials/) ────────────────────────────── */
 
-export const VOICES_COPY: Record<Locale, { cta: string; empty: string }> = {
-  ar: { cta: "اكتب رأيك", empty: "كن أول من يشارك تجربته مع سوفت وير هاوس." },
-  en: { cta: "Write your review", empty: "Be the first to share your experience with Software House." },
+export type TestimonialsCopy = {
+  spotlight: string;
+  counter: (current: number, total: number) => string;
+  previous: string;
+  next: string;
+  pause: string;
+  play: string;
+  show: (name: string) => string;
+  moreTitle: string;
+  readMore: string;
+  readLess: string;
+  inviteEyebrow: string;
+  inviteTitle: string;
+  inviteBody: string;
+  cta: string;
+  empty: string;
+};
+
+export const TESTIMONIALS_COPY: Record<Locale, TestimonialsCopy> = {
+  ar: {
+    spotlight: "آراء العملاء",
+    counter: (current, total) => `${current} من ${total}`,
+    previous: "الرأي السابق",
+    next: "الرأي التالي",
+    pause: "إيقاف التقليب",
+    play: "تشغيل التقليب",
+    show: (name) => `عرض رأي ${name}`,
+    moreTitle: "المزيد من آراء عملائنا",
+    readMore: "اقرأ المزيد",
+    readLess: "عرض أقل",
+    inviteEyebrow: "شاركنا رأيك",
+    inviteTitle: "عندك تجربة مع سوفت وير هاوس؟",
+    inviteBody: "شاركها في دقيقتين. رأيك بيساعد زمايلك في السوق يختاروا صح.",
+    cta: "اكتب رأيك",
+    empty: "كن أول من يشارك تجربته مع سوفت وير هاوس.",
+  },
+  en: {
+    spotlight: "Client testimonials",
+    counter: (current, total) => `${current} of ${total}`,
+    previous: "Previous testimonial",
+    next: "Next testimonial",
+    pause: "Pause rotation",
+    play: "Resume rotation",
+    show: (name) => `Show ${name}'s testimonial`,
+    moreTitle: "More from our clients",
+    readMore: "Read more",
+    readLess: "Show less",
+    inviteEyebrow: "Share your experience",
+    inviteTitle: "Working with Software House?",
+    inviteBody: "Tell us in two minutes — your review helps others in the trade choose well.",
+    cta: "Write your review",
+    empty: "Be the first to share your experience with Software House.",
+  },
 };
 
 /* ── Drafting the review ─────────────────────────────────────────────────────────── */

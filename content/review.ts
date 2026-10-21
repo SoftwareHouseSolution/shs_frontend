@@ -105,7 +105,6 @@ export type ReviewCopy = {
   yourReview: string;
   editHint: string;
   rewrite: string;
-  consent: string;
   send: string;
   sending: string;
   backToQuestions: string;
@@ -183,7 +182,6 @@ export const REVIEW_COPY: Record<Locale, ReviewCopy> = {
     yourReview: "ده الريفيو بتاعك",
     editHint: "لو عايز تغيّر أي كلمة، دوس على الكلام وعدّل.",
     rewrite: "مش عاجبني، اكتبه بشكل تاني",
-    consent: "موافق إن رأيي واسمي واسم المحل يظهروا على موقع سوفت وير هاوس.",
     send: "ابعت الريفيو",
     sending: "بيتبعت...",
     backToQuestions: "رجوع للأسئلة",
@@ -257,7 +255,6 @@ export const REVIEW_COPY: Record<Locale, ReviewCopy> = {
     yourReview: "Your review",
     editHint: "Tap the text to change any word.",
     rewrite: "Not quite — write it another way",
-    consent: "I agree that my review, name and shop name may appear on the Software House website.",
     send: "Send review",
     sending: "Sending...",
     backToQuestions: "Back to the questions",

@@ -4190,24 +4190,6 @@ textarea.swh-review__input {
   text-underline-offset: 3px;
   cursor: pointer;
 }
-.swh-review__consent {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 12px 14px;
-  font: 14px/1.6 var(--f-sans);
-  color: var(--body);
-  background: var(--accent-tint);
-  border-radius: var(--r-md);
-  cursor: pointer;
-}
-.swh-review__consent input {
-  flex: none;
-  width: 20px;
-  height: 20px;
-  margin-top: 2px;
-  accent-color: var(--accent-fill);
-}
 .swh-review__row {
   display: flex;
   flex-wrap: wrap;

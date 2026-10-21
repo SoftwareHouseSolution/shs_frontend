@@ -41,7 +41,7 @@ const OTHER = "__other__";
 const STEP_OF_FIELD: Record<string, Step> = {
   author_name: 1, shop_name: 1, governorate: 1, area: 1, photo: 1,
   duration: 2, support: 2, updates: 2, benefits: 2, comment: 2,
-  text: 3, consent: 3,
+  text: 3,
 };
 const PHOTO_MAX_SIDE = 1600;
 
@@ -73,7 +73,6 @@ export function ReviewWizard({ lang, shareUrl }: { lang: Locale; shareUrl: strin
   const [drafts, setDrafts] = useState<string[]>([]);
   const [draftIndex, setDraftIndex] = useState(0);
   const [text, setText] = useState("");
-  const [consent, setConsent] = useState(false);
   const [stepError, setStepError] = useState("");
   const [errors, setErrors] = useState<FieldErrors>({});
   const [status, setStatus] = useState<Status>({ kind: "idle" });
@@ -157,7 +156,6 @@ export function ReviewWizard({ lang, shareUrl }: { lang: Locale; shareUrl: strin
         benefits,
         comment: extra.trim(),
         text: text.trim(),
-        consent,
         source: new URLSearchParams(window.location.search).get("src") ?? "",
         website: (document.getElementById(`${id}-website`) as HTMLInputElement | null)?.value ?? "",
         photo,
@@ -339,11 +337,6 @@ export function ReviewWizard({ lang, shareUrl }: { lang: Locale; shareUrl: strin
             <span>{name.trim()} · {shop.trim()} · {place}</span>
           </div>
           <button type="button" className="swh-review__link" onClick={() => redraft((draftIndex + 1) % 3)}>{t.rewrite}</button>
-
-          <label className="swh-review__consent">
-            <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-            <span>{t.consent}</span>
-          </label>
 
           {/* Honeypot. Off-screen, unfocusable, unannounced. */}
           <div className="swh-vh" aria-hidden="true">

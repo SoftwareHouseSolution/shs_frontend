@@ -17,7 +17,6 @@ export type ReviewPayload = {
   benefits: Benefit[];
   comment: string;
   text: string;
-  consent: boolean;
   source: string;
   website: string;
   photo?: Blob | null;

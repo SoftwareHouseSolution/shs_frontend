@@ -1,9 +1,9 @@
-/* The client review page (/[lang]/review): its copy, its questions and the templates that
-   draft a review from the answers.
+/* The client review page (/[lang]/review): its copy and its questions. Drafting a review
+   from the answers lives in content/reviewDrafts.ts.
 
-   The answer CODES (duration, rating, benefit keys) are the API contract — they must match
-   apps.reviews.models.Review on the backend, which validates them and counts them on the
-   admin dashboard. Labels and sentences are free to change.
+   The answer CODES (duration, rating, benefit, business, branches, previous system) are the
+   API contract — they must match apps.reviews.models.Review on the backend, which validates
+   them and counts them on the admin dashboard. Labels and sentences are free to change.
 
    The governorate is always sent by its Arabic name (the backend files reviews under one
    spelling whatever the page language); the English page only shows English labels. */
@@ -14,7 +14,16 @@ export type Duration = "lt1" | "1-3" | "3-5" | "5-10" | "10+";
 export type Rating = "good" | "ok" | "low";
 export type Benefit = "inventory" | "weights" | "accounts" | "daily_reports" | "branches" | "invoices" | "workmanship";
 
+export type BusinessType = "retail" | "wholesale" | "manufacturing";
+export type Branches = "1" | "2-3" | "4+";
+export type PreviousSystem = "paper" | "excel" | "other" | "none";
+export type DraftStyle = "casual" | "detailed" | "short";
+
 export const DURATIONS: Duration[] = ["lt1", "1-3", "3-5", "5-10", "10+"];
+export const BUSINESS_TYPES: BusinessType[] = ["retail", "wholesale", "manufacturing"];
+export const BRANCH_COUNTS: Branches[] = ["1", "2-3", "4+"];
+export const PREVIOUS_SYSTEMS: PreviousSystem[] = ["paper", "excel", "other", "none"];
+export const DRAFT_STYLES: DraftStyle[] = ["casual", "detailed", "short"];
 export const RATINGS: Rating[] = ["good", "ok", "low"];
 export const BENEFITS: Benefit[] = ["inventory", "weights", "accounts", "daily_reports", "branches", "invoices", "workmanship"];
 
@@ -57,6 +66,8 @@ export type ReviewCopy = {
   brand: string;
   title: string;
   lede: string;
+  badges: [string, string, string];
+  stepNames: [string, string, string];
   stepOf: (n: number) => string;
   next: string;
   back: string;
@@ -77,7 +88,10 @@ export type ReviewCopy = {
   areaPlaceholderAbroad: string;
   photo: string;
   optional: string;
+  photoDrop: string;
+  photoHint: string;
   photoChange: string;
+  photoRemove: string;
   step1Error: string;
   // Step 2
   questions: string;
@@ -90,6 +104,14 @@ export type ReviewCopy = {
   qBenefits: string;
   pickSeveral: string;
   benefits: Record<Benefit, string>;
+  moreTitle: string;
+  moreHint: string;
+  qBusiness: string;
+  business: Record<BusinessType, string>;
+  qBranches: string;
+  branches: Record<Branches, string>;
+  qBefore: string;
+  before: Record<PreviousSystem, string>;
   qExtra: string;
   extraPlaceholder: string;
   micStart: string;
@@ -104,6 +126,11 @@ export type ReviewCopy = {
   // Step 3
   yourReview: string;
   editHint: string;
+  styleLabel: string;
+  styles: Record<DraftStyle, string>;
+  writing: string;
+  writtenForYou: string;
+  chars: (n: number) => string;
   rewrite: string;
   send: string;
   sending: string;
@@ -129,6 +156,8 @@ export const REVIEW_COPY: Record<Locale, ReviewCopy> = {
     brand: "SOFTWARE HOUSE · من 1988",
     title: "رأيك يفرق معانا ومع زمايلك في السوق",
     lede: "دقيقتين بس: تختار إجاباتك، وإحنا نكتب لك الريفيو، وانت تعدل فيه براحتك.",
+    badges: ["دقيقتين بس", "إحنا نكتبهولك", "تعدّل براحتك"],
+    stepNames: ["بياناتك", "تجربتك", "الريفيو"],
     stepOf: (n) => `الخطوة ${["١", "٢", "٣"][n - 1]} من ٣`,
     next: "التالي",
     back: "رجوع",
@@ -148,7 +177,10 @@ export const REVIEW_COPY: Record<Locale, ReviewCopy> = {
     areaPlaceholderAbroad: "مثلاً: دبي – ديرة",
     photo: "صورة المحل أو الكارت",
     optional: "اختياري",
+    photoDrop: "اضغط هنا وارفع صورة المحل أو الكارت",
+    photoHint: "صورة واحدة — بنصغّرها لوحدنا قبل الرفع",
     photoChange: "غيّر الصورة",
+    photoRemove: "شيل الصورة",
     step1Error: "اكتب اسمك واسم المحل، واختار المحافظة والمنطقة عشان نكمل.",
     questions: "جاوب على ٤ أسئلة",
     qDuration: "١. بقالك قد إيه شغال على البرنامج؟",
@@ -168,6 +200,14 @@ export const REVIEW_COPY: Record<Locale, ReviewCopy> = {
       invoices: "الفواتير",
       workmanship: "المصنعيات والدمغة",
     },
+    moreTitle: "عرّفنا أكتر",
+    moreHint: "اختياري — بس بيخلّي الريفيو شبهك انت ومش شبه غيرك",
+    qBusiness: "نوع شغلك",
+    business: { retail: "محل قطاعي", wholesale: "جملة", manufacturing: "مصنع / ورشة" },
+    qBranches: "عدد الفروع",
+    branches: { "1": "محل واحد", "2-3": "٢–٣ فروع", "4+": "٤ فروع أو أكتر" },
+    qBefore: "قبل سوفت وير هاوس كنت شغال على إيه؟",
+    before: { paper: "دفاتر وورق", excel: "إكسيل", other: "برنامج تاني", none: "ده أول سيستم" },
     qExtra: "عايز تضيف حاجة بكلامك؟",
     extraPlaceholder: "أو اكتب هنا لو تحب...",
     micStart: "دوس واتكلم بالعربي",
@@ -180,8 +220,13 @@ export const REVIEW_COPY: Record<Locale, ReviewCopy> = {
     step2Error: "جاوب على الأسئلة الأربعة عشان نكتب لك الريفيو.",
     writeIt: "اكتب لي الريفيو",
     yourReview: "ده الريفيو بتاعك",
-    editHint: "لو عايز تغيّر أي كلمة، دوس على الكلام وعدّل.",
-    rewrite: "مش عاجبني، اكتبه بشكل تاني",
+    editHint: "اتكتب من إجاباتك انت. لو عايز تغيّر أي كلمة، دوس على الكلام وعدّل.",
+    styleLabel: "أسلوب الكتابة",
+    styles: { casual: "عفوي", detailed: "مفصّل", short: "مختصر" },
+    writing: "بنكتبلك ريفيو على مقاسك…",
+    writtenForYou: "مكتوب من إجاباتك",
+    chars: (n) => `${n} حرف`,
+    rewrite: "اكتبه بشكل تاني",
     send: "ابعت الريفيو",
     sending: "بيتبعت...",
     backToQuestions: "رجوع للأسئلة",
@@ -202,6 +247,8 @@ export const REVIEW_COPY: Record<Locale, ReviewCopy> = {
     brand: "SOFTWARE HOUSE · SINCE 1988",
     title: "Your opinion helps us — and your colleagues in the trade",
     lede: "Two minutes: pick your answers, we draft the review, and you edit it as you like.",
+    badges: ["Two minutes", "We write it for you", "Edit freely"],
+    stepNames: ["About you", "Your experience", "Your review"],
     stepOf: (n) => `Step ${n} of 3`,
     next: "Next",
     back: "Back",
@@ -221,7 +268,10 @@ export const REVIEW_COPY: Record<Locale, ReviewCopy> = {
     areaPlaceholderAbroad: "e.g. Dubai – Deira",
     photo: "Photo of the shop or business card",
     optional: "optional",
+    photoDrop: "Tap to add a photo of the shop or business card",
+    photoHint: "One photo — we resize it before uploading",
     photoChange: "Change photo",
+    photoRemove: "Remove photo",
     step1Error: "Enter your name and shop, and choose the governorate and area to continue.",
     questions: "Answer 4 questions",
     qDuration: "1. How long have you used the system?",
@@ -241,6 +291,14 @@ export const REVIEW_COPY: Record<Locale, ReviewCopy> = {
       invoices: "Invoices",
       workmanship: "Workmanship and hallmarking",
     },
+    moreTitle: "Tell us a little more",
+    moreHint: "Optional — it makes the review sound like you, not like everyone else",
+    qBusiness: "Your business",
+    business: { retail: "Retail shop", wholesale: "Wholesale", manufacturing: "Factory / workshop" },
+    qBranches: "Branches",
+    branches: { "1": "One shop", "2-3": "2–3 branches", "4+": "4 or more" },
+    qBefore: "Before Software House you used",
+    before: { paper: "Paper ledgers", excel: "Excel", other: "Another program", none: "Nothing — first system" },
     qExtra: "Anything to add in your own words?",
     extraPlaceholder: "Or type here if you prefer...",
     micStart: "Tap and speak",
@@ -253,8 +311,13 @@ export const REVIEW_COPY: Record<Locale, ReviewCopy> = {
     step2Error: "Answer all four questions so we can draft your review.",
     writeIt: "Draft my review",
     yourReview: "Your review",
-    editHint: "Tap the text to change any word.",
-    rewrite: "Not quite — write it another way",
+    editHint: "Written from your own answers. Tap the text to change any word.",
+    styleLabel: "Writing style",
+    styles: { casual: "Casual", detailed: "Detailed", short: "Short" },
+    writing: "Writing a review that sounds like you…",
+    writtenForYou: "Written from your answers",
+    chars: (n) => `${n} characters`,
+    rewrite: "Write it another way",
     send: "Send review",
     sending: "Sending...",
     backToQuestions: "Back to the questions",
@@ -327,131 +390,3 @@ export const TESTIMONIALS_COPY: Record<Locale, TestimonialsCopy> = {
     empty: "Be the first to share your experience with Software House.",
   },
 };
-
-/* ── Drafting the review ─────────────────────────────────────────────────────────── */
-
-export type Answers = {
-  name: string;
-  shop: string;
-  place: string;
-  duration: Duration;
-  support: Rating;
-  updates: Rating;
-  benefits: Benefit[];
-  extra: string;
-};
-
-type Templates = {
-  duration: Record<Duration, string[]>;
-  durationShort: Record<Duration, string>;
-  support: Record<Rating, string[]>;
-  updates: Record<Rating, string[]>;
-  benefit: Record<Benefit, string>;
-  closeGood: string[];
-  closeMid: string[];
-  join: (items: string[]) => string;
-  variants: ((a: Answers, pick: <T>(xs: T[]) => T, t: Templates) => string)[];
-};
-
-const AR: Templates = {
-  duration: {
-    lt1: ["بقالي أقل من سنة", "من حوالي سنة"],
-    "1-3": ["بقالي حوالي سنتين", "بقالي كام سنة"],
-    "3-5": ["بقالي أكتر من ٣ سنين", "بقالي حوالي ٤ سنين"],
-    "5-10": ["بقالي أكتر من ٥ سنين", "بقالي سنين طويلة"],
-    "10+": ["بقالي أكتر من ١٠ سنين", "من أكتر من ١٠ سنين"],
-  },
-  durationShort: { lt1: "أقل من سنة", "1-3": "كام سنة", "3-5": "أكتر من ٣ سنين", "5-10": "أكتر من ٥ سنين", "10+": "أكتر من ١٠ سنين" },
-  support: {
-    good: ["الدعم الفني بصراحة ممتاز، أي مشكلة بتتحل بسرعة", "السبورت بيرد بسرعة وفاهم شغل الصاغة كويس", "الدعم الفني محترم جداً وبيتابع معانا أول بأول"],
-    ok: ["الدعم الفني كويس وبيتابع", "السبورت كويس وبيحلوا المشاكل"],
-    low: ["الدعم محتاج يبقى أسرع شوية، بس في الآخر المشكلة بتتحل", "السبورت أحياناً بيتأخر، بس بيوصل لحل"],
-  },
-  updates: {
-    good: ["والتحديثات مش بتقف، كل شوية في حاجة جديدة بتسهل الشغل", "والتحديثات بتنزل باستمرار وبتفرق معانا فعلاً"],
-    ok: ["والتحديثات كويسة", "والتحديثات ماشية كويس"],
-    low: ["ونفسي التحديثات تبقى أكتر من كده", "والتحديثات محتاجة تبقى أكتر شوية"],
-  },
-  benefit: {
-    inventory: "الجرد بقى أسهل وأدق",
-    weights: "الأوزان والعيارات مظبوطة بالجرام",
-    accounts: "حسابات العملاء والتجار بقت واضحة",
-    daily_reports: "بقيت عارف المحل كسبان قد إيه كل يوم",
-    branches: "بتابع الفروع من مكاني",
-    invoices: "الفواتير بتطلع بسرعة ومن غير أخطاء",
-    workmanship: "المصنعيات والدمغة محسوبة صح",
-  },
-  closeGood: ["أنصح بيه أي حد في السوق.", "شغل محترم بجد وأنصح بيه.", "وأنا مرتاح معاهم جداً."],
-  closeMid: ["تجربة كويسة في العموم.", "وفي العموم أنا مرتاح."],
-  join: (xs) => (xs.length === 1 ? xs[0] : `${xs.slice(0, -1).join("، ")}، و${xs[xs.length - 1]}`),
-  variants: [
-    (a, pick, t) => {
-      const where = `${a.shop} في ${a.place}`;
-      return `${pick(t.duration[a.duration])} شغال على برنامج سوفت وير هاوس في ${where}. ${pick(t.support[a.support])}، ${pick(t.updates[a.updates])}. أكتر حاجة فرقت معايا إن ${t.join(a.benefits.map((b) => t.benefit[b]))}. ${close(a, pick, t)}${a.extra ? `\n${a.extra}` : ""}`;
-    },
-    (a, pick, t) => {
-      const where = `${a.shop} في ${a.place}`;
-      return `أنا ${a.name} من ${where}، و${pick(t.duration[a.duration])} شغال على سيستم سوفت وير هاوس.\n${pick(["من ساعة ما اشتغلنا عليه", "من ساعة ما ركبناه"])} ${t.join(a.benefits.map((b) => t.benefit[b]))}.\n${pick(t.support[a.support])}. ${pick(t.updates[a.updates])}.${a.extra ? `\n${a.extra}` : ""}\n${close(a, pick, t)}`;
-    },
-    (a, pick, t) =>
-      `رأيي في برنامج سوفت وير هاوس بعد ${t.durationShort[a.duration]} شغل:\n- الدعم الفني: ${pick(t.support[a.support])}\n- التحديثات: ${pick(t.updates[a.updates]).replace(/^و/, "")}\n- فادني في: ${a.benefits.map((b) => t.benefit[b]).join("، ")}${a.extra ? `\n- ${a.extra}` : ""}\n${close(a, pick, t)}\n${a.name} – ${a.shop} في ${a.place}`,
-  ],
-};
-
-const EN: Templates = {
-  duration: {
-    lt1: ["For almost a year now I've been", "For the past year I've been"],
-    "1-3": ["For a couple of years I've been", "For a few years now I've been"],
-    "3-5": ["For more than three years I've been", "For about four years I've been"],
-    "5-10": ["For more than five years I've been", "For many years I've been"],
-    "10+": ["For more than ten years I've been", "For over a decade I've been"],
-  },
-  durationShort: { lt1: "a year", "1-3": "a few years", "3-5": "over three years", "5-10": "over five years", "10+": "over ten years" },
-  support: {
-    good: ["Technical support is excellent — any problem gets solved quickly", "Support answers fast and really understands the jewellery trade"],
-    ok: ["Technical support is good and follows up", "Support is good and solves our problems"],
-    low: ["Support could be a bit faster, but problems do get solved", "Support is sometimes slow, but they get there"],
-  },
-  updates: {
-    good: ["and the updates keep coming, each one making the work easier", "and regular updates make a real difference"],
-    ok: ["and the updates are good", "and the updates are fine"],
-    low: ["though I'd like more frequent updates", "though updates could come more often"],
-  },
-  benefit: {
-    inventory: "stock-taking is easier and more accurate",
-    weights: "weights and karats are exact to the gram",
-    accounts: "customer and trader accounts are clear",
-    daily_reports: "I know what the shop earns every day",
-    branches: "I follow my branches from wherever I am",
-    invoices: "invoices come out fast and error-free",
-    workmanship: "workmanship and hallmarking are calculated correctly",
-  },
-  closeGood: ["I recommend it to anyone in the trade.", "Truly professional work — recommended.", "I'm very happy with them."],
-  closeMid: ["A good experience overall.", "Overall, I'm satisfied."],
-  join: (xs) => (xs.length === 1 ? xs[0] : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`),
-  variants: [
-    (a, pick, t) =>
-      `${pick(t.duration[a.duration])} using Software House at ${a.shop} in ${a.place}. ${pick(t.support[a.support])}, ${pick(t.updates[a.updates])}. What made the biggest difference: ${t.join(a.benefits.map((b) => t.benefit[b]))}. ${close(a, pick, t)}${a.extra ? `\n${a.extra}` : ""}`,
-    (a, pick, t) =>
-      `I'm ${a.name} from ${a.shop} in ${a.place}. ${pick(t.duration[a.duration])} working with the Software House system.\nSince we started, ${t.join(a.benefits.map((b) => t.benefit[b]))}.\n${pick(t.support[a.support])}, ${pick(t.updates[a.updates])}.${a.extra ? `\n${a.extra}` : ""}\n${close(a, pick, t)}`,
-    (a, pick, t) =>
-      `My review of Software House after ${t.durationShort[a.duration]}:\n- Support: ${pick(t.support[a.support])}\n- Updates: ${capitalise(pick(t.updates[a.updates]).replace(/^(and|though) /, ""))}\n- Helped with: ${a.benefits.map((b) => t.benefit[b]).join("; ")}${a.extra ? `\n- ${a.extra}` : ""}\n${close(a, pick, t)}\n${a.name} – ${a.shop}, ${a.place}`,
-  ],
-};
-
-function close(a: Answers, pick: <T>(xs: T[]) => T, t: Templates): string {
-  return a.support === "low" || a.updates === "low" ? pick(t.closeMid) : pick(t.closeGood);
-}
-
-function capitalise(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
-const TEMPLATES: Record<Locale, Templates> = { ar: AR, en: EN };
-
-/** The three drafts for one set of answers, each with freshly picked wording. */
-export function draftReviews(lang: Locale, answers: Answers): string[] {
-  const t = TEMPLATES[lang];
-  const pick = <T,>(xs: T[]): T => xs[Math.floor(Math.random() * xs.length)];
-  return t.variants.map((variant) => variant(answers, pick, t));
-}

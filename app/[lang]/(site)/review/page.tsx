@@ -36,11 +36,16 @@ export default async function ReviewPage({ params }: Params) {
   const { settings } = await getSite(lang);
 
   return (
-    <div className="swh-review-page">
-      <header className="swh-review-page__head">
-        <p className="swh-review-page__brand">{copy.brand}</p>
-        <h1 className="swh-review-page__title">{copy.title}</h1>
-        <p className="swh-review-page__lede">{copy.lede}</p>
+    <div className="swh-rv-page">
+      <header className="swh-rv-hero">
+        <p className="swh-rv-hero__brand">{copy.brand}</p>
+        <h1 className="swh-rv-hero__title">{copy.title}</h1>
+        <p className="swh-rv-hero__lede">{copy.lede}</p>
+        <ul className="swh-rv-hero__badges">
+          {copy.badges.map((b) => (
+            <li key={b}>{b}</li>
+          ))}
+        </ul>
       </header>
       <ReviewWizard lang={lang} shareUrl={settings.reviewShareUrl ?? ""} />
     </div>

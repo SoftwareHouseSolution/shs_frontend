@@ -21,7 +21,7 @@ import { Container } from "./Container";
 
 export function Footer({ lang }) {
   const ui = UI[lang];
-  const { settings, footerColumns, socialLinks } = useSite();
+  const { settings, footerColumns, socialLinks, legalPages = [] } = useSite();
   return (
     <footer className="swh-footer">
       <Container>
@@ -89,6 +89,12 @@ export function Footer({ lang }) {
           {/* The year is a CMS value, not new Date(): deriving it at render time would
               introduce a server/client mismatch class around New Year. */}
           <p className="swh-footer__legal">
+            {/* Published legal pages (Admin → Site → Legal pages); gone while switched off. */}
+            {legalPages.filter((page) => page.inFooter).map((page) => (
+              <Link key={page.slug} href={localeHref(lang, `/${page.slug}`)} className="swh-footer__legal-link">
+                {page.title}
+              </Link>
+            ))}
             © {settings.siteName} · {settings.copyrightYear} <span>{settings.rightsText}</span>
           </p>
         </div>

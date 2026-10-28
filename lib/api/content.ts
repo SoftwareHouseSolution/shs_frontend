@@ -12,7 +12,8 @@
 import { cache } from "react";
 import type { Locale } from "@/content/i18n";
 import { apiRequest } from "./client";
-import type { Client, ClientTaxonomy, HomeData, PageData, PageSummary, SiteData, Testimonial } from "./types";
+import { ApiResponseError } from "./envelope";
+import type { Client, ClientTaxonomy, HomeData, LegalDocument, PageData, PageSummary, SiteData, Testimonial } from "./types";
 
 const REVALIDATE = Number(process.env.CMS_REVALIDATE_SECONDS ?? 10);
 const NEXT = { revalidate: Number.isFinite(REVALIDATE) ? REVALIDATE : 10, tags: ["cms"] };
@@ -25,6 +26,16 @@ async function get<T>(path: string, lang?: Locale, query?: Record<string, string
 export const getSite = cache(async (lang: Locale): Promise<SiteData> => (await get<SiteData>("site/", lang)).data!);
 
 export const getHome = cache(async (lang: Locale): Promise<HomeData> => (await get<HomeData>("home/", lang)).data!);
+
+/** A legal page, or null while it is switched off in the admin (the API answers 404). */
+export const getLegal = cache(async (lang: Locale, slug: string): Promise<LegalDocument | null> => {
+  try {
+    return (await get<LegalDocument>(`legal/${slug}/`, lang)).data!;
+  } catch (err) {
+    if (err instanceof ApiResponseError && err.isNotFound) return null;
+    throw err;
+  }
+});
 
 /** Published testimonials in the CMS order — published client reviews join at the top. */
 export const getTestimonials = cache(

@@ -47,7 +47,13 @@ export type SiteData = {
   footerColumns: FooterColumn[];
   socialLinks: SocialLink[];
   badges: Badge[];
+  /** Published legal pages (Admin → Site → Legal pages). A page not listed here is switched
+      off; `inFooter` says whether the footer links to it. */
+  legalPages: { slug: string; title: string; inFooter: boolean }[];
 };
+
+/** A legal page (the privacy policy). `body` is the simple Markdown the admin edits. */
+export type LegalDocument = { slug: string; title: string; body: string; lastUpdated: string; updatedAt: string };
 
 /* ── Home ─────────────────────────────────────────────────────────────────────────── */
 

@@ -5248,3 +5248,144 @@ html[lang="ar"] .swh-spotlight__quote {
     transform: none;
   }
 }
+
+/* ── Legal pages (app/[lang]/(site)/privacy, components/legal/LegalMarkdown.tsx) ───────
+   A reading page: one comfortable column for the text, and on wide screens a sticky
+   contents list beside it. Theme tokens only, logical properties for RTL. */
+.swh-legal {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: calc(var(--nav-h) + 40px) var(--gutter) var(--section-y);
+  box-sizing: border-box;
+}
+.swh-legal__head {
+  max-width: 760px;
+  padding-bottom: 28px;
+  margin-bottom: 36px;
+  border-bottom: 1px solid var(--hairline);
+}
+.swh-legal__eyebrow {
+  margin: 0 0 10px;
+  font: 700 12px/1.4 var(--f-sans);
+  letter-spacing: 0.12em;
+  color: var(--accent);
+}
+.swh-legal__title {
+  margin: 0 0 10px;
+  font: 400 clamp(32px, 5vw, 52px) / 1.15 var(--f-serif);
+  color: var(--ink);
+}
+.swh-legal__date {
+  margin: 0;
+  font: 500 14px/1.5 var(--f-sans);
+  color: var(--text-subtle);
+}
+.swh-legal__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 32px;
+}
+@media (min-width: 960px) {
+  .swh-legal__layout {
+    grid-template-columns: 240px minmax(0, 1fr);
+    gap: 56px;
+    align-items: start;
+  }
+  .swh-legal__toc {
+    position: sticky;
+    top: calc(var(--nav-h) + 24px);
+  }
+}
+.swh-legal__toc {
+  padding: 18px 20px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-lg);
+  background: var(--surface-raised);
+}
+.swh-legal__toc-title {
+  margin: 0 0 10px;
+  font: 700 13px/1.4 var(--f-sans);
+  color: var(--ink);
+}
+.swh-legal__toc ol {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.swh-legal__toc a {
+  display: block;
+  padding: 5px 8px;
+  margin-inline: -8px;
+  font: 500 13.5px/1.45 var(--f-sans);
+  color: var(--body);
+  text-decoration: none;
+  border-radius: 8px;
+  transition: background-color var(--t-menu), color var(--t-menu);
+}
+.swh-legal__toc a:hover {
+  color: var(--accent);
+  background: var(--accent-tint);
+}
+.swh-legal__article {
+  max-width: 760px;
+}
+.swh-legal__body {
+  font: 400 17px/1.9 var(--f-sans);
+  color: var(--body);
+}
+html[lang="ar"] .swh-legal__body {
+  font-size: 17.5px;
+  line-height: 2;
+}
+.swh-legal__body h2 {
+  margin: 44px 0 12px;
+  font: 700 21px/1.4 var(--f-sans);
+  color: var(--ink);
+  scroll-margin-top: calc(var(--nav-h) + 24px);
+}
+.swh-legal__body h2:first-child {
+  margin-top: 0;
+}
+.swh-legal__body h3 {
+  margin: 28px 0 8px;
+  font: 700 17px/1.4 var(--f-sans);
+  color: var(--ink);
+}
+.swh-legal__body p,
+.swh-legal__body li {
+  margin: 0 0 14px;
+}
+.swh-legal__body ul {
+  margin: 0 0 16px;
+  padding-inline-start: 1.3em;
+}
+.swh-legal__body li::marker {
+  color: var(--accent);
+}
+.swh-legal__body strong {
+  font-weight: 700;
+  color: var(--ink);
+}
+.swh-legal__body a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.swh-legal__body a:focus-visible,
+.swh-legal__toc a:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: 2px;
+}
+
+/* The footer's link to each published legal page, before the copyright. */
+.swh-footer__legal-link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.swh-footer__legal-link:hover {
+  color: var(--ink);
+}

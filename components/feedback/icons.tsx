@@ -35,6 +35,25 @@ export function SearchOffIcon() {
   );
 }
 
+/** Map pin — the location dropdown's trigger. */
+export function PinIcon() {
+  return (
+    <svg {...base}>
+      <path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z" />
+      <circle cx="12" cy="10" r="2.3" />
+    </svg>
+  );
+}
+
+/** Chevron — marks a control as a dropdown. */
+export function ChevronDownIcon() {
+  return (
+    <svg {...base}>
+      <path d="M6 9.5l6 6 6-6" />
+    </svg>
+  );
+}
+
 /** Compass — "this address leads nowhere", for the 404. */
 export function CompassIcon() {
   return (

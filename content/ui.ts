@@ -62,6 +62,10 @@ export type UIStrings = {
   /* ── Clients directory ────────────────────────────────────────────────────────── */
   findAClient: string;
   nameOrLocation: string;
+  filterByLocation: string;
+  allLocations: string;
+  searchLocations: string;
+  noLocationMatch: string;
   notOnTheMap: string;
   everyClient: string;
   /** Accessible name for the featured-client marquee above the results heading. */
@@ -164,6 +168,10 @@ const en: UIStrings = {
 
   findAClient: "Find a client",
   nameOrLocation: "Name or location",
+  filterByLocation: "Filter by location",
+  allLocations: "All locations",
+  searchLocations: "Search locations",
+  noLocationMatch: "No matching location",
   notOnTheMap: "Not on the map",
   everyClient: "Every client",
   featuredClientsAria: "Featured clients",
@@ -249,6 +257,10 @@ const ar: UIStrings = {
 
   findAClient: "ابحث عن عميل",
   nameOrLocation: "الاسم أو الموقع",
+  filterByLocation: "تصفية حسب الموقع",
+  allLocations: "كل المواقع",
+  searchLocations: "ابحث عن موقع",
+  noLocationMatch: "لا يوجد موقع مطابق",
   notOnTheMap: "خارج الخريطة",
   everyClient: "كل العملاء",
   featuredClientsAria: "عملاء مميزون",

@@ -134,6 +134,79 @@ for (const vp of [
   await p.close();
 }
 
+/* ── The location dropdown (components/clients/LocationFilter.tsx) ──────────────────
+   What can silently break: a spelling falling out of its area (the point of clientAreas.ts
+   is that "Maddi" and "Maadi" are one row), Escape closing the panel AND clearing the
+   filter, and the panel being painted under the strip below it. */
+for (const vp of [{ width: 1440, height: 1000, tag: "desktop" }, { width: 390, height: 844, tag: "mobile" }]) {
+  const p = await b.newPage({ viewport: vp });
+  const errors = [];
+  p.on("pageerror", (e) => errors.push(String(e)));
+  await p.goto(`${BASE}/${LANG}/customers`, { waitUntil: "domcontentloaded" });
+  await p.waitForTimeout(1500);
+  await p.keyboard.press("Escape");
+  await p.waitForTimeout(600);
+  const area = () => p.getAttribute(".swh-map__result", "data-area");
+  const trigger = p.locator(".swh-loc__trigger");
+  const input = p.locator(".swh-loc__panel input");
+
+  await trigger.scrollIntoViewIfNeeded();
+  await trigger.click();
+  rec(`location ${vp.tag}: opening focuses the search`, await input.evaluate((el) => el === document.activeElement));
+  rec(`location ${vp.tag}: panel is on top of the page`,
+    await p.evaluate(() => {
+      const r = document.querySelector(".swh-loc__list").getBoundingClientRect();
+      const hit = document.elementFromPoint(r.left + r.width / 2, r.top + 20);
+      return Boolean(hit?.closest(".swh-loc__panel"));
+    }));
+  rec(`location ${vp.tag}: panel stays inside the viewport`,
+    await p.evaluate(() => {
+      const r = document.querySelector(".swh-loc__panel").getBoundingClientRect();
+      return r.left >= 0 && r.right <= document.documentElement.clientWidth;
+    }));
+  await p.screenshot({ path: `${OUT}/c-location-${vp.tag}.png` });
+
+  await input.fill(LANG === "ar" ? "المعادي" : "maadi");
+  rec(`location ${vp.tag}: typing narrows the list`, (await p.locator(".swh-loc__opt").count()) === 1);
+  await p.keyboard.press("Enter");
+  await p.waitForTimeout(1400);
+  const maadi = await countCards(p);
+  rec(`location ${vp.tag}: an area filters the grid, every spelling included`,
+    (await area()) === "maadi" && maadi === 12, `${await area()} / ${maadi} cards`);
+  rec(`location ${vp.tag}: the panel closed and the button reads the choice`,
+    (await p.locator(".swh-loc__panel").count()) === 0 &&
+    (await trigger.innerText()) === (await p.locator(".swh-map__result-title").innerText()));
+
+  await trigger.click();
+  await p.keyboard.press("Escape");
+  await p.waitForTimeout(100);
+  rec(`location ${vp.tag}: Escape closes the panel and keeps the filter`,
+    (await p.locator(".swh-loc__panel").count()) === 0 && (await area()) === "maadi");
+  await p.keyboard.press("Escape");
+  await p.waitForTimeout(100);
+  rec(`location ${vp.tag}: a second Escape clears the filter`, (await area()) === "");
+
+  await trigger.click();
+  await p.locator('.swh-loc__opt[data-location="region:giza"]').click();
+  await p.waitForTimeout(1400);
+  rec(`location ${vp.tag}: a region row is the same filter as its pin`,
+    (await p.getAttribute(".swh-map__result", "data-active")) === "giza" && (await area()) === "");
+
+  await p.locator(".swh-filters__reset").click();
+  await p.waitForTimeout(600);
+  rec(`location ${vp.tag}: show-all restores the full roster`, (await countCards(p)) === 367);
+
+  await p.locator(".swh-loc__trigger").click();
+  await p.locator(".swh-loc__panel input").fill("zzzzqqq");
+  rec(`location ${vp.tag}: no match says so`,
+    (await p.locator(".swh-loc__none").count()) === 1 && (await p.locator(".swh-loc__opt").count()) === 0);
+  await p.mouse.click(2, 2);
+  await p.waitForTimeout(100);
+  rec(`location ${vp.tag}: clicking away closes the panel`, (await p.locator(".swh-loc__panel").count()) === 0);
+  rec(`location ${vp.tag}: no page errors`, errors.length === 0, errors.slice(0, 2).join(" | "));
+  await p.close();
+}
+
 /* ── The moving roster (components/clients/ClientRoster.tsx) ────────────────────────
    What can silently break: the loop's seam (a track that is not exactly two equal halves
    jumps once per cycle), logos that never load inside the moving window, the pause

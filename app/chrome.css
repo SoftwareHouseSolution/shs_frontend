@@ -1491,7 +1491,8 @@ p {
   margin-bottom: 2px;
 }
 .swh-filters__search,
-.swh-filters__sort {
+.swh-filters__sort,
+.swh-loc__trigger {
   font: var(--body-copy);
   color: var(--ink);
   background: transparent;
@@ -1502,6 +1503,7 @@ p {
 }
 .swh-filters__search:focus-visible,
 .swh-filters__sort:focus-visible,
+.swh-loc__trigger:focus-visible,
 .swh-filters__chip:focus-visible,
 .swh-filters__reset:focus-visible {
   outline: 2px solid var(--accent);
@@ -1701,6 +1703,145 @@ p {
   font-family: var(--f-mono);
   font-size: 11px;
   color: var(--text-subtle);
+}
+
+/* ── Location dropdown ───────────────────────────────────────────────────────────── */
+/* components/clients/LocationFilter.tsx. The trigger takes its shape from the search field
+   beside it (see the .swh-filters__search rule), so the two read as one row of controls.
+   Logical properties throughout, so it mirrors in Arabic without an rtl.css rule. */
+.swh-loc {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 260px;
+  max-width: 100%;
+}
+.swh-loc__trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding-block: 0;
+  padding-inline: 15px 13px;
+  text-align: start;
+  cursor: pointer;
+  transition: border-color var(--t-menu);
+}
+.swh-loc__trigger:hover {
+  border-color: var(--hairline-strong);
+}
+.swh-loc__trigger[aria-expanded="true"] {
+  border-color: var(--accent);
+}
+.swh-loc__icon,
+.swh-loc__chevron {
+  flex: none;
+  display: flex;
+  width: 17px;
+  height: 17px;
+  color: var(--text-subtle);
+}
+.swh-loc__icon svg,
+.swh-loc__chevron svg {
+  width: 100%;
+  height: 100%;
+}
+.swh-loc__chevron {
+  transition: rotate var(--t-menu);
+}
+.swh-loc__trigger[aria-expanded="true"] .swh-loc__chevron {
+  rotate: 180deg;
+}
+.swh-loc__value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.swh-loc__panel {
+  position: absolute;
+  top: 100%;
+  inset-inline-start: 0;
+  z-index: 30; /* over the featured strip and the roster below it */
+  width: 320px;
+  max-width: calc(100vw - 2 * var(--gutter));
+  margin-top: 8px;
+  padding: 8px;
+  box-sizing: border-box;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+  background: var(--surface-raised);
+  box-shadow: 0 2px 4px rgba(22, 25, 29, 0.1), 0 10px 26px rgba(22, 25, 29, 0.2);
+}
+.swh-loc__panel .swh-search {
+  width: 100%;
+}
+.swh-loc__list {
+  max-height: min(320px, 50vh);
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.swh-loc__opt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 40px;
+  padding: 6px 10px;
+  box-sizing: border-box;
+  border-radius: 10px;
+  font: var(--body-copy);
+  font-size: 14px;
+  color: var(--body);
+  cursor: pointer;
+}
+/* Indented under its region, except in search results, where the regions are gone and the
+   indent would point at nothing. */
+.swh-loc__opt[data-kind="area"] {
+  padding-inline-start: 24px;
+}
+.swh-loc__list[data-searching="true"] .swh-loc__opt {
+  padding-inline-start: 10px;
+}
+.swh-loc__opt[data-kind="region"] {
+  font-weight: 700;
+  color: var(--ink);
+}
+.swh-loc__opt[data-cursor="true"] {
+  background: var(--accent-tint);
+}
+.swh-loc__opt[aria-selected="true"] {
+  color: var(--accent);
+}
+.swh-loc__opt-n {
+  flex: none;
+  font-family: var(--f-mono);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-subtle);
+}
+.swh-loc__none {
+  margin: 0;
+  padding: 16px 10px 10px;
+  font: var(--body-copy);
+  font-size: 14px;
+  color: var(--text-subtle);
+}
+@media (max-width: 799px) {
+  .swh-loc {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+  .swh-loc__panel {
+    width: 100%;
+    max-width: none;
+  }
 }
 
 /* ── Featured-client strip ───────────────────────────────────────────────────────── */
@@ -3589,6 +3730,8 @@ p {
   .swh-drawer__trigger,
   .swh-drawer__sub a,
   .swh-search__input,
+  .swh-loc__trigger,
+  .swh-loc__chevron,
   .swh-inline-link {
     transition-duration: 0.01ms;
   }

@@ -35,8 +35,10 @@ import type { Locale } from "@/content/i18n";
 import { PillButton } from "@/components/ds/PillButton";
 import { EmptyState } from "@/components/feedback/EmptyState";
 import { SearchIcon } from "@/components/feedback/icons";
+import { areaLabel, areasOf, areaSearchText, foldText } from "./clientAreas";
 import { ClientRoster } from "./ClientRoster";
 import { FeaturedClients } from "./FeaturedClients";
+import { LocationFilter, type LocationOption } from "./LocationFilter";
 import { embedUrl, fitZoom, offsetFromCentre, type LatLng } from "./regionGeo";
 
 /* Over-scan in px per side. Google's controls sit within ~64px of the corners. */
@@ -72,7 +74,11 @@ export function ClientMap({
     };
   }, [taxonomy, clients]);
   const regionName = (r: string) => names.get(r) ?? r;
+  /* A region and an area are two ways of filtering by place, and only one is ever set: an
+     area can hold clients from several regions (a chain with branches in Heliopolis and
+     Sheikh Zayed is filed under one), so filtering by both would drop them. */
   const [active, setActive] = useState<string | null>(null);
+  const [area, setArea] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const frameRef = useRef<HTMLDivElement>(null);
   const [box, setBox] = useState({ w: 0, h: 0 });
@@ -93,6 +99,40 @@ export function ClientMap({
 
   const onMap = regionKeys.filter((r) => pins.has(r) && (counts.get(r) ?? 0) > 0);
   const offMap = regionKeys.filter((r) => !pins.has(r) && (counts.get(r) ?? 0) > 0);
+
+  /* Run once rather than per keystroke: each client's location is tested against every
+     area pattern. */
+  const areasByClient = useMemo(() => new Map(clients.map((c) => [c.slug, areasOf(c.location)])), [clients]);
+
+  /* The dropdown's rows: each region, then its areas A-Z. An area sits under the region
+     most of its clients belong to, so the grouping follows the CMS data rather than a
+     second copy of the geography. */
+  const locations = useMemo(() => {
+    const tally = new Map<string, Map<string, number>>();
+    for (const c of clients) {
+      for (const a of areasByClient.get(c.slug) ?? []) {
+        const regions = tally.get(a) ?? new Map<string, number>();
+        tally.set(a, regions.set(c.region, (regions.get(c.region) ?? 0) + 1));
+      }
+    }
+    const byRegion = new Map<string, LocationOption[]>();
+    for (const [key, regions] of tally) {
+      const [home] = [...regions].sort((x, y) => y[1] - x[1])[0];
+      const label = areaLabel(key, lang);
+      const count = [...regions.values()].reduce((sum, n) => sum + n, 0);
+      const option: LocationOption = { id: `area:${key}`, kind: "area", key, label, count, search: areaSearchText(key) };
+      byRegion.set(home, [...(byRegion.get(home) ?? []), option]);
+    }
+    return regionKeys
+      .filter((r) => (counts.get(r) ?? 0) > 0)
+      .flatMap((r): LocationOption[] => {
+        const label = names.get(r) ?? r;
+        return [
+          { id: `region:${r}`, kind: "region", key: r, label, count: counts.get(r) ?? 0, search: foldText(label) },
+          ...(byRegion.get(r) ?? []).sort((x, y) => x.label.localeCompare(y.label, lang)),
+        ];
+      });
+  }, [clients, areasByClient, counts, regionKeys, names, lang]);
 
   /* Measure the frame so markers can be placed from its centre. useLayoutEffect: the pills
      must be positioned before paint, otherwise they all flash at the top-left corner for a
@@ -118,6 +158,7 @@ export function ClientMap({
     return clients
       .filter((c) => {
         if (active && c.region !== active) return false;
+        if (area && !areasByClient.get(c.slug)?.includes(area)) return false;
         if (needle && !c.name.toLowerCase().includes(needle) && !c.location.toLowerCase().includes(needle)) {
           return false;
         }
@@ -128,7 +169,10 @@ export function ClientMap({
          (see content/clients.ts), so an Arabic collator would order them by codepoint
          rather than alphabetically. */
       .sort((a, b) => a.name.localeCompare(b.name, "en"));
-  }, [clients, active, q]);
+  }, [clients, areasByClient, active, area, q]);
+
+  const place = area ? areaLabel(area, lang) : active ? regionName(active) : null;
+  const location = area ? `area:${area}` : active ? `region:${active}` : null;
 
   /* Selecting a region scrolls the results into view.
 
@@ -141,28 +185,41 @@ export function ClientMap({
      and `block: "start"` lands on the heading, which already clears the fixed navbar via the
      global `[id] { scroll-margin-top }` rule. */
   const resultRef = useRef<HTMLDivElement>(null);
+  const revealResults = useCallback(() => {
+    requestAnimationFrame(() =>
+      resultRef.current?.scrollIntoView({
+        // html{scroll-behavior:smooth} would otherwise animate this for everyone.
+        behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+        block: "start",
+      }),
+    );
+  }, []);
   const select = useCallback(
     (r: string) => {
+      setArea(null);
       setActive((cur) => {
         const next = cur === r ? null : r;
-        if (next) {
-          requestAnimationFrame(() =>
-            resultRef.current?.scrollIntoView({
-              // html{scroll-behavior:smooth} would otherwise animate this for everyone.
-              behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
-                ? "auto"
-                : "smooth",
-              block: "start",
-            }),
-          );
-        }
+        if (next) revealResults();
         return next;
       });
     },
-    [],
+    [revealResults],
   );
 
-  /* A short fade on the results when the REGION changes, so swapping 225 cards for 42
+  /* Unlike a pin, picking the same row again keeps it: a dropdown's selection is cleared
+     with its "All locations" row, not by toggling. */
+  const pickLocation = useCallback(
+    (option: LocationOption | null) => {
+      setActive(option?.kind === "region" ? option.key : null);
+      setArea(option?.kind === "area" ? option.key : null);
+      if (option) revealResults();
+    },
+    [revealResults],
+  );
+
+  /* A short fade on the results when the PLACE changes, so swapping 225 cards for 42
      reads as the list being filtered rather than as the page jumping. One element, opacity
      and transform only, via the Web Animations API — nothing to remount, so the cards and
      their decoded logos are reused exactly as before. Not on search: re-fading the grid
@@ -171,10 +228,10 @@ export function ClientMap({
   const gridRef = useRef<HTMLDivElement>(null);
   /* Compared against the last value rather than a "first run" flag, which StrictMode's
      double-invoked effect would flip on mount and then animate anyway. */
-  const lastRegion = useRef(active);
+  const lastLocation = useRef(location);
   useEffect(() => {
-    if (lastRegion.current === active) return;
-    lastRegion.current = active;
+    if (lastLocation.current === location) return;
+    lastLocation.current = location;
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
     gridRef.current?.animate(
       [
@@ -183,15 +240,19 @@ export function ClientMap({
       ],
       { duration: 280, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
     );
-  }, [active]);
+  }, [location]);
 
   // Escape clears the selection, matching every other dismissible thing on the site.
   useEffect(() => {
-    if (!active) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setActive(null);
+    if (!location) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      setActive(null);
+      setArea(null);
+    };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [active]);
+  }, [location]);
 
   return (
     <section className="swh-directory">
@@ -285,6 +346,18 @@ export function ClientMap({
               </span>
             </label>
 
+            <LocationFilter
+              options={locations}
+              value={location}
+              onChange={pickLocation}
+              labels={{
+                title: ui.filterByLocation,
+                all: ui.allLocations,
+                search: ui.searchLocations,
+                none: ui.noLocationMatch,
+              }}
+            />
+
             {offMap.length > 0 && (
               <div className="swh-map__off">
                 <span className="swh-filters__label">{ui.notOnTheMap}</span>
@@ -316,8 +389,14 @@ export function ClientMap({
 
         {/* data-active carries the key of the selected region, or nothing when the roster
             is unfiltered — the heading text beside it is localised and cannot be asserted on. */}
-        <div className="swh-map__result" id="clients" ref={resultRef} data-active={active ?? ""}>
-          <h2 className="swh-map__result-title">{active ? regionName(active) : ui.everyClient}</h2>
+        <div
+          className="swh-map__result"
+          id="clients"
+          ref={resultRef}
+          data-active={active ?? ""}
+          data-area={area ?? ""}
+        >
+          <h2 className="swh-map__result-title">{place ?? ui.everyClient}</h2>
           {/* The running count used to be drawn beside the heading. It is now announced
               only, because it was the same number three times over on a page that already
               shows a count on every region pin and then lays the matching cards out
@@ -327,12 +406,13 @@ export function ClientMap({
           <p className="swh-vh" aria-live="polite">
             {ui.countOf(shown.length, clients.length)}
           </p>
-          {active !== null || q !== "" ? (
+          {location !== null || q !== "" ? (
             <button
               type="button"
               className="swh-filters__reset"
               onClick={() => {
                 setActive(null);
+                setArea(null);
                 setQ("");
               }}
             >
@@ -349,6 +429,7 @@ export function ClientMap({
                 variant="secondary"
                 onClick={() => {
                   setActive(null);
+                  setArea(null);
                   setQ("");
                 }}
               >
@@ -356,7 +437,7 @@ export function ClientMap({
               </PillButton>
             }
           >
-            {ui.noClientMatch(q, active ? ui.inRegion(regionName(active)) : "")}
+            {ui.noClientMatch(q, place ? ui.inRegion(place) : "")}
           </EmptyState>
         ) : (
           <ClientRoster ref={gridRef} clients={shown} lang={lang} typeName={typeName} />

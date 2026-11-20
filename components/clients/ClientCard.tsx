@@ -3,6 +3,7 @@
    fields, so a detail page would be an empty shell. */
 
 import type { Client } from "@/lib/api/types";
+import { logoScaleStyle } from "@/lib/logoScale";
 import { UI } from "@/content/ui";
 import type { Locale } from "@/content/i18n";
 
@@ -21,7 +22,7 @@ export function ClientCard({
 }) {
   return (
     <li className="swh-client-card">
-      <div className="swh-client-card__logo">
+      <div className="swh-client-card__logo" style={logoScaleStyle(client.logoScale)}>
         <img src={client.logo} alt={UI[lang].clientLogoAlt(client.name)} loading="lazy" decoding="async" />
       </div>
       <p className="swh-client-card__name">{client.name}</p>

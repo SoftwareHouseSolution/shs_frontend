@@ -1879,9 +1879,9 @@ p {
    read logo by logo and each mark has to survive that. */
 .swh-featured__mark {
   flex: none;
-  height: 112px;
+  height: calc(112px * var(--logo-scale, 1));
   width: auto;
-  max-width: 380px;
+  max-width: calc(380px * var(--logo-scale, 1));
   object-fit: contain;
   /* An <img> with no intrinsic box measures 0 until it decodes, and a 0-width group lets
      the slider compute its duration from nothing on the first paint. */
@@ -1907,8 +1907,8 @@ p {
     );
   }
   .swh-featured__mark {
-    height: 78px;
-    max-width: 260px;
+    height: calc(78px * var(--logo-scale, 1));
+    max-width: calc(260px * var(--logo-scale, 1));
   }
 }
 
@@ -2022,7 +2022,7 @@ p {
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: 82px;
+  height: calc(82px * var(--logo-scale, 1));
 }
 .swh-client-card__logo img {
   max-width: 100%;
@@ -2187,7 +2187,7 @@ p {
     padding: 16px 10px 14px;
   }
   .swh-client-card__logo {
-    height: 60px;
+    height: calc(60px * var(--logo-scale, 1));
   }
   .swh-client-card__name {
     font-size: 15px;
@@ -2341,7 +2341,7 @@ p {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 96px;
+  height: calc(96px * var(--logo-scale, 1));
 }
 /* No blend mode and no opacity dimming: the logos are exported already composited onto
    --paper (see tools/extract-clients.py), so they sit flush on the page. A blend mode
@@ -2351,7 +2351,7 @@ p {
    three-logo row read as one logo plus two footnotes. Capping both keeps the three marks
    at comparable visual weight, which is the point of the tier. */
 .swh-proof__vip img {
-  max-width: min(100%, 280px);
+  max-width: min(100%, calc(280px * var(--logo-scale, 1)));
   max-height: 100%;
   width: auto;
   object-fit: contain;
@@ -2371,9 +2371,9 @@ p {
    strip by having a long name. */
 .swh-proof__mark {
   flex: none;
-  height: 56px;
+  height: calc(56px * var(--logo-scale, 1));
   width: auto;
-  max-width: 210px;
+  max-width: calc(210px * var(--logo-scale, 1));
   object-fit: contain;
   /* Explicit, because an <img> with no intrinsic box measures 0 until it decodes, and a
      0-width group would let the slider compute a duration from nothing on first paint. */
@@ -2389,13 +2389,13 @@ p {
     gap: 24px 32px;
   }
   .swh-proof__vip li {
-    height: 56px;
+    height: calc(56px * var(--logo-scale, 1));
   }
   .swh-proof__vip img {
-    max-width: min(100%, 170px);
+    max-width: min(100%, calc(170px * var(--logo-scale, 1)));
   }
   .swh-proof__mark {
-    height: 40px;
+    height: calc(40px * var(--logo-scale, 1));
   }
 }
 

@@ -28,6 +28,7 @@
 import { useEffect, useState } from "react";
 import { InfiniteSlider } from "@/components/core/infinite-slider";
 import type { Client } from "@/lib/api/types";
+import { logoScaleStyle } from "@/lib/logoScale";
 import { UI } from "@/content/ui";
 import type { Locale } from "@/content/i18n";
 
@@ -71,6 +72,7 @@ export function FeaturedClients({ lang, clients }: { lang: Locale; clients: read
           <img
             key={c.slug}
             className="swh-featured__mark"
+            style={logoScaleStyle(c.logoScale)}
             src={c.logo}
             alt={ui.clientLogoAlt(c.name)}
             decoding="async"

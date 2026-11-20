@@ -16,6 +16,7 @@ import { PillButton } from "@/components/ds/PillButton";
 import { InfiniteSlider } from "@/components/core/infinite-slider";
 import { href as localeHref, type Locale } from "@/content/i18n";
 import type { HomeData } from "@/lib/api/types";
+import { logoScaleStyle } from "@/lib/logoScale";
 
 /* Which clients are highlighted and which run in the strip is set per client in the CMS
    (Clients → "Placement on the site"). */
@@ -29,7 +30,7 @@ export function LogoWall({ lang, proof: c }: { lang: Locale; proof: HomeData["pr
           <ul className="swh-proof__vip">
             {/* `v`, not `c`: `c` is the page copy in this scope now. */}
             {c.highlighted.map((v) => (
-              <li key={v.slug}>
+              <li key={v.slug} style={logoScaleStyle(v.logoScale)}>
                 {/* eager, not lazy: these three are above the fold on most desktops, and a
                     logo that fades in late is the one thing worse than a logo that moves. */}
                 <img src={v.logo} alt={v.name} decoding="async" />
@@ -59,6 +60,7 @@ export function LogoWall({ lang, proof: c }: { lang: Locale; proof: HomeData["pr
             <img
               key={m.slug}
               className="swh-proof__mark"
+              style={logoScaleStyle(m.logoScale)}
               src={m.logo}
               alt={m.name}
               decoding="async"

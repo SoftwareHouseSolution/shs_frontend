@@ -72,7 +72,8 @@ export type HeroSlide = {
 export type Stat = { label: string; value: number | null; prefix: string; suffix: string; text: string | null };
 
 export type SectionItem = { n: string; title: string; body: string };
-export type ClientLogo = { slug: string; name: string; logo: string };
+/** logoScale: the admin's per-client "logo size (%)", 100 = normal. See lib/logoScale.ts. */
+export type ClientLogo = { slug: string; name: string; logo: string; logoScale: number };
 
 export type SpecColumn = { label: string; highlight: boolean };
 export type SpecCell = { ok: boolean; text: string };
@@ -149,6 +150,7 @@ export type Client = {
   sector: string;
   businessTypes: string[];
   logo: string;
+  logoScale: number;
   featuredOrder: number | null;
 };
 

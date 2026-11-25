@@ -607,3 +607,8 @@ a.pill:hover {
     transform: translateY(620%);
   }
 }
+
+/* Room for the site's fixed nav bar (its height is the site's --nav-h). */
+.withNav {
+  padding-block-start: var(--nav-h, 64px);
+}

@@ -47,7 +47,13 @@ export function LanguageToggle({ lang, onNavigate, className = "swh-lang" }: Pro
   /* Strip the current locale and re-prefix with the other one. Any hash in the URL is
      deliberately dropped — a fragment is a section id, and while those happen to match
      across languages today, carrying one over would silently break the moment they do not. */
-  const target = href(other, pathWithoutLocale(pathname));
+  /* The E-Jewelry install page lives outside the locale prefix (/e-jewelry/ is Arabic,
+     /e-jewelry/en/ English), so it maps to its own pair rather than to /en/e-jewelry. */
+  const target = pathname.startsWith("/e-jewelry")
+    ? other === "en"
+      ? "/e-jewelry/en/"
+      : "/e-jewelry/"
+    : href(other, pathWithoutLocale(pathname));
 
   return (
     <Link

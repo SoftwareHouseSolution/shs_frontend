@@ -11,6 +11,9 @@
 import { IBM_Plex_Sans_Arabic } from "next/font/google";
 import { DIR, HTML_LANG, type Locale } from "@/content/i18n";
 import { getSite } from "@/lib/api/content";
+import { HtmlLangSync } from "@/components/chrome/HtmlLangSync";
+import { SiteProvider } from "@/components/chrome/SiteContext";
+import { SiteNav } from "@/components/chrome/SiteNav";
 import { DownloadButton } from "./DownloadButton";
 import { QR_PATH, QR_SIZE, QR_URL } from "./qr";
 import s from "./install.module.css";
@@ -106,12 +109,14 @@ const STEP_ICON: Record<Step["icon"], React.ReactNode> = {
   ),
 };
 
-/** Footer details from the CMS. The page must still render when the API is down (or, in
-    local dev, not configured), so a failure only drops the footer's extras. */
+/** The site data (for the nav) and the footer details from the CMS. The page must still
+    render when the API is down (or, in local dev, not configured), so a failure only drops
+    the nav and the footer's extras. */
 async function footerInfo(lang: Locale) {
   try {
     const site = await getSite(lang);
     return {
+      site,
       name: site.settings.siteName,
       whatsapp: site.settings.whatsappUrl,
       phone: site.settings.phoneDisplay,
@@ -119,7 +124,7 @@ async function footerInfo(lang: Locale) {
       privacy: site.legalPages?.some((p) => p.slug === "privacy") ? `/${lang}/privacy` : "",
     };
   } catch {
-    return { name: "Software House Solutions", whatsapp: "", phone: "", phoneLink: "", privacy: "" };
+    return { site: null, name: "Software House Solutions", whatsapp: "", phone: "", phoneLink: "", privacy: "" };
   }
 }
 
@@ -133,119 +138,136 @@ export async function InstallPage({ lang }: { lang: Locale }) {
   ].filter(Boolean) as { href: string; label: string; ltr: boolean }[];
 
   return (
-    <main className={`${s.page} ${lang === "ar" ? plex.className : ""}`} lang={HTML_LANG[lang]} dir={DIR[lang]}>
-      <div className={s.wrap}>
-        <section className={s.hero} aria-labelledby="ej-name">
-          <div className={s.intro}>
-            <img className={s.appIcon} src="/e-jewelry/icon.png" alt="" width={88} height={88} />
-            <h1 id="ej-name" className={s.name}>
-              <span dir="ltr">E-Jewelry</span>
-            </h1>
-            <p className={s.promise}>{t.promise}</p>
-            <DownloadButton lang={lang} label={t.download} mb={t.mb} />
-          </div>
-
-          {/* The scene: a phone holding the QR in front of a tablet with the app on its
-              home screen. The tablet is decoration; the phone carries the QR. */}
-          <div className={s.scene}>
-            <div className={s.tablet} aria-hidden="true">
-              <div className={s.tabletScreen}>
-                {Array.from({ length: 16 }, (_, i) =>
-                  i === 7 ? (
-                    <div key={i} className={s.homeApp}>
-                      <img src="/e-jewelry/icon.png" alt="" />
-                      <span>E-Jewelry</span>
-                    </div>
-                  ) : (
-                    <i key={i} className={s.tile} data-tone={i % 3} />
-                  ),
-                )}
-              </div>
+    <>
+      {/* The site's own nav bar, as on every site page (app/[lang]/layout.tsx does the
+          same: lang/dir on a wrapper, then copied up to <html>). With no hero on this page
+          the bar is always solid. */}
+      <HtmlLangSync lang={HTML_LANG[lang]} dir={DIR[lang]} />
+      {f.site && (
+        <div lang={HTML_LANG[lang]} dir={DIR[lang]}>
+          <SiteProvider site={f.site}>
+            <SiteNav lang={lang} />
+          </SiteProvider>
+        </div>
+      )}
+      <main
+        className={`${s.page} ${f.site ? s.withNav : ""} ${lang === "ar" ? plex.className : ""}`}
+        lang={HTML_LANG[lang]}
+        dir={DIR[lang]}
+      >
+        <div className={s.wrap}>
+          <section className={s.hero} aria-labelledby="ej-name">
+            <div className={s.intro}>
+              <img className={s.appIcon} src="/e-jewelry/icon.png" alt="" width={88} height={88} />
+              <h1 id="ej-name" className={s.name}>
+                <span dir="ltr">E-Jewelry</span>
+              </h1>
+              <p className={s.promise}>{t.promise}</p>
+              <DownloadButton lang={lang} label={t.download} mb={t.mb} />
             </div>
-            <figure className={s.phone}>
-              <div className={s.phoneScreen}>
-                <span className={s.island} aria-hidden="true" />
-                <div className={s.qrBox}>
-                  <svg
-                    className={s.qr}
-                    viewBox={`-4 -4 ${QR_SIZE + 8} ${QR_SIZE + 8}`}
-                    role="img"
-                    aria-label={QR_URL}
-                    shapeRendering="crispEdges"
-                  >
-                    <rect x="-4" y="-4" width={QR_SIZE + 8} height={QR_SIZE + 8} fill="#fff" />
-                    <path d={QR_PATH} fill="#000" />
-                  </svg>
-                  <span className={s.scanLine} aria-hidden="true" />
+
+            {/* The scene: a phone holding the QR in front of a tablet with the app on its
+                home screen. The tablet is decoration; the phone carries the QR. */}
+            <div className={s.scene}>
+              <div className={s.tablet} aria-hidden="true">
+                <div className={s.tabletScreen}>
+                  {Array.from({ length: 16 }, (_, i) =>
+                    i === 7 ? (
+                      <div key={i} className={s.homeApp}>
+                        <img src="/e-jewelry/icon.png" alt="" />
+                        <span>E-Jewelry</span>
+                      </div>
+                    ) : (
+                      <i key={i} className={s.tile} data-tone={i % 3} />
+                    ),
+                  )}
                 </div>
-                <figcaption className={s.qrCap}>{t.scan}</figcaption>
               </div>
-            </figure>
-          </div>
-        </section>
-
-        <section className={s.steps} aria-labelledby="ej-first">
-          <h2 id="ej-first" className={s.stepsTitle}>
-            {t.firstTime}
-          </h2>
-          <ol className={s.cards}>
-            {t.steps.map((step, i) => (
-              <li key={step.icon} className={s.card}>
-                <div className={s.cardTop}>
-                  <span className={s.num} aria-hidden="true">
-                    {i + 1}
-                  </span>
-                  <span className={s.ico} aria-hidden="true">
-                    <svg viewBox="0 0 24 24">{STEP_ICON[step.icon]}</svg>
-                  </span>
+              <figure className={s.phone}>
+                <div className={s.phoneScreen}>
+                  <span className={s.island} aria-hidden="true" />
+                  <div className={s.qrBox}>
+                    <svg
+                      className={s.qr}
+                      viewBox={`-4 -4 ${QR_SIZE + 8} ${QR_SIZE + 8}`}
+                      role="img"
+                      aria-label={QR_URL}
+                      shapeRendering="crispEdges"
+                    >
+                      <rect x="-4" y="-4" width={QR_SIZE + 8} height={QR_SIZE + 8} fill="#fff" />
+                      <path d={QR_PATH} fill="#000" />
+                    </svg>
+                    <span className={s.scanLine} aria-hidden="true" />
+                  </div>
+                  <figcaption className={s.qrCap}>{t.scan}</figcaption>
                 </div>
-                <h3>{step.title}</h3>
-                {step.note && <p>{step.note}</p>}
-              </li>
-            ))}
-          </ol>
-        </section>
+              </figure>
+            </div>
+          </section>
 
-        <section className={s.stores} aria-label={t.stores}>
-          <a className={s.pill} href={TESTFLIGHT_URL} rel="noopener">
-            <span className={s.pillIco} aria-hidden="true">
-              <svg viewBox="0 0 24 24">
-                <rect x="7" y="2.5" width="10" height="19" rx="2.6" />
-                <path d="M10.5 5.5h3" />
-              </svg>
-            </span>
-            <span>
-              <b>{t.iphone[0]}</b>
-              <small>{t.iphone[1]}</small>
-            </span>
-          </a>
-          <span className={s.pill} aria-disabled="true">
-            <span className={s.pillIco} aria-hidden="true">
-              <svg viewBox="0 0 24 24">
-                <path d="M6.5 3.8v16.4a.8.8 0 0 0 1.2.7l13-8.2a.8.8 0 0 0 0-1.4l-13-8.2a.8.8 0 0 0-1.2.7z" />
-              </svg>
-            </span>
-            <span>
-              <b lang="en">{t.play[0]}</b>
-              <small>{t.play[1]}</small>
-            </span>
-          </span>
-        </section>
+          <section className={s.steps} aria-labelledby="ej-first">
+            <h2 id="ej-first" className={s.stepsTitle}>
+              {t.firstTime}
+            </h2>
+            <ol className={s.cards}>
+              {t.steps.map((step, i) => (
+                <li key={step.icon} className={s.card}>
+                  <div className={s.cardTop}>
+                    <span className={s.num} aria-hidden="true">
+                      {i + 1}
+                    </span>
+                    <span className={s.ico} aria-hidden="true">
+                      <svg viewBox="0 0 24 24">{STEP_ICON[step.icon]}</svg>
+                    </span>
+                  </div>
+                  <h3>{step.title}</h3>
+                  {step.note && <p>{step.note}</p>}
+                </li>
+              ))}
+            </ol>
+          </section>
 
-        <footer className={s.footer}>
-          <span className={s.brand} lang="en">
-            {f.name}
-          </span>
-          {links.map((l) => (
-            <a key={l.href} href={l.href} dir={l.ltr ? "ltr" : undefined} rel="noopener">
-              {l.label}
+          <section className={s.stores} aria-label={t.stores}>
+            <a className={s.pill} href={TESTFLIGHT_URL} rel="noopener">
+              <span className={s.pillIco} aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <rect x="7" y="2.5" width="10" height="19" rx="2.6" />
+                  <path d="M10.5 5.5h3" />
+                </svg>
+              </span>
+              <span>
+                <b>{t.iphone[0]}</b>
+                <small>{t.iphone[1]}</small>
+              </span>
             </a>
-          ))}
-          <a href={t.other.href} hrefLang={t.other.lang} lang={HTML_LANG[t.other.lang]}>
-            {t.other.label}
-          </a>
-        </footer>
-      </div>
-    </main>
+            <span className={s.pill} aria-disabled="true">
+              <span className={s.pillIco} aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M6.5 3.8v16.4a.8.8 0 0 0 1.2.7l13-8.2a.8.8 0 0 0 0-1.4l-13-8.2a.8.8 0 0 0-1.2.7z" />
+                </svg>
+              </span>
+              <span>
+                <b lang="en">{t.play[0]}</b>
+                <small>{t.play[1]}</small>
+              </span>
+            </span>
+          </section>
+
+          <footer className={s.footer}>
+            <span className={s.brand} lang="en">
+              {f.name}
+            </span>
+            {links.map((l) => (
+              <a key={l.href} href={l.href} dir={l.ltr ? "ltr" : undefined} rel="noopener">
+                {l.label}
+              </a>
+            ))}
+            <a href={t.other.href} hrefLang={t.other.lang} lang={HTML_LANG[t.other.lang]}>
+              {t.other.label}
+            </a>
+          </footer>
+        </div>
+      </main>
+    </>
   );
 }

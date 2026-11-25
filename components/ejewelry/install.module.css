@@ -1,221 +1,158 @@
-/* E-Jewelry install page — the app's «Black Card» look (apple-ui palette), not the site's.
+/* E-Jewelry install page — a soft device scene in the site's own colours.
 
-   One object carries the page: a black card lit by a gold edge, with the download button on
-   it. It stays dark in both themes — a black card on ivory in light mode, on warm black in
-   dark — so the gold has the same ground everywhere. Everything else is quiet ink on the
-   page. Logical properties only, so one sheet serves RTL and LTR. */
+   Every colour is one of the site's tokens (styles/tokens/colors.css, app/theme.css), so
+   the page follows the site's light/dark theme and its brand blue without a second
+   palette. The --ej-* names below only alias them for this page.
+
+   Logical properties only, so one sheet serves RTL and LTR. Every animation lives inside
+   (prefers-reduced-motion: no-preference); without it the page is complete and still. */
 
 .page {
-  --bg: #f6f5f2;
-  --ink: #1c1a17;
-  --ink-2: #5f584c;
-  --hair: rgba(28, 26, 23, 0.11);
-  --chip: #ffffff;
-  --gold-text: #86601f;
-  --focus: #86601f;
-  --lift: rgba(42, 31, 21, 0.28);
+  --ej-ink: var(--ink, #16191d);
+  --ej-ink-2: color-mix(in srgb, var(--ej-ink) 68%, var(--ej-ground-top));
+  --ej-ground-top: var(--surface, #fafaf8);
+  --ej-ground-bottom: var(--footer-bg, #eeeff1);
+  --ej-card: #ffffff;
+  --ej-fill: var(--accent-fill, #4a6fa6);
+  --ej-fill-hover: var(--accent-fill-hover, #3a5a8a);
+  --ej-accent: var(--accent, #4a6fa6);
+  --ej-tint: var(--accent-tint, #eff4fa);
+  --ej-device: #1d1f23;
+  --ej-device-edge: #3a3d43;
+  --ej-home: linear-gradient(160deg, #f3f5f8 0%, #e5e8ed 55%, #dadee4 100%);
+  --ej-shadow-card: 0 1px 2px rgba(22, 25, 29, 0.04), 0 14px 36px -14px rgba(22, 25, 29, 0.16);
+  --ej-shadow-device: 0 2px 4px rgba(10, 12, 16, 0.1), 0 30px 50px -22px rgba(10, 12, 16, 0.38),
+    0 60px 110px -30px rgba(22, 25, 29, 0.3);
+  --ej-dir: 1;
 
   min-block-size: 100dvh;
-  background: var(--bg);
-  color: var(--ink);
+  background: var(--ej-ground-bottom) linear-gradient(180deg, var(--ej-ground-top) 0%, var(--ej-ground-bottom) 100%)
+    no-repeat;
+  color: var(--ej-ink);
   font-family: var(--f-sans, system-ui, sans-serif);
+  font-size: 18px;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
 }
-
-/* Dark: the site's toggle writes data-theme on <html>; the media query covers a visitor
-   whose script never ran. */
+.page[dir="rtl"] {
+  --ej-dir: -1;
+}
 :global(html[data-theme="dark"]) .page {
-  --bg: #0b0a09;
-  --ink: #f3ede2;
-  --ink-2: #a99e8a;
-  --hair: rgba(243, 237, 226, 0.1);
-  --chip: #161412;
-  --gold-text: #dcb875;
-  --focus: #dcb875;
-  --lift: rgba(0, 0, 0, 0.6);
-}
-@media (prefers-color-scheme: dark) {
-  :global(html:not([data-theme])) .page {
-    --bg: #0b0a09;
-    --ink: #f3ede2;
-    --ink-2: #a99e8a;
-    --hair: rgba(243, 237, 226, 0.1);
-    --chip: #161412;
-    --gold-text: #dcb875;
-    --focus: #dcb875;
-    --lift: rgba(0, 0, 0, 0.6);
-  }
+  --ej-card: var(--surface-raised, #181c21);
+  --ej-device: #0b0d10;
+  --ej-device-edge: #2c3138;
+  --ej-home: linear-gradient(160deg, #222831 0%, #1a1f26 55%, #14181d 100%);
+  --ej-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 18px 40px -16px rgba(0, 0, 0, 0.6);
+  --ej-shadow-device: 0 2px 4px rgba(0, 0, 0, 0.3), 0 30px 60px -22px rgba(0, 0, 0, 0.7),
+    0 60px 110px -30px rgba(0, 0, 0, 0.6);
 }
 
-/* The page owns the whole viewport, overscroll included. */
+/* The page owns the viewport, overscroll included. */
 :global(body):has(.page) {
-  background: #f6f5f2;
-}
-:global(html[data-theme="dark"] body):has(.page) {
-  background: #0b0a09;
-}
-@media (prefers-color-scheme: dark) {
-  :global(html:not([data-theme]) body):has(.page) {
-    background: #0b0a09;
-  }
+  background: var(--footer-bg, #eeeff1);
 }
 
 .page ::selection {
-  background: rgba(220, 184, 117, 0.4);
-  color: inherit;
+  background: color-mix(in srgb, var(--ej-fill) 28%, transparent);
 }
 .page a:focus-visible {
-  outline: 2px solid var(--focus);
+  outline: 3px solid var(--ej-accent);
   outline-offset: 3px;
+  border-radius: 12px;
 }
 
-.column {
+.wrap {
   box-sizing: border-box;
-  max-inline-size: 476px;
+  max-inline-size: 1160px;
   margin-inline: auto;
-  padding: 28px 18px 32px;
+  padding-inline: 16px;
+}
+@media (min-width: 734px) {
+  .wrap {
+    padding-inline: 40px;
+  }
+}
+
+/* ── Hero ─────────────────────────────────────────────────────────────────────────── */
+
+.hero {
+  display: grid;
+  gap: 40px;
+  align-items: center;
+  padding-block: 48px 24px;
+}
+@media (min-width: 734px) {
+  .hero {
+    padding-block: 88px 24px;
+  }
+}
+@media (min-width: 980px) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    gap: 56px;
+  }
+}
+.intro {
   display: flex;
   flex-direction: column;
-  gap: 56px;
+  align-items: flex-start;
 }
-.column > :not(.top) {
-  inline-size: 100%;
-  max-inline-size: 440px;
-  margin-inline: auto;
-}
-
-/* ── Card + QR ────────────────────────────────────────────────────────────────────── */
-
-.top {
-  display: flex;
-  flex-direction: column;
-  gap: 48px;
-}
-.qr {
-  margin: 0;
-  text-align: center;
-}
-@media (min-width: 900px) {
-  .column {
-    max-inline-size: 940px;
-    padding-block-start: 72px;
-    gap: 72px;
-  }
-  .top {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    align-items: center;
-    gap: 64px;
-  }
-  .qr {
-    order: -1;
-  }
-  .phone {
-    inline-size: 236px;
-    padding: 9px;
-  }
-}
-
-/* The black card. Edge-glow recipe from the Black Card palette: a warm surface falling to
-   near-black, and a 1px gold line along the top edge. */
-.card {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  padding: 44px 24px 26px;
-  border-radius: 30px;
-  background: linear-gradient(172deg, #2a1f15 0%, #17130b 46%, #110f0d 100%);
-  color: #f3ede2;
-  text-align: center;
-  box-shadow: 0 1px 0 rgba(255, 244, 220, 0.06) inset, 0 28px 56px -22px var(--lift);
-  animation: enter 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-.card::before {
-  content: "";
-  position: absolute;
-  inset: 0 12% auto;
-  block-size: 1px;
-  background: linear-gradient(90deg, transparent, #dcb875, transparent);
-}
-/* One soft gold light behind the icon. */
-.card::after {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  inset-block-start: -90px;
-  inset-inline-start: 50%;
-  inline-size: 320px;
-  block-size: 280px;
-  margin-inline-start: -160px;
-  background: radial-gradient(closest-side, rgba(220, 184, 117, 0.26), transparent);
-}
-@keyframes enter {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .card {
-    animation: none;
-  }
-}
-
-.icon {
+.appIcon {
   display: block;
-  inline-size: 96px;
-  block-size: 96px;
-  margin: 0 auto 22px;
+  inline-size: 88px;
+  block-size: 88px;
   border-radius: 22px;
-  box-shadow: 0 0 0 1px rgba(220, 184, 117, 0.22), 0 14px 30px -8px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 16px 30px -12px rgba(22, 25, 29, 0.35);
 }
 .name {
-  margin: 0;
-  font-size: 34px;
-  line-height: 1.1;
+  margin: 28px 0 0;
+  font-size: clamp(44px, 6vw, 64px);
+  line-height: 1.08;
   font-weight: 600;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.01em;
 }
 .promise {
-  margin: 10px auto 0;
-  max-inline-size: 26ch;
-  font-size: 17px;
-  line-height: 1.6;
-  color: #b9ad97;
-  text-wrap: balance;
+  margin: 14px 0 0;
+  font-size: clamp(20px, 2.2vw, 24px);
+  line-height: 1.5;
+  font-weight: 500;
+  color: var(--ej-ink-2);
 }
 
+/* DownloadButton's own nodes. */
 .action {
-  margin-block-start: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  margin-block-start: 36px;
 }
 .button {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  box-sizing: border-box;
-  inline-size: 100%;
   min-block-size: 56px;
-  padding-inline: 24px;
-  border-radius: 980px;
-  background: linear-gradient(180deg, #e6c88a, #d4ad62);
-  color: #17130b;
+  padding-inline: 30px;
+  border-radius: 16px;
+  background: var(--ej-fill);
+  color: #fff;
   font: inherit;
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 600;
   text-decoration: none;
-  box-shadow: 0 1px 0 rgba(255, 250, 230, 0.55) inset, 0 8px 20px -8px rgba(220, 184, 117, 0.55);
-  transition: filter 150ms cubic-bezier(0.4, 0, 0.6, 1), transform 150ms cubic-bezier(0.4, 0, 0.6, 1);
+  box-shadow: 0 1px 2px rgba(22, 25, 29, 0.2), 0 14px 28px -12px color-mix(in srgb, var(--ej-fill) 70%, transparent);
+  transition: background-color 200ms ease, transform 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 200ms ease;
 }
 .button:hover {
-  color: #17130b;
-  filter: brightness(1.06);
+  background: var(--ej-fill-hover);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 1px 2px rgba(22, 25, 29, 0.2), 0 20px 34px -14px color-mix(in srgb, var(--ej-fill) 80%, transparent);
 }
 .button:active {
-  transform: scale(0.98);
-}
-.button:focus-visible {
-  outline-color: #dcb875;
+  transform: translateY(0) scale(0.98);
 }
 .buttonIcon {
   inline-size: 22px;
@@ -225,217 +162,448 @@
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.button:hover .buttonIcon {
+  transform: translateY(2px);
 }
 .meta {
-  margin: 14px 0 0;
-  font-size: 14px;
-  color: #a99e8a;
+  margin: 0;
+  font-size: 15px;
+  color: var(--ej-ink-2);
   font-variant-numeric: tabular-nums;
 }
 
-/* The QR on a phone: a dark bezel, a screen, and gold viewfinder corners around a white
-   tile. The tile is white in both themes — scanners want dark modules on light. */
-.phone {
-  box-sizing: border-box;
-  inline-size: 196px;
+/* ── Device scene ─────────────────────────────────────────────────────────────────── */
+
+.scene {
+  position: relative;
+  inline-size: 100%;
+  max-inline-size: 620px;
   margin-inline: auto;
-  padding: 8px;
-  border-radius: 44px;
-  background: linear-gradient(160deg, #3a342b, #14120f 40%, #2a2620);
-  box-shadow: 0 30px 60px -24px var(--lift), 0 2px 6px rgba(0, 0, 0, 0.25);
+  aspect-ratio: 1 / 1;
 }
-.screen {
-  position: relative;
-  display: grid;
-  place-items: center;
-  aspect-ratio: 9 / 17;
-  border-radius: 35px;
-  background: radial-gradient(120% 70% at 50% 45%, #221d16, #0b0a09 70%);
-}
-.screen::before {
-  content: "";
+.tablet {
   position: absolute;
-  inset-block-start: 12px;
-  inset-inline-start: 50%;
-  inline-size: 72px;
-  block-size: 20px;
-  margin-inline-start: -36px;
-  border-radius: 20px;
-  background: #000;
+  inset-block-start: 0;
+  inset-inline-end: 0;
+  inline-size: 64%;
+  aspect-ratio: 3 / 4;
+  box-sizing: border-box;
+  padding: 3.2%;
+  border-radius: 9% / 6.75%;
+  background: var(--ej-device);
+  box-shadow: var(--ej-shadow-device), inset 0 0 0 1px var(--ej-device-edge);
 }
-.finder {
+.tabletScreen {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-content: start;
+  gap: 9% 8%;
+  box-sizing: border-box;
+  block-size: 100%;
+  padding: 13% 10%;
+  border-radius: 6.4% / 4.8%;
+  overflow: hidden;
+  background: var(--ej-home);
+}
+.tile {
+  aspect-ratio: 1;
+  border-radius: 23%;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 1px 2px rgba(22, 25, 29, 0.06);
+}
+.tile[data-tone="1"] {
+  background: rgba(255, 255, 255, 0.5);
+}
+.tile[data-tone="2"] {
+  background: color-mix(in srgb, var(--ej-fill) 16%, rgba(255, 255, 255, 0.6));
+}
+:global(html[data-theme="dark"]) .tile {
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+}
+:global(html[data-theme="dark"]) .tile[data-tone="2"] {
+  background: color-mix(in srgb, var(--ej-fill) 30%, transparent);
+}
+.homeApp {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-inline-size: 0;
+}
+.homeApp img {
+  display: block;
+  inline-size: 100%;
+  aspect-ratio: 1;
+  border-radius: 23%;
+  box-shadow: 0 6px 14px -6px rgba(22, 25, 29, 0.45);
+}
+.homeApp span {
+  font-size: clamp(8px, 1.5vw, 11px);
+  line-height: 1.2;
+  font-weight: 500;
+  color: var(--ej-ink);
+  direction: ltr;
+  white-space: nowrap;
+}
+
+.phone {
+  position: absolute;
+  inset-block-end: 0;
+  inset-inline-start: 0;
+  inline-size: 50%;
+  aspect-ratio: 9 / 19;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 3.6%;
+  border-radius: 15% / 7.1%;
+  background: var(--ej-device);
+  box-shadow: var(--ej-shadow-device), inset 0 0 0 1px var(--ej-device-edge), inset 0 0 0 3px #111;
+}
+.phoneScreen {
   position: relative;
-  inline-size: 74%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  block-size: 100%;
+  padding: 16% 7% 10%;
+  border-radius: 12% / 5.6%;
+  overflow: hidden;
+  background: #fff;
+  text-align: center;
 }
-.finder svg {
+.island {
+  position: absolute;
+  inset-block-start: 3%;
+  inset-inline: 0;
+  margin-inline: auto;
+  inline-size: 32%;
+  block-size: 3.6%;
+  border-radius: 999px;
+  background: #0b0b0c;
+}
+.qrBox {
+  position: relative;
+  inline-size: 100%;
+  overflow: hidden;
+}
+.qr {
   display: block;
   inline-size: 100%;
   block-size: auto;
-  border-radius: 12px;
 }
-/* Only the corners of this border show: the mask keeps four 26px squares. */
-.finder::before {
-  content: "";
+/* A soft brand-blue band that sweeps down the QR, like a camera reading it. Hidden when
+   motion is reduced. Translucent and thin enough not to hide modules from a scanner. */
+.scanLine {
   position: absolute;
-  inset: -12px;
-  border: 2.5px solid #dcb875;
-  border-radius: 20px;
-  -webkit-mask:
-    linear-gradient(#000 0 0) 0 0 / 26px 26px no-repeat,
-    linear-gradient(#000 0 0) 100% 0 / 26px 26px no-repeat,
-    linear-gradient(#000 0 0) 0 100% / 26px 26px no-repeat,
-    linear-gradient(#000 0 0) 100% 100% / 26px 26px no-repeat;
-  mask:
-    linear-gradient(#000 0 0) 0 0 / 26px 26px no-repeat,
-    linear-gradient(#000 0 0) 100% 0 / 26px 26px no-repeat,
-    linear-gradient(#000 0 0) 0 100% / 26px 26px no-repeat,
-    linear-gradient(#000 0 0) 100% 100% / 26px 26px no-repeat;
+  inset-inline: 4%;
+  inset-block-start: 0;
+  block-size: 14%;
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--accent-fill, #4a6fa6) 28%, transparent));
+  border-block-end: 2px solid color-mix(in srgb, var(--accent-fill, #4a6fa6) 70%, transparent);
+  opacity: 0;
+  pointer-events: none;
 }
-.caption {
-  margin: 24px auto 0;
-  max-inline-size: 30ch;
-  font-size: 15px;
-  line-height: 1.6;
-  color: var(--ink-2);
+.qrCap {
+  margin: 10% 0 0;
+  font-size: clamp(13px, 1.6vw, 15px);
+  line-height: 1.55;
+  font-weight: 500;
+  color: #16191d;
   text-wrap: balance;
 }
 
-/* ── First install ────────────────────────────────────────────────────────────────── */
-
-.stepsTitle {
-  margin: 0 0 8px;
-  font-size: 22px;
-  line-height: 1.3;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+@media (max-width: 733px) {
+  .scene {
+    aspect-ratio: 1 / 1.4;
+  }
+  .tablet {
+    inline-size: 56%;
+  }
+  .phone {
+    inline-size: 64%;
+  }
 }
-.steps ol {
+
+/* ── Steps ────────────────────────────────────────────────────────────────────────── */
+
+.steps {
+  padding-block: 56px 24px;
+}
+@media (min-width: 734px) {
+  .steps {
+    padding-block: 96px 32px;
+  }
+}
+.stepsTitle {
+  margin: 0 0 28px;
+  font-size: clamp(30px, 3.6vw, 40px);
+  line-height: 1.2;
+  font-weight: 600;
+}
+.cards {
+  display: grid;
+  gap: 16px;
   margin: 0;
   padding: 0;
   list-style: none;
-  counter-reset: step;
 }
-.steps li {
-  counter-increment: step;
+@media (min-width: 734px) {
+  .cards {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+}
+.card {
+  padding: 28px 26px 30px;
+  border-radius: 24px;
+  background: var(--ej-card);
+  box-shadow: var(--ej-shadow-card);
+  transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 250ms ease;
+}
+.card:hover {
+  transform: translateY(-3px);
+}
+.cardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-block-end: 22px;
+}
+.num {
   display: grid;
-  grid-template-columns: 32px 1fr;
-  column-gap: 8px;
-  padding-block: 16px;
-  border-block-end: 1px solid var(--hair);
-}
-.steps li:last-child {
-  border-block-end: 0;
-}
-.steps li::before {
-  content: counter(step);
-  grid-row: span 2;
+  place-items: center;
+  inline-size: 36px;
+  block-size: 36px;
+  border-radius: 50%;
+  background: var(--ej-fill);
+  color: #fff;
   font-size: 17px;
-  line-height: 1.6;
   font-weight: 600;
-  color: var(--gold-text);
   font-variant-numeric: tabular-nums;
 }
-.stepMain {
-  text-wrap: pretty;
-  font-size: 17px;
-  line-height: 1.6;
-  font-weight: 500;
+.ico {
+  display: grid;
+  place-items: center;
+  inline-size: 44px;
+  block-size: 44px;
+  border-radius: 14px;
+  background: var(--ej-tint);
+  color: var(--ej-accent);
 }
-.stepSub {
-  margin-block-start: 2px;
-  font-size: 14px;
-  line-height: 1.6;
-  color: var(--ink-2);
+.ico svg,
+.pillIco svg {
+  inline-size: 24px;
+  block-size: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.card h3 {
+  margin: 0;
+  font-size: 19px;
+  line-height: 1.5;
+  font-weight: 600;
+  text-wrap: balance;
+}
+.card p {
+  margin: 8px 0 0;
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--ej-ink-2);
+  text-wrap: pretty;
 }
 
 /* ── Stores ───────────────────────────────────────────────────────────────────────── */
 
 .stores {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.chip {
   display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding-block: 40px 24px;
+}
+.pill {
+  display: inline-flex;
   align-items: center;
   gap: 12px;
-  box-sizing: border-box;
-  block-size: 100%;
-  min-block-size: 64px;
-  padding: 12px 14px;
-  border-radius: 18px;
-  background: var(--chip);
-  border: 1px solid var(--hair);
-  color: var(--ink);
+  min-block-size: 60px;
+  padding-block: 8px;
+  padding-inline: 14px 24px;
+  border-radius: 999px;
+  background: var(--ej-card);
+  box-shadow: var(--ej-shadow-card);
+  color: var(--ej-ink);
   text-decoration: none;
-  transition: border-color 150ms cubic-bezier(0.4, 0, 0.6, 1);
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 200ms ease;
 }
-a.chip:hover {
-  color: var(--ink);
-  border-color: var(--gold-text);
+a.pill:hover {
+  color: var(--ej-ink);
+  transform: translateY(-2px);
 }
-.chip[aria-disabled="true"] {
-  background: transparent;
-  color: var(--ink-2);
-}
-.chipIcon {
+.pillIco {
+  display: grid;
   flex: none;
-  inline-size: 24px;
-  block-size: 24px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  place-items: center;
+  inline-size: 40px;
+  block-size: 40px;
+  border-radius: 50%;
+  background: var(--ej-tint);
+  color: var(--ej-accent);
 }
-.chipText {
-  display: flex;
-  flex-direction: column;
-  min-inline-size: 0;
+.pillIco svg {
+  inline-size: 22px;
+  block-size: 22px;
 }
-.chipName {
-  font-size: 15px;
+.pill b {
+  display: block;
+  font-size: 16px;
+  line-height: 1.3;
   font-weight: 600;
-  line-height: 1.35;
 }
-.chipSub {
-  font-size: 13px;
+.pill small {
+  display: block;
+  font-size: 14px;
   line-height: 1.4;
-  color: var(--ink-2);
+  color: var(--ej-ink-2);
+}
+.pill[aria-disabled="true"] {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--hairline, #e6e7e9);
+}
+.pill[aria-disabled="true"] .pillIco {
+  background: var(--hairline, #e6e7e9);
+  color: var(--ej-ink-2);
+}
+.pill[aria-disabled="true"] b {
+  color: var(--ej-ink-2);
 }
 
 /* ── Footer ───────────────────────────────────────────────────────────────────────── */
 
 .footer {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding-block-start: 20px;
-  border-block-start: 1px solid var(--hair);
-  font-size: 13px;
-  color: var(--ink-2);
-}
-.company {
-  font-weight: 500;
-  color: var(--ink);
-}
-.links {
-  display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  align-items: center;
   column-gap: 20px;
+  padding-block: 40px 32px;
+  font-size: 15px;
+  color: var(--ej-ink-2);
 }
-.links a {
+.brand {
+  font-weight: 500;
+  color: var(--ej-ink);
+}
+.footer a {
   display: inline-flex;
   align-items: center;
   min-block-size: 44px;
-  color: var(--ink-2);
+  color: var(--ej-ink-2);
   text-decoration: none;
 }
-.links a:hover {
-  color: var(--ink);
+.footer a:hover {
+  color: var(--ej-ink);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* ── Motion ───────────────────────────────────────────────────────────────────────────
+   One authored sequence on load: the intro rises line by line, the tablet slides in from
+   its side, the phone lands in front and then floats gently, and the scan line starts
+   reading the QR. The step cards rise as they scroll into view where the browser
+   supports scroll-driven animation; elsewhere they are simply there. */
+
+@media (prefers-reduced-motion: no-preference) {
+  .intro > * {
+    animation: ej-rise 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .intro > :nth-child(2) {
+    animation-delay: 70ms;
+  }
+  .intro > :nth-child(3) {
+    animation-delay: 140ms;
+  }
+  .intro > :nth-child(4) {
+    animation-delay: 210ms;
+  }
+
+  .tablet {
+    animation: ej-slide 1000ms cubic-bezier(0.16, 1, 0.3, 1) 150ms both;
+  }
+  .phone {
+    animation:
+      ej-land 1000ms cubic-bezier(0.16, 1, 0.3, 1) 300ms both,
+      ej-float 6s ease-in-out 1400ms infinite;
+  }
+  .homeApp img {
+    animation: ej-pop 600ms cubic-bezier(0.16, 1, 0.3, 1) 900ms both;
+  }
+  .scanLine {
+    animation: ej-scan 3200ms cubic-bezier(0.45, 0, 0.55, 1) 1500ms infinite;
+  }
+
+  @supports (animation-timeline: view()) {
+    .card {
+      animation: ej-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 60%;
+    }
+  }
+}
+
+@keyframes ej-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+@keyframes ej-slide {
+  from {
+    opacity: 0;
+    transform: translateX(calc(var(--ej-dir) * 40px)) rotate(calc(var(--ej-dir) * -2deg));
+  }
+}
+@keyframes ej-land {
+  from {
+    opacity: 0;
+    transform: translateY(48px) scale(0.96);
+  }
+}
+@keyframes ej-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+@keyframes ej-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+@keyframes ej-scan {
+  0% {
+    opacity: 0;
+    transform: translateY(-20%);
+  }
+  12% {
+    opacity: 1;
+  }
+  55% {
+    opacity: 1;
+    transform: translateY(620%);
+  }
+  65%,
+  100% {
+    opacity: 0;
+    transform: translateY(620%);
+  }
 }

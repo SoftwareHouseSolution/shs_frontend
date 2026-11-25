@@ -16,3 +16,7 @@ __pycache__/
 # encodes in public/assets/video/ can be regenerated, never committed: GitHub rejects any
 # blob over 100MB, and public/ is copied verbatim into the Bluehost upload bundle.
 video-masters/
+
+# E-Jewelry builds (APK + latest.json) live on the server, not in git — docs/e-jewelry.md.
+# Copy them here only to test /e-jewelry/ locally.
+public/e-jewelry/android/

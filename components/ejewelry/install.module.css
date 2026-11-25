@@ -612,3 +612,104 @@ a.pill:hover {
 .withNav {
   padding-block-start: var(--nav-h, 64px);
 }
+
+/* ── iPhone (TestFlight) ──────────────────────────────────────────────────────────────
+   html[data-ej-platform] is set before paint by the page's platform script. An iPhone
+   gets the TestFlight button and the iPhone card; an Android phone gets the APK button
+   and its steps; desktop (or no script) sees everything except the iPhone button. */
+
+.iosButton {
+  display: none;
+}
+:global(html[data-ej-platform="ios"]) .iosButton {
+  display: inline-flex;
+  margin-block-start: 36px;
+}
+:global(html[data-ej-platform="ios"]) .androidOnly,
+:global(html[data-ej-platform="android"]) .iosOnly {
+  display: none;
+}
+
+.iosCard {
+  margin-block-start: 24px;
+  padding: 28px 26px 30px;
+  border-radius: 24px;
+  background: var(--ej-card);
+  box-shadow: var(--ej-shadow-card);
+}
+.iosTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 22px;
+  font-size: clamp(24px, 3vw, 30px);
+  line-height: 1.2;
+  font-weight: 600;
+}
+.beta {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--ej-tint);
+  color: var(--ej-accent);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+.iosBody {
+  display: grid;
+  gap: 24px;
+  align-items: center;
+}
+@media (min-width: 734px) {
+  .iosBody {
+    grid-template-columns: 200px 1fr;
+    gap: 40px;
+  }
+}
+.iosQr {
+  margin: 0;
+  text-align: center;
+}
+.iosQr svg {
+  display: block;
+  inline-size: 100%;
+  max-inline-size: 200px;
+  margin-inline: auto;
+  border-radius: 14px;
+  box-shadow: 0 0 0 1px var(--hairline, #e6e7e9);
+}
+.iosQr figcaption {
+  margin-block-start: 12px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ej-ink-2);
+  text-wrap: balance;
+}
+.iosSteps {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.iosSteps li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 17px;
+  line-height: 1.5;
+  font-weight: 500;
+}
+.iosSteps .num {
+  flex: none;
+}
+.iosSignin {
+  margin: 18px 0 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ej-ink-2);
+}
+/* On an iPhone the QR is useless (it is the phone that would scan it). */
+:global(html[data-ej-platform="ios"]) .iosQr {
+  display: none;
+}

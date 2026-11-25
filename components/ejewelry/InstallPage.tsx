@@ -15,12 +15,17 @@ import { HtmlLangSync } from "@/components/chrome/HtmlLangSync";
 import { SiteProvider } from "@/components/chrome/SiteContext";
 import { SiteNav } from "@/components/chrome/SiteNav";
 import { DownloadButton } from "./DownloadButton";
-import { QR_PATH, QR_SIZE, QR_URL } from "./qr";
+import { IOS_QR_PATH, IOS_QR_SIZE, IOS_QR_URL, QR_PATH, QR_SIZE, QR_URL } from "./qr";
 import s from "./install.module.css";
 
 const plex = IBM_Plex_Sans_Arabic({ subsets: ["arabic"], weight: ["400", "500", "600"], display: "swap" });
 
-const TESTFLIGHT_URL = "https://testflight.apple.com/join/x3WVqjbK";
+const TESTFLIGHT_URL = IOS_QR_URL;
+
+/* Runs before paint: marks <html> with the visitor's platform, used ONLY to choose which
+   download button a phone sees (iPhone → TestFlight, Android → the APK). Desktop shows
+   both QRs. <html> already carries suppressHydrationWarning for the theme script. */
+const PLATFORM = `(function(){try{var u=navigator.userAgent,p=/iPhone|iPad|iPod/.test(u)||(/Macintosh/.test(u)&&navigator.maxTouchPoints>1)?"ios":/Android/.test(u)?"android":"desktop";document.documentElement.setAttribute("data-ej-platform",p)}catch(e){}})();`;
 
 type Step = { title: string; note: string; icon: "remove" | "allow" | "signin" };
 
@@ -35,6 +40,7 @@ const COPY: Record<
     steps: Step[];
     stores: string;
     iphone: [string, string];
+    ios: { title: string; beta: string; scan: string; open: string; steps: string[]; signin: string };
     play: [string, string];
     privacy: string;
     other: { href: string; label: string; lang: Locale };
@@ -56,7 +62,15 @@ const COPY: Record<
       },
     ],
     stores: "المتاجر",
-    iphone: ["آيفون", "تجريبي على TestFlight"],
+    iphone: ["للآيفون على TestFlight", "تجريبي"],
+    ios: {
+      title: "للآيفون",
+      beta: "تجريبي",
+      scan: "صوّر الكود بالآيفون، هيفتح TestFlight، نزّله وافتح الدعوة",
+      open: "افتح على TestFlight",
+      steps: ["نزّل TestFlight من App Store", "افتح الرابط", "اضغط «قبول» وبعدين «تثبيت»"],
+      signin: "الدخول زي أندرويد: اسم المستخدم بتاع Gweb، أو بالإيميل لو محلك مفعّله",
+    },
     play: ["Google Play", "قريبًا"],
     privacy: "الخصوصية",
     other: { href: "/e-jewelry/en/", label: "English", lang: "en" },
@@ -77,7 +91,15 @@ const COPY: Record<
       },
     ],
     stores: "Stores",
-    iphone: ["iPhone", "Beta on TestFlight"],
+    iphone: ["iPhone, on TestFlight", "Beta"],
+    ios: {
+      title: "On iPhone",
+      beta: "Beta",
+      scan: "Scan with your iPhone: it opens TestFlight; install it, then accept the invite",
+      open: "Open in TestFlight",
+      steps: ["Install TestFlight from the App Store", "Open the link", "Tap “Accept”, then “Install”"],
+      signin: "Sign in as on Android: your Gweb username, or email if your shop turned it on",
+    },
     play: ["Google Play", "Soon"],
     privacy: "Privacy",
     other: { href: "/e-jewelry/", label: "العربية", lang: "ar" },
@@ -142,6 +164,7 @@ export async function InstallPage({ lang }: { lang: Locale }) {
       {/* The site's own nav bar, as on every site page (app/[lang]/layout.tsx does the
           same: lang/dir on a wrapper, then copied up to <html>). With no hero on this page
           the bar is always solid. */}
+      <script dangerouslySetInnerHTML={{ __html: PLATFORM }} />
       <HtmlLangSync lang={HTML_LANG[lang]} dir={DIR[lang]} />
       {f.site && (
         <div lang={HTML_LANG[lang]} dir={DIR[lang]}>
@@ -163,12 +186,17 @@ export async function InstallPage({ lang }: { lang: Locale }) {
                 <span dir="ltr">E-Jewelry</span>
               </h1>
               <p className={s.promise}>{t.promise}</p>
-              <DownloadButton lang={lang} label={t.download} mb={t.mb} />
+              <div className={s.androidOnly}>
+                <DownloadButton lang={lang} label={t.download} mb={t.mb} />
+              </div>
+              <a className={`${s.button} ${s.iosButton}`} href={TESTFLIGHT_URL} target="_blank" rel="noopener">
+                {t.ios.open}
+              </a>
             </div>
 
             {/* The scene: a phone holding the QR in front of a tablet with the app on its
                 home screen. The tablet is decoration; the phone carries the QR. */}
-            <div className={s.scene}>
+            <div className={`${s.scene} ${s.androidOnly}`}>
               <div className={s.tablet} aria-hidden="true">
                 <div className={s.tabletScreen}>
                   {Array.from({ length: 16 }, (_, i) =>
@@ -205,7 +233,7 @@ export async function InstallPage({ lang }: { lang: Locale }) {
             </div>
           </section>
 
-          <section className={s.steps} aria-labelledby="ej-first">
+          <section className={`${s.steps} ${s.androidOnly}`} aria-labelledby="ej-first">
             <h2 id="ej-first" className={s.stepsTitle}>
               {t.firstTime}
             </h2>
@@ -227,8 +255,41 @@ export async function InstallPage({ lang }: { lang: Locale }) {
             </ol>
           </section>
 
+          <section className={`${s.iosCard} ${s.iosOnly}`} aria-labelledby="ej-ios">
+            <h2 id="ej-ios" className={s.iosTitle}>
+              {t.ios.title} <span className={s.beta}>{t.ios.beta}</span>
+            </h2>
+            <div className={s.iosBody}>
+              <figure className={s.iosQr}>
+                <svg
+                  viewBox={`-4 -4 ${IOS_QR_SIZE + 8} ${IOS_QR_SIZE + 8}`}
+                  role="img"
+                  aria-label={IOS_QR_URL}
+                  shapeRendering="crispEdges"
+                >
+                  <rect x="-4" y="-4" width={IOS_QR_SIZE + 8} height={IOS_QR_SIZE + 8} fill="#fff" />
+                  <path d={IOS_QR_PATH} fill="#000" />
+                </svg>
+                <figcaption>{t.ios.scan}</figcaption>
+              </figure>
+              <div>
+                <ol className={s.iosSteps}>
+                  {t.ios.steps.map((step, i) => (
+                    <li key={step}>
+                      <span className={s.num} aria-hidden="true">
+                        {i + 1}
+                      </span>
+                      {step}
+                    </li>
+                  ))}
+                </ol>
+                <p className={s.iosSignin}>{t.ios.signin}</p>
+              </div>
+            </div>
+          </section>
+
           <section className={s.stores} aria-label={t.stores}>
-            <a className={s.pill} href={TESTFLIGHT_URL} rel="noopener">
+            <a className={s.pill} href={TESTFLIGHT_URL} target="_blank" rel="noopener">
               <span className={s.pillIco} aria-hidden="true">
                 <svg viewBox="0 0 24 24">
                   <rect x="7" y="2.5" width="10" height="19" rx="2.6" />

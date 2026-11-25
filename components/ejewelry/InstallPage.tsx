@@ -14,7 +14,7 @@ import { DownloadButton } from "./DownloadButton";
 import { QR_PATH, QR_SIZE, QR_URL } from "./qr";
 import s from "./install.module.css";
 
-const plex = IBM_Plex_Sans_Arabic({ subsets: ["arabic"], weight: ["400", "500", "600"], display: "swap" });
+const plex = IBM_Plex_Sans_Arabic({ subsets: ["arabic"], weight: ["400", "500", "600", "700"], display: "swap" });
 
 const TESTFLIGHT_URL = "https://testflight.apple.com/join/x3WVqjbK";
 
@@ -29,6 +29,7 @@ const COPY: Record<
     steps: [string, string][];
     iphone: [string, string];
     play: [string, string];
+    privacy: string;
     other: { href: string; label: string; lang: Locale };
   }
 > = {
@@ -45,6 +46,7 @@ const COPY: Record<
     ],
     iphone: ["آيفون", "تجريبي على TestFlight"],
     play: ["Google Play", "قريبًا"],
+    privacy: "الخصوصية",
     other: { href: "/e-jewelry/en/", label: "English", lang: "en" },
   },
   en: {
@@ -60,6 +62,7 @@ const COPY: Record<
     ],
     iphone: ["iPhone", "Beta on TestFlight"],
     play: ["Google Play", "Soon"],
+    privacy: "Privacy",
     other: { href: "/e-jewelry/", label: "العربية", lang: "ar" },
   },
 };
@@ -88,36 +91,40 @@ export async function InstallPage({ lang }: { lang: Locale }) {
   return (
     <main className={`${s.page} ${lang === "ar" ? plex.className : ""}`} lang={HTML_LANG[lang]} dir={DIR[lang]}>
       <div className={s.column}>
-        <header className={s.hero}>
-          <div className={s.iconWrap}>
-            <img className={s.icon} src="/e-jewelry/icon.png" alt="" width={112} height={112} />
-          </div>
-          <h1 className={s.name} dir="ltr">
-            E-Jewelry
-          </h1>
-          <p className={s.promise}>{t.promise}</p>
-        </header>
+        {/* Phone: the card (with the button) leads and the QR follows. Desktop: the two sit
+            side by side with the QR first, because the phone that installs the app is the
+            one in the visitor's hand. */}
+        <div className={s.top}>
+          {/* The black card: the one dark, gold-lit object on the page, in both themes. */}
+          <section className={s.card} aria-labelledby="ej-name">
+            <img className={s.icon} src="/e-jewelry/icon.png" alt="" width={96} height={96} />
+            <h1 id="ej-name" className={s.name} dir="ltr">
+              E-Jewelry
+            </h1>
+            <p className={s.promise}>{t.promise}</p>
+            <DownloadButton lang={lang} label={t.download} mb={t.mb} />
+          </section>
 
-        <section className={s.get}>
-          <DownloadButton lang={lang} label={t.download} mb={t.mb} />
-
+          {/* The QR on a phone screen, framed like a camera viewfinder. */}
           <figure className={s.qr}>
             <div className={s.phone}>
-              <div className={s.tile}>
-                <svg
-                  viewBox={`-4 -4 ${QR_SIZE + 8} ${QR_SIZE + 8}`}
-                  role="img"
-                  aria-label={QR_URL}
-                  shapeRendering="crispEdges"
-                >
-                  <rect x="-4" y="-4" width={QR_SIZE + 8} height={QR_SIZE + 8} fill="#fff" />
-                  <path d={QR_PATH} fill="#000" />
-                </svg>
+              <div className={s.screen}>
+                <div className={s.finder}>
+                  <svg
+                    viewBox={`-3 -3 ${QR_SIZE + 6} ${QR_SIZE + 6}`}
+                    role="img"
+                    aria-label={QR_URL}
+                    shapeRendering="crispEdges"
+                  >
+                    <rect x="-3" y="-3" width={QR_SIZE + 6} height={QR_SIZE + 6} fill="#fff" />
+                    <path d={QR_PATH} fill="#000" />
+                  </svg>
+                </div>
               </div>
             </div>
             <figcaption className={s.caption}>{t.scan}</figcaption>
           </figure>
-        </section>
+        </div>
 
         <section className={s.steps} aria-labelledby="ej-first">
           <h2 id="ej-first" className={s.stepsTitle}>
@@ -136,34 +143,47 @@ export async function InstallPage({ lang }: { lang: Locale }) {
         <ul className={s.stores}>
           <li>
             <a className={s.chip} href={TESTFLIGHT_URL} rel="noopener">
-              <span className={s.chipName}>{t.iphone[0]}</span>
-              <span className={s.chipSub}>{t.iphone[1]}</span>
+              <svg className={s.chipIcon} viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="6.5" y="2.75" width="11" height="18.5" rx="2.75" />
+                <path d="M10.5 5.5h3" />
+              </svg>
+              <span className={s.chipText}>
+                <span className={s.chipName}>{t.iphone[0]}</span>
+                <span className={s.chipSub}>{t.iphone[1]}</span>
+              </span>
             </a>
           </li>
           <li>
             <span className={s.chip} aria-disabled="true">
-              <span className={s.chipName}>{t.play[0]}</span>
-              <span className={s.chipSub}>{t.play[1]}</span>
+              <svg className={s.chipIcon} viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M7 4.5v15l12-7.5z" />
+              </svg>
+              <span className={s.chipText}>
+                <span className={s.chipName}>{t.play[0]}</span>
+                <span className={s.chipSub}>{t.play[1]}</span>
+              </span>
             </span>
           </li>
         </ul>
 
         <footer className={s.footer}>
-          <span>{f.name}</span>
-          {f.whatsapp && (
-            <a href={f.whatsapp} rel="noopener">
-              WhatsApp
+          <span className={s.company}>{f.name}</span>
+          <span className={s.links}>
+            {f.whatsapp && (
+              <a href={f.whatsapp} rel="noopener">
+                WhatsApp
+              </a>
+            )}
+            {f.phone && (
+              <a href={f.phoneLink} dir="ltr">
+                {f.phone}
+              </a>
+            )}
+            {f.privacy && <a href={f.privacy}>{t.privacy}</a>}
+            <a href={t.other.href} hrefLang={t.other.lang} lang={HTML_LANG[t.other.lang]}>
+              {t.other.label}
             </a>
-          )}
-          {f.phone && (
-            <a href={f.phoneLink} dir="ltr">
-              {f.phone}
-            </a>
-          )}
-          {f.privacy && <a href={f.privacy}>{lang === "ar" ? "الخصوصية" : "Privacy"}</a>}
-          <a href={t.other.href} hrefLang={t.other.lang} lang={HTML_LANG[t.other.lang]}>
-            {t.other.label}
-          </a>
+          </span>
         </footer>
       </div>
     </main>

@@ -1,20 +1,19 @@
 /* E-Jewelry install page — the app's «Black Card» look (apple-ui palette), not the site's.
-   Ivory and ink in light mode, warm black and champagne gold in dark. Gold is spent once:
-   on the download button. Logical properties only, so one sheet serves RTL and LTR. */
+
+   One object carries the page: a black card lit by a gold edge, with the download button on
+   it. It stays dark in both themes — a black card on ivory in light mode, on warm black in
+   dark — so the gold has the same ground everywhere. Everything else is quiet ink on the
+   page. Logical properties only, so one sheet serves RTL and LTR. */
 
 .page {
   --bg: #f6f5f2;
-  --surface: #ffffff;
   --ink: #1c1a17;
   --ink-2: #5f584c;
-  --hair: rgba(28, 26, 23, 0.1);
+  --hair: rgba(28, 26, 23, 0.11);
+  --chip: #ffffff;
   --gold-text: #86601f;
-  --btn-bg: #1c1a17;
-  --btn-ink: #e8ce99;
-  --btn-hover: #2e2a24;
-  --glow: rgba(220, 184, 117, 0.55);
-  --frame: #1c1a17;
   --focus: #86601f;
+  --lift: rgba(42, 31, 21, 0.28);
 
   min-block-size: 100dvh;
   background: var(--bg);
@@ -27,32 +26,24 @@
    whose script never ran. */
 :global(html[data-theme="dark"]) .page {
   --bg: #0b0a09;
-  --surface: #161412;
   --ink: #f3ede2;
   --ink-2: #a99e8a;
   --hair: rgba(243, 237, 226, 0.1);
+  --chip: #161412;
   --gold-text: #dcb875;
-  --btn-bg: #dcb875;
-  --btn-ink: #17130b;
-  --btn-hover: #e8ce99;
-  --glow: rgba(220, 184, 117, 0.28);
-  --frame: #2a2620;
   --focus: #dcb875;
+  --lift: rgba(0, 0, 0, 0.6);
 }
 @media (prefers-color-scheme: dark) {
   :global(html:not([data-theme])) .page {
     --bg: #0b0a09;
-    --surface: #161412;
     --ink: #f3ede2;
     --ink-2: #a99e8a;
     --hair: rgba(243, 237, 226, 0.1);
+    --chip: #161412;
     --gold-text: #dcb875;
-    --btn-bg: #dcb875;
-    --btn-ink: #17130b;
-    --btn-hover: #e8ce99;
-    --glow: rgba(220, 184, 117, 0.28);
-    --frame: #2a2620;
     --focus: #dcb875;
+    --lift: rgba(0, 0, 0, 0.6);
   }
 }
 
@@ -69,6 +60,10 @@
   }
 }
 
+.page ::selection {
+  background: rgba(220, 184, 117, 0.4);
+  color: inherit;
+}
 .page a:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 3px;
@@ -76,96 +71,123 @@
 
 .column {
   box-sizing: border-box;
+  max-inline-size: 476px;
+  margin-inline: auto;
+  padding: 28px 18px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 56px;
+}
+.column > :not(.top) {
+  inline-size: 100%;
   max-inline-size: 440px;
   margin-inline: auto;
-  padding: 56px 20px 40px;
+}
+
+/* ── Card + QR ────────────────────────────────────────────────────────────────────── */
+
+.top {
   display: flex;
   flex-direction: column;
   gap: 48px;
-  animation: enter 280ms cubic-bezier(0.4, 0, 0.6, 1) both;
+}
+.qr {
+  margin: 0;
+  text-align: center;
+}
+@media (min-width: 900px) {
+  .column {
+    max-inline-size: 940px;
+    padding-block-start: 72px;
+    gap: 72px;
+  }
+  .top {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    gap: 64px;
+  }
+  .qr {
+    order: -1;
+  }
+  .phone {
+    inline-size: 236px;
+    padding: 9px;
+  }
+}
+
+/* The black card. Edge-glow recipe from the Black Card palette: a warm surface falling to
+   near-black, and a 1px gold line along the top edge. */
+.card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 44px 24px 26px;
+  border-radius: 30px;
+  background: linear-gradient(172deg, #2a1f15 0%, #17130b 46%, #110f0d 100%);
+  color: #f3ede2;
+  text-align: center;
+  box-shadow: 0 1px 0 rgba(255, 244, 220, 0.06) inset, 0 28px 56px -22px var(--lift);
+  animation: enter 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0 12% auto;
+  block-size: 1px;
+  background: linear-gradient(90deg, transparent, #dcb875, transparent);
+}
+/* One soft gold light behind the icon. */
+.card::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset-block-start: -90px;
+  inset-inline-start: 50%;
+  inline-size: 320px;
+  block-size: 280px;
+  margin-inline-start: -160px;
+  background: radial-gradient(closest-side, rgba(220, 184, 117, 0.26), transparent);
 }
 @keyframes enter {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(8px);
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .column {
+  .card {
     animation: none;
   }
 }
 
-/* ── Hero ─────────────────────────────────────────────────────────────────────────── */
-
-.hero {
-  text-align: center;
-}
-.iconWrap {
-  position: relative;
-  inline-size: 112px;
-  block-size: 112px;
-  margin-inline: auto;
-  margin-block-end: 24px;
-}
-.iconWrap::before {
-  content: "";
-  position: absolute;
-  inset: -36px;
-  background: radial-gradient(closest-side, var(--glow), transparent);
-  filter: blur(6px);
-}
 .icon {
-  position: relative;
   display: block;
-  inline-size: 100%;
-  block-size: 100%;
-  border-radius: 26px;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 12px 32px rgba(23, 19, 11, 0.22);
+  inline-size: 96px;
+  block-size: 96px;
+  margin: 0 auto 22px;
+  border-radius: 22px;
+  box-shadow: 0 0 0 1px rgba(220, 184, 117, 0.22), 0 14px 30px -8px rgba(0, 0, 0, 0.6);
 }
 .name {
   margin: 0;
   font-size: 34px;
   line-height: 1.1;
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
 }
 .promise {
-  margin: 10px 0 0;
+  margin: 10px auto 0;
+  max-inline-size: 26ch;
   font-size: 17px;
   line-height: 1.6;
-  color: var(--ink-2);
+  color: #b9ad97;
+  text-wrap: balance;
 }
 
-/* ── Download + QR ────────────────────────────────────────────────────────────────── */
-
-.get {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 40px;
-}
-/* Phone first: the button leads, the QR is only for sharing. Desktop: the QR leads,
-   because the phone that installs the app is the one in the visitor's hand. */
 .action {
-  order: 1;
-  inline-size: 100%;
-  text-align: center;
+  margin-block-start: 30px;
 }
-.qr {
-  order: 2;
-  margin: 0;
-  text-align: center;
-}
-@media (min-width: 734px) {
-  .action {
-    order: 2;
-  }
-  .qr {
-    order: 1;
-  }
-}
-
 .button {
   display: flex;
   align-items: center;
@@ -176,20 +198,24 @@
   min-block-size: 56px;
   padding-inline: 24px;
   border-radius: 980px;
-  background: var(--btn-bg);
-  color: var(--btn-ink);
+  background: linear-gradient(180deg, #e6c88a, #d4ad62);
+  color: #17130b;
   font: inherit;
   font-size: 18px;
   font-weight: 600;
   text-decoration: none;
-  transition: background-color 150ms cubic-bezier(0.4, 0, 0.6, 1), transform 150ms cubic-bezier(0.4, 0, 0.6, 1);
+  box-shadow: 0 1px 0 rgba(255, 250, 230, 0.55) inset, 0 8px 20px -8px rgba(220, 184, 117, 0.55);
+  transition: filter 150ms cubic-bezier(0.4, 0, 0.6, 1), transform 150ms cubic-bezier(0.4, 0, 0.6, 1);
 }
 .button:hover {
-  background: var(--btn-hover);
-  color: var(--btn-ink);
+  color: #17130b;
+  filter: brightness(1.06);
 }
 .button:active {
   transform: scale(0.98);
+}
+.button:focus-visible {
+  outline-color: #dcb875;
 }
 .buttonIcon {
   inline-size: 22px;
@@ -201,114 +227,122 @@
   stroke-linejoin: round;
 }
 .meta {
-  margin: 12px 0 0;
+  margin: 14px 0 0;
   font-size: 14px;
-  color: var(--ink-2);
+  color: #a99e8a;
   font-variant-numeric: tabular-nums;
 }
 
-/* A phone-shaped frame around the white tile. The tile stays white in both themes:
-   scanners want dark modules on light. */
+/* The QR on a phone: a dark bezel, a screen, and gold viewfinder corners around a white
+   tile. The tile is white in both themes — scanners want dark modules on light. */
 .phone {
-  position: relative;
-  inline-size: 220px;
-  padding: 60px 14px 84px;
+  box-sizing: border-box;
+  inline-size: 196px;
+  margin-inline: auto;
+  padding: 8px;
   border-radius: 44px;
-  background: var(--surface);
-  border: 1px solid var(--hair);
-  box-shadow: 0 0 0 7px var(--frame), 0 24px 48px rgba(23, 19, 11, 0.18);
-  margin: 7px auto 0;
+  background: linear-gradient(160deg, #3a342b, #14120f 40%, #2a2620);
+  box-shadow: 0 30px 60px -24px var(--lift), 0 2px 6px rgba(0, 0, 0, 0.25);
 }
-.phone::before {
+.screen {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 9 / 17;
+  border-radius: 35px;
+  background: radial-gradient(120% 70% at 50% 45%, #221d16, #0b0a09 70%);
+}
+.screen::before {
   content: "";
   position: absolute;
   inset-block-start: 12px;
   inset-inline-start: 50%;
-  inline-size: 64px;
-  block-size: 8px;
-  margin-inline-start: -32px;
-  border-radius: 8px;
-  background: var(--hair);
-}
-.phone::after {
-  content: "";
-  position: absolute;
-  inset-block-end: 12px;
-  inset-inline-start: 50%;
-  inline-size: 84px;
-  block-size: 4px;
-  margin-inline-start: -42px;
-  border-radius: 4px;
-  background: var(--hair);
-}
-.tile {
-  padding: 10px;
+  inline-size: 72px;
+  block-size: 20px;
+  margin-inline-start: -36px;
   border-radius: 20px;
-  background: #ffffff;
-  border: 1px solid rgba(28, 26, 23, 0.08);
+  background: #000;
 }
-.tile svg {
+.finder {
+  position: relative;
+  inline-size: 74%;
+}
+.finder svg {
   display: block;
   inline-size: 100%;
   block-size: auto;
+  border-radius: 12px;
+}
+/* Only the corners of this border show: the mask keeps four 26px squares. */
+.finder::before {
+  content: "";
+  position: absolute;
+  inset: -12px;
+  border: 2.5px solid #dcb875;
+  border-radius: 20px;
+  -webkit-mask:
+    linear-gradient(#000 0 0) 0 0 / 26px 26px no-repeat,
+    linear-gradient(#000 0 0) 100% 0 / 26px 26px no-repeat,
+    linear-gradient(#000 0 0) 0 100% / 26px 26px no-repeat,
+    linear-gradient(#000 0 0) 100% 100% / 26px 26px no-repeat;
+  mask:
+    linear-gradient(#000 0 0) 0 0 / 26px 26px no-repeat,
+    linear-gradient(#000 0 0) 100% 0 / 26px 26px no-repeat,
+    linear-gradient(#000 0 0) 0 100% / 26px 26px no-repeat,
+    linear-gradient(#000 0 0) 100% 100% / 26px 26px no-repeat;
 }
 .caption {
-  margin: 22px auto 0;
-  max-inline-size: 36ch;
-  text-wrap: balance;
+  margin: 24px auto 0;
+  max-inline-size: 30ch;
   font-size: 15px;
   line-height: 1.6;
   color: var(--ink-2);
+  text-wrap: balance;
 }
 
 /* ── First install ────────────────────────────────────────────────────────────────── */
 
 .stepsTitle {
-  margin: 0 0 16px;
-  font-size: 13px;
+  margin: 0 0 8px;
+  font-size: 22px;
+  line-height: 1.3;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  color: var(--gold-text);
+  letter-spacing: -0.01em;
 }
 .steps ol {
   margin: 0;
   padding: 0;
   list-style: none;
   counter-reset: step;
-  border-block-start: 1px solid var(--hair);
 }
 .steps li {
   counter-increment: step;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  column-gap: 8px;
   padding-block: 16px;
-  padding-inline-start: 44px;
   border-block-end: 1px solid var(--hair);
+}
+.steps li:last-child {
+  border-block-end: 0;
 }
 .steps li::before {
   content: counter(step);
-  position: absolute;
-  inset-inline-start: 0;
-  inset-block-start: 15px;
-  inline-size: 28px;
-  block-size: 28px;
-  border-radius: 50%;
-  border: 1px solid var(--gold-text);
-  color: var(--gold-text);
-  font-size: 14px;
+  grid-row: span 2;
+  font-size: 17px;
+  line-height: 1.6;
   font-weight: 600;
-  line-height: 26px;
-  text-align: center;
+  color: var(--gold-text);
   font-variant-numeric: tabular-nums;
 }
 .stepMain {
-  font-size: 16px;
+  text-wrap: pretty;
+  font-size: 17px;
   line-height: 1.6;
   font-weight: 500;
 }
 .stepSub {
+  margin-block-start: 2px;
   font-size: 14px;
   line-height: 1.6;
   color: var(--ink-2);
@@ -326,13 +360,14 @@
 }
 .chip {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  align-items: center;
+  gap: 12px;
   box-sizing: border-box;
   block-size: 100%;
-  min-block-size: 60px;
-  padding: 10px 16px;
-  border-radius: 16px;
+  min-block-size: 64px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: var(--chip);
   border: 1px solid var(--hair);
   color: var(--ink);
   text-decoration: none;
@@ -340,18 +375,35 @@
 }
 a.chip:hover {
   color: var(--ink);
-  border-color: var(--ink-2);
+  border-color: var(--gold-text);
 }
 .chip[aria-disabled="true"] {
+  background: transparent;
   color: var(--ink-2);
-  border-style: dashed;
+}
+.chipIcon {
+  flex: none;
+  inline-size: 24px;
+  block-size: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.chipText {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
 }
 .chipName {
   font-size: 15px;
   font-weight: 600;
+  line-height: 1.35;
 }
 .chipSub {
   font-size: 13px;
+  line-height: 1.4;
   color: var(--ink-2);
 }
 
@@ -359,21 +411,31 @@ a.chip:hover {
 
 .footer {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  gap: 4px 18px;
-  padding-block-start: 8px;
+  gap: 2px;
+  padding-block-start: 20px;
+  border-block-start: 1px solid var(--hair);
   font-size: 13px;
   color: var(--ink-2);
 }
-.footer a {
+.company {
+  font-weight: 500;
+  color: var(--ink);
+}
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  column-gap: 20px;
+}
+.links a {
   display: inline-flex;
   align-items: center;
   min-block-size: 44px;
   color: var(--ink-2);
   text-decoration: none;
 }
-.footer a:hover {
+.links a:hover {
   color: var(--ink);
 }

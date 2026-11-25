@@ -16,6 +16,7 @@ import { EventsRail } from "./EventsRail";
 import { StatsRow } from "./StatsRow";
 import { StatsBand } from "./StatsBand";
 import { Contact } from "./Contact";
+import { AppPromo } from "./AppPromo";
 import type { Locale } from "@/content/i18n";
 import type { HomeData } from "@/lib/api/types";
 
@@ -26,6 +27,7 @@ export function HomeSections({ lang, home }: { lang: Locale; home: HomeData }) {
       {/* The figures come first, immediately under the hero: since 1988, 1,750+ stores,
           96% of the market is the strongest thing on the page. */}
       {home.figures.stats.length > 0 ? <StatsRow figures={home.figures} /> : null}
+      <AppPromo lang={lang} />
       <LogoWall lang={lang} proof={home.proof} />
       <Services section={home.services} />
       <BigPicture section={home.bigPicture} discoverMoreLabel={home.discoverMoreLabel} />
